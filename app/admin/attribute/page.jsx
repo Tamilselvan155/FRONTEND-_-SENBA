@@ -1,8 +1,11 @@
 'use client'
 
 import { Plus, Edit } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function AdminAttribute() {
+    const router = useRouter()
+    
     const attributes = [
         { id: 8, title: "qwert" },
         { id: 7, title: "kw" },
@@ -15,8 +18,11 @@ export default function AdminAttribute() {
     return (
         <div className="bg-white rounded-lg shadow-sm">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h1 className="text-2xl font-semibold text-gray-800">Attribute List</h1>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">
+                <h1 className="text-2xl font-semibold text-blue-600">Attribute List</h1>
+                <button 
+                    onClick={() => router.push('/admin/attribute/add')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                >
                     <Plus size={18} />
                     Add Attribute
                 </button>

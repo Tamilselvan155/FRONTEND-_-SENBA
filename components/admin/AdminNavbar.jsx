@@ -11,6 +11,12 @@ const AdminNavbar = ({ onToggleSidebar }) => {
                 >
                     <Menu size={20} className="text-gray-700" />
                 </button>
+                <button className="px-4 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-md transition">
+                    Storage Link
+                </button>
+                <button className="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition">
+                    Cache Clear
+                </button>
             </div>
             <div className="flex items-center gap-3">
                 <button className="p-2 hover:bg-gray-200 rounded-md transition-colors">

@@ -54,19 +54,122 @@
   background-color: rgb(37 99 235);
 }
 
-/* Hide Next.js development indicator */
+/* Hide Next.js development indicator - Comprehensive Rules */
 #__next-build-watcher,
 .__next-dev-overlay,
 [data-nextjs-toast],
-[data-nextjs-dialog] {
+[data-nextjs-dialog],
+[data-nextjs-router],
+.__next-dev-indicator,
+.__next-dev-indicator *,
+[class*="__next-dev-indicator"],
+[id*="__next-dev-indicator"],
+[data-nextjs-dev-indicator],
+[data-testid="nextjs-dev-indicator"],
+[data-testid*="nextjs"],
+[class*="nextjs-dev-indicator"] {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
-/* Hide any circular N symbols in sidebar */
-aside [class*="N"],
-aside [data-testid*="next"],
-aside [aria-label*="Next"] {
+/* Hide any fixed position elements that might be the N indicator */
+div[style*="position: fixed"][style*="bottom"],
+div[style*="position: fixed"][style*="left"],
+div[style*="position: fixed"][style*="z-index"] {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Additional aggressive hiding for fixed position elements */
+body > div[style*="position: fixed"][style*="bottom"],
+body > div[style*="position: fixed"][style*="left"],
+body > div[style*="position: fixed"][style*="z-index: 9999"],
+body > div[style*="position: fixed"][style*="z-index:9999"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Hide in sidebar specifically */
+aside div[style*="position: fixed"],
+aside [class*="__next"],
+aside [id*="__next"],
+aside [data-nextjs-dev-indicator],
+aside *[class*="__next"],
+aside *[id*="__next"],
+aside *[data-nextjs-dev-indicator] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Specifically target fixed elements near sidebar (bottom-left corner) - AGGRESSIVE */
+body > div[style*="position: fixed"][style*="left"][style*="bottom"],
+body > div[style*="position: fixed"][style*="left: 0"],
+body > div[style*="position: fixed"][style*="left:0"],
+body > div[style*="position:fixed"][style*="left"][style*="bottom"],
+body > div[style*="position:fixed"][style*="left:0"],
+body > div[style*="position:fixed"][style*="left: 0"],
+div[style*="position: fixed"][style*="left"][style*="bottom"],
+div[style*="position:fixed"][style*="left"][style*="bottom"],
+*[style*="position: fixed"][style*="left"][style*="bottom"],
+*[style*="position:fixed"][style*="left"][style*="bottom"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+
+
+/* Specific targeting for Next.js dev indicator - only target suspicious fixed divs */
+body > div[style*="position: fixed"][style*="bottom"][style*="left"]:not(header):not(nav):not([class*="modal"]):not([class*="dropdown"]):not([class*="toast"]):not([class*="notification"]) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Target the specific Next.js dev indicator button/circle */
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="width"][style*="height"],
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="border-radius"],
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="cursor: pointer"],
+div[style*="position:fixed"][style*="bottom"][style*="left"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Hide the black menu overlay that appears when clicking N - handled by JavaScript */
+
+/* Additional global rule to hide any watermark-like elements with "N" */
+*[style*="position: fixed"]:not(header):not(nav):not(main):not(article):not(section):not(footer),
+*[style*="position:fixed"]:not(header):not(nav):not(main):not(article):not(section):not(footer) {
+  /* This will be handled by JavaScript for precise detection */
 }
 
 /* html, body {
