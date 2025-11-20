@@ -10,6 +10,7 @@ const AdminLayout = ({ children }) => {
 
     const [isAdmin, setIsAdmin] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
     const fetchIsAdmin = async () => {
         setIsAdmin(true)
@@ -20,16 +21,20 @@ const AdminLayout = ({ children }) => {
         fetchIsAdmin()
     }, [])
 
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(!isSidebarCollapsed)
+    }
+
     return loading ? (
         <Loading />
     ) : isAdmin ? (
-        <div className="flex flex-col h-screen">
-            <AdminNavbar />
-            <div className="flex flex-1 items-start h-full overflow-y-scroll no-scrollbar">
-                <AdminSidebar />
-                <div className="flex-1 h-full p-5 lg:pl-12 lg:pt-12 overflow-y-scroll">
+        <div className="flex h-screen bg-white">
+            <AdminSidebar isCollapsed={isSidebarCollapsed} />
+            <div className="flex flex-1 flex-col overflow-hidden">
+                <AdminNavbar onToggleSidebar={toggleSidebar} />
+                <main className="flex-1 overflow-y-auto bg-white p-8">
                     {children}
-                </div>
+                </main>
             </div>
         </div>
     ) : (

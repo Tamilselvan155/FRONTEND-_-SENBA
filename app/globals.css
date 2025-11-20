@@ -31,6 +31,44 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* Custom Scrollbar for Sidebar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(29 78 216) rgb(30 58 138);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgb(30 58 138);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(29 78 216);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(37 99 235);
+}
+
+/* Hide Next.js development indicator */
+#__next-build-watcher,
+.__next-dev-overlay,
+[data-nextjs-toast],
+[data-nextjs-dialog] {
+  display: none !important;
+}
+
+/* Hide any circular N symbols in sidebar */
+aside [class*="N"],
+aside [data-testid*="next"],
+aside [aria-label*="Next"] {
+  display: none !important;
+}
+
 /* html, body {
   overflow-x: hidden;
 } */
