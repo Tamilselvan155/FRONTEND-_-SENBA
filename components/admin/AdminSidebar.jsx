@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from "next/navigation"
-import { ImageIcon, Tag, List, FolderTree, Building2, Package, FolderOpen, ChevronRight } from "lucide-react"
+import { Gauge, ImageIcon, Tag, List, FolderTree, Building2, Package, FolderOpen, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
@@ -368,6 +368,7 @@ const AdminSidebar = ({ isCollapsed = false }) => {
     }, [])
 
     const sidebarLinks = [
+        { name: 'Dashboard', href: '/admin', icon: Gauge },
         { name: 'Banners', href: '/admin/banners', icon: ImageIcon },
         { name: 'Attribute', href: '/admin/attribute', icon: Tag },
         { name: 'Attribute value', href: '/admin/attribute-value', icon: List },
