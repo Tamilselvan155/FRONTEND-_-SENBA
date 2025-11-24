@@ -1,7 +1,7 @@
 'use client'
 
-import { Plus, Edit, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import DataTable from "@/components/common/DataTable"
 
 export default function AdminAttribute() {
     const router = useRouter()
@@ -15,49 +15,46 @@ export default function AdminAttribute() {
         { id: 3, title: "HP" },
     ]
 
+    const columns = [
+        {
+            key: 'id',
+            label: 'S.N.',
+            sortable: true,
+            width: 80,
+        },
+        {
+            key: 'title',
+            label: 'Title',
+            sortable: true,
+        },
+    ]
+
+    const handleEdit = (attribute) => {
+        router.push(`/admin/attribute/edit/${attribute.id}`)
+    }
+
+    const handleDelete = (attribute) => {
+        // Implement delete logic here
+        console.log('Deleting attribute:', attribute)
+    }
+
     return (
-        <div className="bg-white">
-            <div className="flex items-center justify-between p-6">
-                <h1 className="text-2xl font-semibold text-blue-600">Attribute List</h1>
-                <button 
-                    onClick={() => router.push('/admin/attribute/add')}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
-                >
-                    <Plus size={18} />
-                    Add Attribute
-                </button>
-            </div>
-            
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">S.N.</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Title</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white">
-                        {attributes.map((attr) => (
-                            <tr key={attr.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{attr.id}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{attr.title}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <button className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition">
-                                            <Edit size={14} />
-                                        </button>
-                                        <button className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition">
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+        <div className="space-y-6">
+            <DataTable
+                columns={columns}
+                data={attributes}
+                rowKey="id"
+                enableSearch={true}
+                searchPlaceholder="Search attributes..."
+                enablePagination={true}
+                pageSize={10}
+                enableSorting={true}
+                enableFiltering={true}
+                enableExport={true}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                showActions={true}
+            />
         </div>
     )
 }
-

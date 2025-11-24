@@ -1,19 +1,20 @@
 'use client'
 
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronLeft, User, Settings, LogOut, ChevronDown } from "lucide-react"
+import { ChevronLeft, User, Settings, LogOut, ChevronDown, Plus } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
 import { useState } from "react"
 
-const AdminNavbar = ({ actionButtons }) => {
+const AdminNavbar = () => {
     const pathname = usePathname()
     const router = useRouter()
     const [showUserMenu, setShowUserMenu] = useState(false)
 
     // Check if we're on a module page (not dashboard)
     const isModulePage = pathname !== '/admin' && pathname !== '/admin/'
+    const isAddOrEditPage = pathname.includes('/add') || pathname.includes('/edit')
     
     // Get module name from path
     const getModuleName = (path) => {
@@ -25,7 +26,7 @@ const AdminNavbar = ({ actionButtons }) => {
         }
         if (path.includes('/category')) {
             if (path.includes('/add')) return 'Add Category'
-            return 'Category'
+            return 'Categories'
         }
         if (path.includes('/brands')) {
             if (path.includes('/add')) return 'Add Brand'
@@ -56,7 +57,20 @@ const AdminNavbar = ({ actionButtons }) => {
             .join(' ')
     }
 
+    // Get add route for current module
+    const getAddRoute = (path) => {
+        if (path.includes('/products')) return '/admin/products/add'
+        if (path.includes('/category')) return '/admin/category/add'
+        if (path.includes('/brands')) return '/admin/brands/add'
+        if (path.includes('/banners')) return '/admin/banners/add'
+        if (path.includes('/attribute-value')) return '/admin/attribute-value/add'
+        if (path.includes('/attribute')) return '/admin/attribute/add'
+        return null
+    }
+
     const moduleName = getModuleName(pathname)
+    const addRoute = getAddRoute(pathname)
+    const showAddButton = isModulePage && !isAddOrEditPage && addRoute
 
     const handleBack = () => {
         router.push('/admin')
@@ -104,11 +118,15 @@ const AdminNavbar = ({ actionButtons }) => {
 
                 {/* Right Section */}
                 <div className="flex items-center space-x-4">
-                    {/* Action Buttons */}
-                    {actionButtons && (
-                        <div className="flex items-center space-x-3">
-                            {actionButtons}
-                        </div>
+                    {/* Add Button - Only on list pages */}
+                    {showAddButton && (
+                        <button
+                            onClick={() => router.push(addRoute)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition text-sm font-medium"
+                        >
+                            <Plus size={16} />
+                            Add
+                        </button>
                     )}
                     
                     {/* Profile Dropdown - Only on Dashboard */}

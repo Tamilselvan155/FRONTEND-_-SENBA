@@ -63,7 +63,7 @@ export default function AssetUploadPage() {
             </div>
 
             {/* Form */}
-            <div className="max-w-2xl">
+            <div className="w-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Title Field */}
                     <div>
@@ -77,7 +77,7 @@ export default function AssetUploadPage() {
                             onChange={handleInputChange}
                             placeholder="Enter asset title"
                             required
-                            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         />
                     </div>
 
@@ -86,7 +86,7 @@ export default function AssetUploadPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Type <span className="text-red-500">*</span>
                         </label>
-                        <div className="relative max-w-md">
+                        <div className="relative w-full">
                             <select
                                 name="type"
                                 value={formData.type}
@@ -111,7 +111,7 @@ export default function AssetUploadPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Upload File <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex items-center gap-2 max-w-md">
+                        <div className="flex items-center gap-2 w-full">
                             <label className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded cursor-pointer transition">
                                 Choose File
                                 <input

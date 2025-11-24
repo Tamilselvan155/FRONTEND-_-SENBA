@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Plus, FileText } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
-const ActionButtons = ({ moduleType, onAdd, onReport }) => {
+const ActionButtons = ({ moduleType, onAdd }) => {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -42,14 +42,6 @@ const ActionButtons = ({ moduleType, onAdd, onReport }) => {
     }
   };
 
-  const handleReport = () => {
-    if (onReport) {
-      onReport();
-    } else {
-      console.log(`Generate ${moduleName} report`);
-    }
-  };
-
   return (
     <div className="flex items-center space-x-3">
       {/* Add Button */}
@@ -60,18 +52,10 @@ const ActionButtons = ({ moduleType, onAdd, onReport }) => {
         <Plus className="w-4 h-4" />
         <span>Add</span>
       </button>
-
-      {/* Report Button */}
-      <button
-        onClick={handleReport}
-        className="flex items-center text-sm space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200 shadow-sm hover:shadow-md font-medium cursor-pointer"
-      >
-        <FileText className="w-4 h-4" />
-        <span>Report</span>
-      </button>
     </div>
   );
 };
 
 export default ActionButtons;
+
 

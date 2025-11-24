@@ -13,23 +13,47 @@ export default function AdminDashboard() {
         brands: 8,
         banners: 3,
         attributes: 12,
+        attributeValues: 9,
+        assetManager: 42,
     }
 
     const modules = [
         {
-            id: 'products',
-            name: 'Products',
-            count: stats.products,
-            color: 'blue',
-            icon: Package,
-            route: '/admin/products',
+            id: 'banners',
+            name: 'Banners',
+            count: stats.banners,
+            color: 'orange',
+            icon: ImageIcon,
+            route: '/admin/banners',
             subNav: [
-                { label: 'View All', route: '/admin/products', icon: Package }
+                { label: 'Add Banner', route: '/admin/banners/add', icon: ImageIcon }
+            ]
+        },
+        {
+            id: 'attributes',
+            name: 'Attribute',
+            count: stats.attributes,
+            color: 'teal',
+            icon: Tag,
+            route: '/admin/attribute',
+            subNav: [
+                { label: 'Add Attribute', route: '/admin/attribute/add', icon: Tag }
+            ]
+        },
+        {
+            id: 'attribute-values',
+            name: 'Attribute Value',
+            count: stats.attributeValues,
+            color: 'cyan',
+            icon: Tag,
+            route: '/admin/attribute-value',
+            subNav: [
+                { label: 'Add Attribute Value', route: '/admin/attribute-value/add', icon: Tag }
             ]
         },
         {
             id: 'categories',
-            name: 'Categories',
+            name: 'Category',
             count: stats.category,
             color: 'purple',
             icon: FolderTree,
@@ -50,52 +74,20 @@ export default function AdminDashboard() {
             ]
         },
         {
-            id: 'banners',
-            name: 'Banners',
-            count: stats.banners,
-            color: 'orange',
-            icon: ImageIcon,
-            route: '/admin/banners',
+            id: 'products',
+            name: 'Products',
+            count: stats.products,
+            color: 'blue',
+            icon: Package,
+            route: '/admin/products',
             subNav: [
-                { label: 'Add Banner', route: '/admin/banners/add', icon: ImageIcon }
-            ]
-        },
-        {
-            id: 'attributes',
-            name: 'Attributes',
-            count: stats.attributes,
-            color: 'teal',
-            icon: Tag,
-            route: '/admin/attribute',
-            subNav: [
-                { label: 'Add Attribute', route: '/admin/attribute/add', icon: Tag }
-            ]
-        },
-        {
-            id: 'stores',
-            name: 'Stores',
-            count: stats.stores,
-            color: 'indigo',
-            icon: Store,
-            route: '/admin/stores',
-            subNav: [
-                { label: 'View All', route: '/admin/stores', icon: Store }
-            ]
-        },
-        {
-            id: 'orders',
-            name: 'Orders',
-            count: stats.order,
-            color: 'emerald',
-            icon: ClipboardList,
-            route: '/admin/orders',
-            subNav: [
-                { label: 'View All', route: '/admin/orders', icon: ClipboardList }
+                { label: 'View All', route: '/admin/products', icon: Package }
             ]
         },
         {
             id: 'asset-manager',
             name: 'Asset Manager',
+            count: stats.assetManager,
             color: 'pink',
             icon: FolderOpen,
             route: '/admin/asset-manager',
@@ -140,24 +132,24 @@ export default function AdminDashboard() {
 
                 {/* Modules Grid */}
                 {modules.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
                         {modules.map((module) => (
                             <div
                                 key={module.id}
-                                className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 flex flex-col h-full cursor-pointer"
+                                className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 flex flex-col overflow-hidden"
                             >
                                 {/* Main Card Content */}
                                 <button
                                     onClick={() => handleModuleClick(module.route)}
-                                    className="w-full p-6 text-left flex-1 cursor-pointer min-h-[100px] flex items-start"
+                                    className="w-full p-6 text-left cursor-pointer flex-shrink-0"
                                 >
                                     <div className="flex items-start justify-between w-full">
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-4 flex-1 min-w-0">
                                             <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getIconColorClass(module.color)}`}>
                                                 <module.icon className="w-6 h-6" />
                                             </div>
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900">
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg font-semibold text-gray-900 truncate">
                                                     {module.name}
                                                 </h3>
                                                 {module.count !== undefined ? (
@@ -171,7 +163,7 @@ export default function AdminDashboard() {
                                                 )}
                                             </div>
                                         </div>
-                                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
                                     </div>
@@ -179,13 +171,14 @@ export default function AdminDashboard() {
 
                                 {/* Sub-Navigation */}
                                 {module.subNav && module.subNav.length > 0 && (
-                                    <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 mt-auto">
+                                    <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 flex-shrink-0">
                                         <div className={`grid ${module.subNav.length === 4 ? 'grid-cols-2' : module.subNav.length === 3 ? 'grid-cols-3' : 'grid-cols-1'} gap-2`}>
                                             {module.subNav.map((subNavItem, index) => (
                                                 <Link
                                                     key={index}
                                                     href={subNavItem.route}
-                                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-white border border-gray-200 hover:border-gray-300 transition-all duration-150 cursor-pointer"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-white border border-gray-200 hover:border-gray-300 transition-all duration-150"
                                                 >
                                                     <subNavItem.icon className="w-4 h-4 flex-shrink-0" />
                                                     <span className="truncate">{subNavItem.label}</span>

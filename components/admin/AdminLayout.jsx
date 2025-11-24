@@ -5,9 +5,8 @@ import Loading from "../Loading"
 import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 import AdminNavbar from "./AdminNavbar"
-import ActionButtons from "../common/ActionButtons"
 
-const AdminLayout = ({ children, actionButtons }) => {
+const AdminLayout = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(false)
     const [loading, setLoading] = useState(true)
     const pathname = usePathname()
@@ -21,20 +20,6 @@ const AdminLayout = ({ children, actionButtons }) => {
         fetchIsAdmin()
     }, [])
 
-    // Determine module type from pathname for action buttons
-    const getModuleType = () => {
-        if (pathname.includes('/products')) return 'products'
-        if (pathname.includes('/category')) return 'categories'
-        if (pathname.includes('/brands')) return 'brands'
-        if (pathname.includes('/banners')) return 'banners'
-        if (pathname.includes('/attribute-value')) return 'attribute-values'
-        if (pathname.includes('/attribute')) return 'attributes'
-        if (pathname.includes('/stores')) return 'stores'
-        if (pathname.includes('/coupons')) return 'coupons'
-        return null
-    }
-
-    const moduleType = getModuleType()
     const isDashboard = pathname === '/admin' || pathname === '/admin/'
 
     return loading ? (
@@ -42,9 +27,7 @@ const AdminLayout = ({ children, actionButtons }) => {
     ) : isAdmin ? (
         <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
             {/* Header */}
-            <AdminNavbar 
-                actionButtons={actionButtons || (moduleType ? <ActionButtons moduleType={moduleType} /> : null)}
-            />
+            <AdminNavbar />
 
             {/* Main Content */}
             <main className="flex-1 overflow-x-hidden overflow-y-auto">

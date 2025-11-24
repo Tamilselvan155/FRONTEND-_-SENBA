@@ -9,6 +9,7 @@ export default function AddCategoryPage() {
     const [formData, setFormData] = useState({
         title: '',
         isParent: true,
+        parentCategory: '',
         englishName: '',
         slug: '',
         menuPosition: '',
@@ -24,10 +25,17 @@ export default function AddCategoryPage() {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }))
+        setFormData(prev => {
+            const newData = {
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }
+            // If isParent is checked, clear parentCategory
+            if (name === 'isParent' && checked) {
+                newData.parentCategory = ''
+            }
+            return newData
+        })
     }
 
     const handleFileChange = (e) => {
@@ -45,6 +53,7 @@ export default function AddCategoryPage() {
         setFormData({
             title: '',
             isParent: true,
+            parentCategory: '',
             englishName: '',
             slug: '',
             menuPosition: '',
@@ -70,23 +79,61 @@ export default function AddCategoryPage() {
             {/* Form */}
             <div className="w-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Basic Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 1. Title */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Title <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleInputChange}
+                            placeholder="Enter title"
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                    </div>
+
+                    {/* 2. Is Parent */}
+                    <div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="isParent"
+                                checked={formData.isParent}
+                                onChange={handleInputChange}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">Is Parent</span>
+                        </label>
+                    </div>
+
+                    {/* 3. Parent Category - Only show when Is Parent is unchecked */}
+                    {!formData.isParent && (
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Title <span className="text-red-500">*</span>
+                                Parent Category
                             </label>
-                            <input
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleInputChange}
-                                placeholder="Enter title"
-                                required
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            />
+                            <div className="relative">
+                                <select
+                                    name="parentCategory"
+                                    value={formData.parentCategory}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
+                                >
+                                    <option value="">--Select any category--</option>
+                                    <option value="water-pumps">Water-Pumps</option>
+                                    <option value="pp-rope">PP ROPE</option>
+                                    {/* Add more parent categories as needed */}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
+                    )}
 
+                    {/* 4. English Name and 5. Slug */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 English Name
@@ -102,7 +149,7 @@ export default function AddCategoryPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Slug
+                                slug
                             </label>
                             <input
                                 type="text"
@@ -112,46 +159,9 @@ export default function AddCategoryPage() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             />
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Sort Order
-                            </label>
-                            <input
-                                type="number"
-                                name="sortOrder"
-                                value={formData.sortOrder}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            />
-                        </div>
                     </div>
 
-                    {/* Checkboxes */}
-                    <div className="flex flex-wrap gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="isParent"
-                                checked={formData.isParent}
-                                onChange={handleInputChange}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">Is Parent</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="showOnHomepage"
-                                checked={formData.showOnHomepage}
-                                onChange={handleInputChange}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">Show on Homepage</span>
-                        </label>
-                    </div>
-
-                    {/* Display Settings */}
+                    {/* 6. Menu Position and 7. Sort Order */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -175,63 +185,53 @@ export default function AddCategoryPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Display Position
+                                Sort Order
                             </label>
-                            <div className="relative">
-                                <select
-                                    name="displayPosition"
-                                    value={formData.displayPosition}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
-                                >
-                                    <option value="Center">Center</option>
-                                    <option value="Left">Left</option>
-                                    <option value="Right">Right</option>
-                                </select>
-                                <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Type
-                            </label>
-                            <div className="relative">
-                                <select
-                                    name="type"
-                                    value={formData.type}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
-                                >
-                                    <option value="Common">Common</option>
-                                    <option value="Featured">Featured</option>
-                                    <option value="Special">Special</option>
-                                </select>
-                                <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Status <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
-                                >
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                                <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                            </div>
+                            <input
+                                type="number"
+                                name="sortOrder"
+                                value={formData.sortOrder}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
                         </div>
                     </div>
 
-                    {/* Photo Upload */}
+                    {/* 8. Show on Homepage */}
+                    <div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="showOnHomepage"
+                                checked={formData.showOnHomepage}
+                                onChange={handleInputChange}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">Show on Homepage</span>
+                        </label>
+                    </div>
+
+                    {/* 9. Display Position */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Display Position
+                        </label>
+                        <div className="relative">
+                            <select
+                                name="displayPosition"
+                                value={formData.displayPosition}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
+                            >
+                                <option value="Center">Center</option>
+                                <option value="Left">Left</option>
+                                <option value="Right">Right</option>
+                            </select>
+                            <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* 10. Photo Upload */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Photo
@@ -256,7 +256,27 @@ export default function AddCategoryPage() {
                         </div>
                     </div>
 
-                    {/* Summary */}
+                    {/* 11. Type */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Type
+                        </label>
+                        <div className="relative">
+                            <select
+                                name="type"
+                                value={formData.type}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
+                            >
+                                <option value="Common">Common</option>
+                                <option value="Featured">Featured</option>
+                                <option value="Special">Special</option>
+                            </select>
+                            <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* 12. Summary */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Summary
@@ -269,6 +289,26 @@ export default function AddCategoryPage() {
                             rows={4}
                             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-sm"
                         />
+                    </div>
+
+                    {/* 13. Status */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Status <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <select
+                                name="status"
+                                value={formData.status}
+                                onChange={handleInputChange}
+                                required
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
+                            >
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                            <ChevronDown size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
                     </div>
 
                     {/* Action Buttons */}

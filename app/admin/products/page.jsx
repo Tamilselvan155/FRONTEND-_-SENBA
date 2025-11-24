@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import DataTable from "@/components/common/DataTable"
-import { Edit, Trash2 } from "lucide-react"
 
 export default function AdminProducts() {
     const router = useRouter()
