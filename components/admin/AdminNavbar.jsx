@@ -101,11 +101,11 @@ const AdminNavbar = () => {
                             <Image 
                                 src={assets.gs_logo || assets.WV_logo} 
                                 alt="logo" 
-                                width={50} 
-                                height={50} 
+                                width={100} 
+                                height={100} 
                                 className="cursor-pointer" 
                             />
-                            <h1 className="text-2xl font-bold text-[#009fe3]">
+                            <h1 className="text-2xl font-bold text-black">
                                 GoCart Admin
                             </h1>
                         </div>

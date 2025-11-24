@@ -378,9 +378,9 @@ export default function AddProductPage() {
                     </label>
                 </div>
 
-                {/* Add Brand Variant Button - Show only when hasVariants is checked */}
-                {formData.hasVariants && (
-                    <div>
+                {/* Add Brand Variant and Specification Group Buttons - Show in a row */}
+                <div className="flex items-center gap-4">
+                    {formData.hasVariants && (
                         <button
                             type="button"
                             onClick={handleAddBrandVariant}
@@ -389,11 +389,24 @@ export default function AddProductPage() {
                             <Plus size={18} />
                             Add Brand Variant
                         </button>
-                    </div>
-                )}
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleAddSpecificationGroup}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                    >
+                        <Plus size={18} />
+                        Add Specification Group
+                    </button>
+                </div>
 
-                {/* Brand Variants Section */}
-                {formData.hasVariants && brandVariants.map((variant, index) => (
+                {/* Brand Variants and Specification Groups - Side by Side Layout */}
+                {(formData.hasVariants && brandVariants.length > 0) || specificationGroups.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Brand Variants Section - Left Half */}
+                        {formData.hasVariants && brandVariants.length > 0 && (
+                            <div className="space-y-4">
+                                {brandVariants.map((variant, index) => (
                     <div key={variant.id} className="bg-gray-50 p-6 rounded-lg space-y-4">
                         {/* Variant Header */}
                         <div className="flex items-center justify-between">
@@ -612,11 +625,103 @@ export default function AddProductPage() {
                             </div>
                         </div>
                     </div>
-                ))}
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Specification Groups Section - Right Half */}
+                        {specificationGroups.length > 0 && (
+                            <div className="space-y-4">
+                                {specificationGroups.map((group, index) => (
+                                    <div key={group.id} className="bg-white p-6 border border-gray-200 rounded-lg space-y-4">
+                                        {/* Group Header */}
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-semibold text-gray-800">
+                                                Specification Group {index + 1}
+                                            </h3>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveSpecificationGroup(group.id)}
+                                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+                                                title="Remove Group"
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
+
+                                        {/* Group Label Field */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Group Label
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={group.groupLabel}
+                                                onChange={(e) => handleUpdateGroupLabel(group.id, e.target.value)}
+                                                placeholder="Enter group label"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        {/* Specifications */}
+                                        <div className="space-y-3">
+                                            {group.specifications.map((spec) => (
+                                                <div key={spec.id} className="flex items-end gap-3">
+                                                    <div className="flex-1">
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Feature name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={spec.featureName}
+                                                            onChange={(e) => handleUpdateSpecification(group.id, spec.id, 'featureName', e.target.value)}
+                                                            placeholder="Enter feature name"
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Feature value
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={spec.featureValue}
+                                                            onChange={(e) => handleUpdateSpecification(group.id, spec.id, 'featureValue', e.target.value)}
+                                                            placeholder="Enter feature value"
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveSpecification(group.id, spec.id)}
+                                                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
+                                                        title="Remove specification"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Add Specification Button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAddSpecification(group.id)}
+                                            className="mt-4 flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md transition text-sm"
+                                        >
+                                            <Plus size={16} />
+                                            Add Specification
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : null}
 
                 {/* Price, Discount, Stock, SKU Fields - Hide when hasVariants is true */}
                 {!formData.hasVariants && (
-                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Price Field */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -682,98 +787,9 @@ export default function AddProductPage() {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
-                    </>
+                    </div>
                 )}
 
-                {/* Specification Groups */}
-                <div className="space-y-4">
-                    {specificationGroups.map((group) => (
-                        <div key={group.id} className="bg-white p-6">
-                            {/* Group Header */}
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Group Label
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={group.groupLabel}
-                                        onChange={(e) => handleUpdateGroupLabel(group.id, e.target.value)}
-                                        placeholder="Enter group label"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveSpecificationGroup(group.id)}
-                                    className="ml-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition text-sm"
-                                >
-                                    Remove Group
-                                </button>
-                            </div>
-
-                            {/* Specifications */}
-                            <div className="space-y-3">
-                                {group.specifications.map((spec) => (
-                                    <div key={spec.id} className="flex items-end gap-3">
-                                        <div className="flex-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Feature name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={spec.featureName}
-                                                onChange={(e) => handleUpdateSpecification(group.id, spec.id, 'featureName', e.target.value)}
-                                                placeholder="Enter feature name"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Feature value
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={spec.featureValue}
-                                                onChange={(e) => handleUpdateSpecification(group.id, spec.id, 'featureValue', e.target.value)}
-                                                placeholder="Enter feature value"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveSpecification(group.id, spec.id)}
-                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
-                                            title="Remove specification"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Add Specification Button */}
-                            <button
-                                type="button"
-                                onClick={() => handleAddSpecification(group.id)}
-                                className="mt-4 flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md transition text-sm"
-                            >
-                                <Plus size={16} />
-                                Add Specification
-                            </button>
-                        </div>
-                    ))}
-
-                    {/* Add Specification Group Button */}
-                    <button
-                        type="button"
-                        onClick={handleAddSpecificationGroup}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
-                    >
-                        <Plus size={18} />
-                        Add Specification Group
-                    </button>
-                </div>
 
                 {/* Status Field */}
                 <div>

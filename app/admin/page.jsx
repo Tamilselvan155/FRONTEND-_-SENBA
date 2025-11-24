@@ -2,10 +2,14 @@
 
 import { FolderTree, Package, ClipboardList, FolderOpen, Store, Tag, ImageIcon } from "lucide-react"
 import Link from "next/link"
+import { useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
 
 export default function AdminDashboard() {
+    const router = useRouter()
+    
     // Sample data - replace with actual API calls
-    const stats = {
+    const stats = useMemo(() => ({
         category: 15,
         products: 20,
         order: 0,
@@ -15,9 +19,9 @@ export default function AdminDashboard() {
         attributes: 12,
         attributeValues: 9,
         assetManager: 42,
-    }
+    }), [])
 
-    const modules = [
+    const modules = useMemo(() => [
         {
             id: 'banners',
             name: 'Banners',
@@ -95,9 +99,9 @@ export default function AdminDashboard() {
                 { label: 'View All', route: '/admin/asset-manager', icon: FolderOpen }
             ]
         },
-    ]
+    ], [stats])
 
-    const getIconColorClass = (color) => {
+    const getIconColorClass = useCallback((color) => {
         const colorMap = {
             blue: 'bg-blue-500 text-white',
             purple: 'bg-purple-500 text-white',
@@ -112,11 +116,11 @@ export default function AdminDashboard() {
             slate: 'bg-slate-500 text-white',
         };
         return colorMap[color] || 'bg-gray-500 text-white';
-    };
+    }, []);
 
-    const handleModuleClick = (route) => {
-        window.location.href = route
-    }
+    const handleModuleClick = useCallback((route) => {
+        router.push(route)
+    }, [router])
 
     return (
         <div className="h-full w-full">

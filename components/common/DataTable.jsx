@@ -11,6 +11,105 @@ import {
   FilterFilled
 } from '@ant-design/icons';
 
+// Memoized styles component to prevent forced reflows
+const TableStyles = React.memo(() => (
+  <style dangerouslySetInnerHTML={{__html: `
+    .custom-data-table {
+      margin: 0 !important;
+    }
+    
+    .custom-data-table .ant-table {
+      margin: 0 !important;
+    }
+    
+    .custom-data-table .ant-table-thead > tr > th {
+      padding: 16px 20px !important;
+      background: #e5e7eb !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      color: #1f2937 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      border-bottom: 2px solid #d1d5db !important;
+      line-height: 1.5 !important;
+    }
+    
+    .custom-data-table .ant-table-thead > tr > th:first-child {
+      padding-left: 24px !important;
+    }
+    
+    .custom-data-table .ant-table-thead > tr > th:last-child {
+      padding-right: 24px !important;
+    }
+    
+    .custom-data-table .ant-table-tbody > tr > td {
+      padding: 16px 20px !important;
+      font-size: 14px !important;
+      color: #374151 !important;
+      border-bottom: 1px solid #f3f4f6 !important;
+      line-height: 1.6 !important;
+      vertical-align: middle !important;
+    }
+    
+    .custom-data-table .ant-table-tbody > tr > td:first-child {
+      padding-left: 24px !important;
+    }
+    
+    .custom-data-table .ant-table-tbody > tr > td:last-child {
+      padding-right: 24px !important;
+    }
+    
+    .custom-data-table .ant-table-tbody > tr:hover > td {
+      background: #f9fafb !important;
+    }
+    
+    .custom-data-table .ant-table-tbody > tr:last-child > td {
+      border-bottom: none !important;
+    }
+    
+    .custom-data-table .ant-table-pagination {
+      margin: 20px 24px !important;
+      padding: 0 !important;
+    }
+    
+    .custom-data-table .ant-table-column-sorter {
+      margin-left: 8px !important;
+    }
+    
+    .custom-data-table .ant-table-cell {
+      text-align: left !important;
+    }
+    
+    .custom-data-table .ant-table-thead > tr > th[align="center"],
+    .custom-data-table .ant-table-tbody > tr > td[align="center"] {
+      text-align: center !important;
+    }
+    
+    .custom-data-table .ant-table-thead > tr > th[align="right"],
+    .custom-data-table .ant-table-tbody > tr > td[align="right"] {
+      text-align: right !important;
+    }
+    
+    .custom-data-table .ant-table-cell:last-child {
+      text-align: center !important;
+    }
+    
+    .custom-data-table .ant-checkbox-wrapper {
+      display: flex !important;
+      align-items: center !important;
+    }
+    
+    .custom-data-table .ant-table-cell:last-child .ant-btn,
+    .custom-data-table .ant-table-cell:last-child .ant-dropdown-trigger {
+      margin: 0 auto;
+    }
+    
+    .custom-data-table .ant-table-cell:last-child {
+      white-space: nowrap;
+    }
+  `}} />
+));
+
 /**
  * Fully customizable DataTable component using Ant Design
  * Supports: sorting, filtering, searching, pagination, actions, and custom rendering
@@ -78,30 +177,59 @@ const DataTable = ({
   const [sortField, setSortField] = useState(defaultSortField);
   const [sortOrder, setSortOrder] = useState(defaultSortOrder);
 
+  // Memoize callbacks to prevent unnecessary re-renders
+  const memoizedOnSearchChange = useCallback((text) => {
+    if (onSearchChange) onSearchChange(text);
+  }, [onSearchChange]);
+
+  const memoizedOnFilterChange = useCallback((filters) => {
+    if (onFilterChange) onFilterChange(filters);
+  }, [onFilterChange]);
+
+  const memoizedOnSortChange = useCallback((field, order) => {
+    if (onSortChange) onSortChange(field, order);
+  }, [onSortChange]);
+
   // Handle server-side search with debounce
   useEffect(() => {
     if (!serverSide || !onSearchChange) return;
     
     const timeoutId = setTimeout(() => {
-      onSearchChange(searchText);
+      memoizedOnSearchChange(searchText);
     }, 500); // 500ms debounce
     
     return () => clearTimeout(timeoutId);
-  }, [searchText, serverSide, onSearchChange]);
+  }, [searchText, serverSide, memoizedOnSearchChange, onSearchChange]);
 
   // Handle server-side filter changes
   useEffect(() => {
     if (!serverSide || !onFilterChange) return;
-    onFilterChange(columnFilters);
-  }, [columnFilters, serverSide, onFilterChange]);
+    memoizedOnFilterChange(columnFilters);
+  }, [columnFilters, serverSide, memoizedOnFilterChange, onFilterChange]);
 
   // Handle server-side sort changes
   useEffect(() => {
     if (!serverSide || !onSortChange) return;
     if (sortField) {
-      onSortChange(sortField, sortOrder);
+      memoizedOnSortChange(sortField, sortOrder);
     }
-  }, [sortField, sortOrder, serverSide, onSortChange]);
+  }, [sortField, sortOrder, serverSide, memoizedOnSortChange, onSortChange]);
+
+  // Memoize sort handler
+  const handleSort = useCallback((colKey) => {
+    if (sortField === colKey) {
+      // Toggle: asc -> desc -> null
+      if (sortOrder === 'ascend') {
+        setSortOrder('descend');
+      } else if (sortOrder === 'descend') {
+        setSortField(null);
+        setSortOrder(null);
+      }
+    } else {
+      setSortField(colKey);
+      setSortOrder('ascend');
+    }
+  }, [sortField, sortOrder]);
 
   // Convert custom columns format to Ant Design columns format
   const antdColumns = useMemo(() => {
@@ -131,20 +259,7 @@ const DataTable = ({
         }) : false,
         sortOrder: serverSide && sortField === col.key ? sortOrder : null,
         onHeaderCell: serverSide && enableSorting && col.sortable !== false ? () => ({
-          onClick: () => {
-            if (sortField === col.key) {
-              // Toggle: asc -> desc -> null
-              if (sortOrder === 'ascend') {
-                setSortOrder('descend');
-              } else if (sortOrder === 'descend') {
-                setSortField(null);
-                setSortOrder(null);
-              }
-            } else {
-              setSortField(col.key);
-              setSortOrder('ascend');
-            }
-          }
+          onClick: () => handleSort(col.key),
         }) : undefined,
         
         // Custom render function (maintain backward compatibility)
@@ -179,7 +294,7 @@ const DataTable = ({
       
       return column;
     });
-  }, [columns, data, enableSorting, enableFiltering]);
+  }, [columns, enableSorting, enableFiltering, serverSide, sortField, sortOrder, handleSort]);
 
   // Add Actions column if actions are enabled
   const finalColumns = useMemo(() => {
@@ -317,8 +432,8 @@ const DataTable = ({
     return [...antdColumns, actionsColumn];
   }, [antdColumns, showActions, onEdit, onDelete, onView, customActions]);
 
-  // Get available filter options for each filterable column
-  const getFilterOptions = (columnKey) => {
+  // Get available filter options for each filterable column - memoized
+  const getFilterOptions = useCallback((columnKey) => {
     const column = columns.find(col => col.key === columnKey);
     if (column && column.filters) {
       return column.filters.map(f => ({
@@ -333,7 +448,7 @@ const DataTable = ({
       label: String(val),
       value: val,
     }));
-  };
+  }, [columns, data]);
 
   // Get filterable columns - only show columns where filterable is explicitly true or filters are defined
   const filterableColumns = useMemo(() => {
@@ -397,8 +512,8 @@ const DataTable = ({
       }
     : null;
 
-  // Handle export
-  const handleExport = () => {
+  // Handle export - memoized
+  const handleExport = useCallback(() => {
     if (onExport) {
       onExport(filteredData, selectedRowKeys);
     } else {
@@ -441,63 +556,101 @@ const DataTable = ({
         message.error('Failed to export data');
       }
     }
-  };
+  }, [onExport, filteredData, selectedRowKeys, columns]);
 
-  // Table props configuration
-  const tableProps = {
-    columns: finalColumns,
-    dataSource: filteredData,
-    rowKey: rowKey,
-    size: tableSize,
-    bordered: bordered,
-    showHeader: showHeader,
-    rowSelection: rowSelection,
-    pagination: enablePagination
-      ? {
-          pageSize: pageSize,
-          current: serverSidePagination ? current : undefined,
-          total: serverSidePagination ? total : undefined,
-          showSizeChanger: showSizeChanger,
-          pageSizeOptions: pageSizeOptions,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} items`,
-          onChange: serverSidePagination && onPaginationChange
-            ? (page, pageSize) => onPaginationChange(page, pageSize)
-            : undefined,
-          onShowSizeChange: serverSidePagination && onPaginationChange
-            ? (current, size) => onPaginationChange(current, size)
-            : undefined,
-        }
-      : false,
-    onRow: (onRowClick || onView)
-      ? (record) => ({
-          onClick: (event) => {
-            // Prevent row click if clicking on action buttons/dropdown
-            if (event.target.closest('.ant-dropdown') || 
-                event.target.closest('.ant-btn') || 
-                event.target.closest('button') ||
-                event.target.closest('.ant-dropdown-trigger')) {
-              return;
-            }
-            // If onRowClick is provided, use it; otherwise use onView
-            if (onRowClick) {
-              onRowClick(record, event);
-            } else if (onView) {
-              onView(record);
-            }
-          },
-          style: { cursor: 'pointer' },
-        })
-      : null,
-    rowClassName: rowClassName,
-    scroll: { x: 'max-content' },
-    ...restTableProps,
-  };
+  // Memoize style objects
+  const tableStyle = useMemo(() => ({ margin: 0 }), []);
+  const rowClickStyle = useMemo(() => ({ cursor: 'pointer' }), []);
 
-  // Default sort configuration
-  if (defaultSortField && defaultSortOrder) {
-    tableProps.defaultSortOrder = defaultSortOrder;
-  }
+  // Memoize row click handler
+  const handleRowClick = useCallback((record, event) => {
+    // Prevent row click if clicking on action buttons/dropdown
+    if (event.target.closest('.ant-dropdown') || 
+        event.target.closest('.ant-btn') || 
+        event.target.closest('button') ||
+        event.target.closest('.ant-dropdown-trigger')) {
+      return;
+    }
+    // If onRowClick is provided, use it; otherwise use onView
+    if (onRowClick) {
+      onRowClick(record, event);
+    } else if (onView) {
+      onView(record);
+    }
+  }, [onRowClick, onView]);
+
+  // Memoize pagination handlers
+  const handlePaginationChange = useCallback((page, pageSize) => {
+    if (onPaginationChange) {
+      onPaginationChange(page, pageSize);
+    }
+  }, [onPaginationChange]);
+
+  // Table props configuration - memoized
+  const tableProps = useMemo(() => {
+    const props = {
+      columns: finalColumns,
+      dataSource: filteredData,
+      rowKey: rowKey,
+      size: tableSize,
+      bordered: bordered,
+      showHeader: showHeader,
+      rowSelection: rowSelection,
+      pagination: enablePagination
+        ? {
+            pageSize: pageSize,
+            current: serverSidePagination ? current : undefined,
+            total: serverSidePagination ? total : undefined,
+            showSizeChanger: showSizeChanger,
+            pageSizeOptions: pageSizeOptions,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} items`,
+            onChange: serverSidePagination ? handlePaginationChange : undefined,
+            onShowSizeChange: serverSidePagination ? handlePaginationChange : undefined,
+          }
+        : false,
+      onRow: (onRowClick || onView)
+        ? (record) => ({
+            onClick: (event) => handleRowClick(record, event),
+            style: rowClickStyle,
+          })
+        : null,
+      rowClassName: rowClassName,
+      scroll: { x: 'max-content' },
+      ...restTableProps,
+    };
+
+    // Default sort configuration
+    if (defaultSortField && defaultSortOrder) {
+      props.defaultSortOrder = defaultSortOrder;
+    }
+
+    return props;
+  }, [
+    finalColumns,
+    filteredData,
+    rowKey,
+    tableSize,
+    bordered,
+    showHeader,
+    rowSelection,
+    enablePagination,
+    pageSize,
+    serverSidePagination,
+    current,
+    total,
+    showSizeChanger,
+    pageSizeOptions,
+    handlePaginationChange,
+    onRowClick,
+    onView,
+    handleRowClick,
+    rowClickStyle,
+    rowClassName,
+    defaultSortField,
+    defaultSortOrder,
+    restTableProps
+  ]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden m-0">
@@ -643,7 +796,7 @@ const DataTable = ({
           <Table
             {...tableProps}
             className="custom-data-table"
-            style={{ margin: 0 }}
+            style={tableStyle}
           />
         </div>
       ) : null}
@@ -663,103 +816,11 @@ const DataTable = ({
         </div>
       )}
 
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-data-table {
-          margin: 0 !important;
-        }
-        
-        .custom-data-table .ant-table {
-          margin: 0 !important;
-        }
-        
-        .custom-data-table .ant-table-thead > tr > th {
-          padding: 16px 20px !important;
-          background: #e5e7eb !important;
-          font-weight: 600 !important;
-          font-size: 13px !important;
-          color: #1f2937 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.5px !important;
-          border-bottom: 2px solid #d1d5db !important;
-          line-height: 1.5 !important;
-        }
-        
-        .custom-data-table .ant-table-thead > tr > th:first-child {
-          padding-left: 24px !important;
-        }
-        
-        .custom-data-table .ant-table-thead > tr > th:last-child {
-          padding-right: 24px !important;
-        }
-        
-        .custom-data-table .ant-table-tbody > tr > td {
-          padding: 16px 20px !important;
-          font-size: 14px !important;
-          color: #374151 !important;
-          border-bottom: 1px solid #f3f4f6 !important;
-          line-height: 1.6 !important;
-          vertical-align: middle !important;
-        }
-        
-        .custom-data-table .ant-table-tbody > tr > td:first-child {
-          padding-left: 24px !important;
-        }
-        
-        .custom-data-table .ant-table-tbody > tr > td:last-child {
-          padding-right: 24px !important;
-        }
-        
-        .custom-data-table .ant-table-tbody > tr:hover > td {
-          background: #f9fafb !important;
-        }
-        
-        .custom-data-table .ant-table-tbody > tr:last-child > td {
-          border-bottom: none !important;
-        }
-        
-        .custom-data-table .ant-table-pagination {
-          margin: 20px 24px !important;
-          padding: 0 !important;
-        }
-        
-        .custom-data-table .ant-table-column-sorter {
-          margin-left: 8px !important;
-        }
-        
-        .custom-data-table .ant-table-cell {
-          text-align: left !important;
-        }
-        
-        .custom-data-table .ant-table-thead > tr > th[align="center"],
-        .custom-data-table .ant-table-tbody > tr > td[align="center"] {
-          text-align: center !important;
-        }
-        
-        .custom-data-table .ant-table-thead > tr > th[align="right"],
-        .custom-data-table .ant-table-tbody > tr > td[align="right"] {
-          text-align: right !important;
-        }
-        
-        .custom-data-table .ant-table-cell:last-child {
-          text-align: center !important;
-        }
-        
-        .custom-data-table .ant-checkbox-wrapper {
-          display: flex !important;
-          align-items: center !important;
-        }
-        
-        .custom-data-table .ant-table-cell:last-child .ant-btn,
-        .custom-data-table .ant-table-cell:last-child .ant-dropdown-trigger {
-          margin: 0 auto;
-        }
-        
-        .custom-data-table .ant-table-cell:last-child {
-          white-space: nowrap;
-        }
-      `}} />
+      {/* Styles - memoized to prevent forced reflows */}
+      <TableStyles />
     </div>
   );
 };
 
-export default DataTable;
+// Memoize component to prevent unnecessary re-renders
+export default React.memo(DataTable);

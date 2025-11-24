@@ -52,13 +52,6 @@ export default function AssetUploadPage() {
         <div className="p-4">
             {/* Header */}
             <div className="mb-4">
-                <button
-                    onClick={handleBack}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:text-gray-900 rounded transition mb-2"
-                >
-                    <ArrowLeft size={16} />
-                    <span className="text-sm">Back</span>
-                </button>
                 <h2 className="text-xl font-semibold text-gray-900">Asset Upload</h2>
             </div>
 
