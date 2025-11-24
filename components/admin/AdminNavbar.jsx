@@ -1,21 +1,197 @@
 'use client'
+
+import { usePathname, useRouter } from "next/navigation"
+import { ChevronLeft, User, Settings, LogOut, ChevronDown, Plus } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
+import { assets } from "@/assets/assets"
+import { useState } from "react"
 
 const AdminNavbar = () => {
+    const pathname = usePathname()
+    const router = useRouter()
+    const [showUserMenu, setShowUserMenu] = useState(false)
 
+    // Check if we're on a module page (not dashboard)
+    const isModulePage = pathname !== '/admin' && pathname !== '/admin/'
+    const isAddOrEditPage = pathname.includes('/add') || pathname.includes('/edit')
+    
+    // Get module name from path
+    const getModuleName = (path) => {
+        if (path === '/admin') return ''
+        if (path.includes('/products')) {
+            if (path.includes('/add')) return 'Add Product'
+            if (path.includes('/edit')) return 'Edit Product'
+            return 'Products'
+        }
+        if (path.includes('/category')) {
+            if (path.includes('/add')) return 'Add Category'
+            return 'Categories'
+        }
+        if (path.includes('/brands')) {
+            if (path.includes('/add')) return 'Add Brand'
+            return 'Brands'
+        }
+        if (path.includes('/banners')) {
+            if (path.includes('/add')) return 'Add Banner'
+            return 'Banners'
+        }
+        if (path.includes('/attribute-value')) {
+            if (path.includes('/add')) return 'Add Attribute Value'
+            return 'Attribute Values'
+        }
+        if (path.includes('/attribute')) {
+            if (path.includes('/add')) return 'Add Attribute'
+            return 'Attributes'
+        }
+        if (path.includes('/stores')) return 'Stores'
+        if (path.includes('/coupons')) return 'Coupons'
+        if (path.includes('/asset-manager')) return 'Asset Manager'
+        
+        const pathName = path.split('/').pop()
+        if (!pathName) return ''
+        
+        return pathName
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+    }
+
+    // Get add route for current module
+    const getAddRoute = (path) => {
+        if (path.includes('/products')) return '/admin/products/add'
+        if (path.includes('/category')) return '/admin/category/add'
+        if (path.includes('/brands')) return '/admin/brands/add'
+        if (path.includes('/banners')) return '/admin/banners/add'
+        if (path.includes('/attribute-value')) return '/admin/attribute-value/add'
+        if (path.includes('/attribute')) return '/admin/attribute/add'
+        return null
+    }
+
+    const moduleName = getModuleName(pathname)
+    const addRoute = getAddRoute(pathname)
+    const showAddButton = isModulePage && !isAddOrEditPage && addRoute
+
+    const handleBack = () => {
+        router.push('/admin')
+    }
+
+    const handleLogout = () => {
+        // Implement logout logic
+        router.push('/login')
+    }
 
     return (
-        <div className="flex items-center justify-between px-12 py-3 border-b border-slate-200 transition-all">
-            <Link href="/" className="relative text-4xl font-semibold text-slate-700">
-                <span className="text-green-600">go</span>cart<span className="text-green-600 text-5xl leading-0">.</span>
-                <p className="absolute text-xs font-semibold -top-1 -right-13 px-3 p-0.5 rounded-full flex items-center gap-2 text-white bg-green-500">
-                    Admin
-                </p>
-            </Link>
-            <div className="flex items-center gap-3">
-                <p>Hi, Admin</p>
+        <header className="bg-[#f0f9ff] border-b border-[#009fe3]/20 sticky top-0 z-50 shadow-sm">
+            <div className="flex items-center justify-between h-16 px-6">
+                {/* Left Section */}
+                <div className="flex items-center space-x-4">
+                    {isModulePage && (
+                        <button
+                            onClick={handleBack}
+                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-white/60 rounded-lg transition-colors cursor-pointer"
+                            title="Back to Dashboard"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    
+                    {!isModulePage && (
+                        <div className="flex items-center space-x-3">
+                            <Image 
+                                src={assets.gs_logo || assets.WV_logo} 
+                                alt="logo" 
+                                width={50} 
+                                height={50} 
+                                className="cursor-pointer" 
+                            />
+                            <h1 className="text-2xl font-bold text-[#009fe3]">
+                                GoCart Admin
+                            </h1>
+                        </div>
+                    )}
+                    
+                    {isModulePage && (
+                        <h2 className="text-xl font-semibold text-gray-900">{moduleName}</h2>
+                    )}
+                </div>
+
+                {/* Right Section */}
+                <div className="flex items-center space-x-4">
+                    {/* Add Button - Only on list pages */}
+                    {showAddButton && (
+                        <button
+                            onClick={() => router.push(addRoute)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition text-sm font-medium"
+                        >
+                            <Plus size={16} />
+                            Add
+                        </button>
+                    )}
+                    
+                    {/* Profile Dropdown - Only on Dashboard */}
+                    {!isModulePage && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowUserMenu(!showUserMenu)}
+                                className="flex items-center space-x-2 px-2 py-1.5 hover:bg-white/60 rounded-lg transition-colors group cursor-pointer"
+                            >
+                                <div className="hidden md:block text-left">
+                                    <div className="text-sm font-medium text-gray-900">Admin</div>
+                                    <div className="text-xs text-gray-500">Administrator</div>
+                                </div>
+                                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-white" />
+                                </div>
+                                <ChevronDown className="hidden md:block text-gray-400 group-hover:text-gray-600 transition-colors w-3 h-3" />
+                            </button>
+                            
+                            {showUserMenu && (
+                                <>
+                                    <div 
+                                        className="fixed inset-0 z-10" 
+                                        onClick={() => setShowUserMenu(false)}
+                                    />
+                                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+                                        <div className="px-4 py-3 border-b border-gray-200">
+                                            <div className="font-semibold text-gray-900 text-sm">Admin</div>
+                                            <div className="text-xs text-gray-500 mt-0.5">admin@gocart.com</div>
+                                        </div>
+                                        <Link
+                                            href="/admin/profile"
+                                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            onClick={() => setShowUserMenu(false)}
+                                        >
+                                            <User className="w-4 h-4 mr-3" />
+                                            Profile
+                                        </Link>
+                                        <Link
+                                            href="/admin/settings"
+                                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            onClick={() => setShowUserMenu(false)}
+                                        >
+                                            <Settings className="w-4 h-4 mr-3" />
+                                            Settings
+                                        </Link>
+                                        <div className="border-t border-gray-200 my-1"></div>
+                                        <button
+                                            onClick={() => {
+                                                handleLogout()
+                                                setShowUserMenu(false)
+                                            }}
+                                            className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-3" />
+                                            Logout
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </header>
     )
 }
 

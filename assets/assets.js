@@ -16,6 +16,7 @@ import product_img9 from "./Self Priming Monobloc_Mini Pump 19.jpg"
 import product_img10 from "./Shallow Well Pump 20.jpg"
 import product_img11 from "./Slowspeed Monobloc Pump 21.jpg"
 import product_img12 from "./V-Type Monobloc Pump22.jpg"
+import CenMono from "./CenMono.png"
 import product_img01 from "./pump.jpg"
 import product_img02 from "./electric motor.jpg"
 import product_img03 from "./engine.jpg"
@@ -44,7 +45,7 @@ export const assets = {
     hero_product_img1, hero_product_img2, gs_logo,
     product_img1, product_img2, product_img3, product_img4, product_img5, product_img6,
     product_img7, product_img8, product_img9, product_img10, product_img11, product_img12,product_img0,banner1,banner2,banner3,banner,
-    product_img01,product_img02,product_img03,product_img04,product_img05,agri,build,home,solar,wastewater,productHelpBanner,recent1
+    product_img01,product_img02,product_img03,product_img04,product_img05,agri,build,home,solar,wastewater,productHelpBanner,recent1,CenMono
 }
 
 export const categories = ["Pumps","ElectricMotor","Engine","Generator","AirCompressor"];

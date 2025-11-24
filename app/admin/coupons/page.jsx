@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import toast from "react-hot-toast"
-import { DeleteIcon } from "lucide-react"
 import { couponDummyData } from "@/assets/assets"
+import DataTable from "@/components/common/DataTable"
 
 export default function AdminCoupons() {
 
@@ -26,26 +26,70 @@ export default function AdminCoupons() {
     const handleAddCoupon = async (e) => {
         e.preventDefault()
         // Logic to add a coupon
-
-
     }
 
     const handleChange = (e) => {
         setNewCoupon({ ...newCoupon, [e.target.name]: e.target.value })
     }
 
-    const deleteCoupon = async (code) => {
+    const handleDelete = async (coupon) => {
         // Logic to delete a coupon
-
-
+        console.log('Deleting coupon:', coupon)
     }
 
     useEffect(() => {
         fetchCoupons();
     }, [])
 
+    const columns = [
+        {
+            key: 'code',
+            label: 'Code',
+            sortable: true,
+        },
+        {
+            key: 'description',
+            label: 'Description',
+            sortable: true,
+        },
+        {
+            key: 'discount',
+            label: 'Discount',
+            sortable: true,
+            render: (value) => `${value}%`,
+        },
+        {
+            key: 'expiresAt',
+            label: 'Expires At',
+            sortable: true,
+            render: (value) => format(new Date(value), 'yyyy-MM-dd'),
+        },
+        {
+            key: 'forNewUser',
+            label: 'New User',
+            sortable: true,
+            filterable: true,
+            filters: [
+                { text: 'Yes', value: true },
+                { text: 'No', value: false }
+            ],
+            render: (value) => value ? 'Yes' : 'No',
+        },
+        {
+            key: 'forMember',
+            label: 'For Member',
+            sortable: true,
+            filterable: true,
+            filters: [
+                { text: 'Yes', value: true },
+                { text: 'No', value: false }
+            ],
+            render: (value) => value ? 'Yes' : 'No',
+        },
+    ]
+
     return (
-        <div className="text-slate-500 mb-40">
+        <div className="text-slate-500 mb-40 space-y-6">
 
             {/* Add Coupon */}
             <form onSubmit={(e) => toast.promise(handleAddCoupon(e), { loading: "Adding coupon..." })} className="max-w-sm text-sm">
@@ -97,38 +141,22 @@ export default function AdminCoupons() {
             </form>
 
             {/* List Coupons */}
-            <div className="mt-14">
-                <h2 className="text-2xl">List <span className="text-slate-800 font-medium">Coupons</span></h2>
-                <div className="overflow-x-auto mt-4 rounded-lg border border-slate-200 max-w-4xl">
-                    <table className="min-w-full bg-white text-sm">
-                        <thead className="bg-slate-50">
-                            <tr>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">Code</th>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">Description</th>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">Discount</th>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">Expires At</th>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">New User</th>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">For Member</th>
-                                <th className="py-3 px-4 text-left font-semibold text-slate-600">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                            {coupons.map((coupon) => (
-                                <tr key={coupon.code} className="hover:bg-slate-50">
-                                    <td className="py-3 px-4 font-medium text-slate-800">{coupon.code}</td>
-                                    <td className="py-3 px-4 text-slate-800">{coupon.description}</td>
-                                    <td className="py-3 px-4 text-slate-800">{coupon.discount}%</td>
-                                    <td className="py-3 px-4 text-slate-800">{format(coupon.expiresAt, 'yyyy-MM-dd')}</td>
-                                    <td className="py-3 px-4 text-slate-800">{coupon.forNewUser ? 'Yes' : 'No'}</td>
-                                    <td className="py-3 px-4 text-slate-800">{coupon.forMember ? 'Yes' : 'No'}</td>
-                                    <td className="py-3 px-4 text-slate-800">
-                                        <DeleteIcon onClick={() => toast.promise(deleteCoupon(coupon.code), { loading: "Deleting coupon..." })} className="w-5 h-5 text-red-500 hover:text-red-800 cursor-pointer" />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            <div>
+                <h2 className="text-2xl mb-4">List <span className="text-slate-800 font-medium">Coupons</span></h2>
+                <DataTable
+                    columns={columns}
+                    data={coupons}
+                    rowKey="code"
+                    enableSearch={true}
+                    searchPlaceholder="Search coupons..."
+                    enablePagination={true}
+                    pageSize={10}
+                    enableSorting={true}
+                    enableFiltering={true}
+                    enableExport={true}
+                    onDelete={handleDelete}
+                    showActions={true}
+                />
             </div>
         </div>
     )

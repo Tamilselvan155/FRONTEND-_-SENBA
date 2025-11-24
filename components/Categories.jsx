@@ -101,19 +101,19 @@ export default function Categories() {
                   />
                 </div> */}
 
-                <div className="bg-[#F5F5F5] h-32 w-32 sm:h-36 sm:w-36 lg:h-40 lg:w-40 rounded-full flex items-center justify-center overflow-hidden"
+                <div className="bg-[#F5F5F5] h-24 w-24 sm:h-28 sm:w-28 lg:h-32 lg:w-32 rounded-full flex items-center justify-center overflow-hidden"
                 >
                   <Image
                   src={categoryImages[cat]}
                     alt={cat}
-                    width={200}
-                    height={200}
+                    width={120}
+                    height={120}
                     
                     className="scale-110 group-hover:scale-115 transition duration-300"
                   />
                 </div>
 
-                <p className="text-center mt-3 text-base text-[15px] sm:text-[16px] font-medium text-slate-800">{cat}</p>
+                <p className="text-center mt-3 text-sm text-[13px] sm:text-[14px] font-medium text-slate-800">{cat}</p>
               </Link>
             ))}
           </div>
@@ -155,16 +155,16 @@ export default function Categories() {
                 href={`/category/${cat}`}
                 className="group flex-shrink-0 w-1/5 px-4 flex flex-col items-center snap-center"
               >
-                <div className="bg-[#F5F5F5] h-50 w-50 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="bg-[#F5F5F5] h-32 w-32 rounded-full flex items-center justify-center overflow-hidden">
                   <Image
                     src={categoryImages[cat]}
                     alt={cat}
-                    width={200}
-                    height={200}
+                    width={120}
+                    height={120}
                     className="scale-110 group-hover:scale-115 transition duration-300"
                   />
                 </div>
-                <p className="font-medium text-center mt-2 text-lg text-slate-800">{cat}</p>
+                <p className="font-medium text-center mt-2 text-sm text-slate-800">{cat}</p>
               </Link>
             ))}
           </div>

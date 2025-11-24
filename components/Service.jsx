@@ -109,19 +109,19 @@ export default function PumpApplications() {
                     height={144}
                   />
                 </div> */}
-                <div className="bg-[#F5F5F5] h-32 w-32 sm:h-36 sm:w-36 lg:h-40 lg:w-40 rounded-full flex items-center justify-center overflow-hidden"
+                <div className="bg-[#F5F5F5] h-24 w-24 sm:h-28 sm:w-28 lg:h-32 lg:w-32 rounded-full flex items-center justify-center overflow-hidden"
 
                 >
                         <Image
                           src={app.src}
                           alt={app.label}
-                          width={160}
-                          height={160}
+                          width={120}
+                          height={120}
                           className="scale-110 group-hover:scale-115 transition duration-300"
                         />
                       </div>
 
-                <p className="text-center mt-5 text-[15px] font-medium text-slate-800">{app.label}</p>
+                <p className="text-center mt-3 text-[13px] font-medium text-slate-800">{app.label}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -164,16 +164,16 @@ export default function PumpApplications() {
                 className="group flex-shrink-0 w-1/3 px-4 flex flex-col items-center snap-start"
                 variants={itemVariants}
               >
-                <div className="bg-[#F5F5F5] h-40 w-40 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="bg-[#F5F5F5] h-32 w-32 rounded-full flex items-center justify-center overflow-hidden">
                   <Image
                     className="scale-110 group-hover:scale-115 transition duration-300"
                     src={app.src}
                     alt={app.label}
-                    width={160}
-                    height={160}
+                    width={120}
+                    height={120}
                   />
                 </div>
-                <p className=" text-center mt-2 font-medium text-lg text-slate-800">{app.label}</p>
+                <p className=" text-center mt-2 font-medium text-sm text-slate-800">{app.label}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -203,16 +203,16 @@ export default function PumpApplications() {
             className="group flex flex-col items-center"
             variants={itemVariants}
           >
-            <div className="bg-[#F5F5F5] h-32 w-32 sm:h-50 sm:w-50 cursor-pointer hover:shadow-[15px_-15px_0_#f48638] flex items-center justify-center overflow-hidden">
+            <div className="bg-[#F5F5F5] h-24 w-24 sm:h-28 sm:w-28 cursor-pointer hover:shadow-[10px_-10px_0_#f48638] flex items-center justify-center overflow-hidden">
               <Image
                 className="scale-110 group-hover:scale-115 transition duration-300"
                 src={app.src}
                 alt={app.label}
-                width={200}
-                height={200}
+                width={100}
+                height={100}
               />
             </div>
-            <p className="font-medium text-center mt-2 text-lg text-slate-800">
+            <p className="font-medium text-center mt-2 text-sm text-slate-800">
               {app.label}
             </p>
           </motion.div>

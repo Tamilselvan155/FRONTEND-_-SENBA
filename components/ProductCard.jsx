@@ -8,6 +8,7 @@ import ModalPopup from './PopupModel';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '@/lib/features/cart/cartSlice';
 import toast from 'react-hot-toast';
+import { assets } from '@/assets/assets';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -56,25 +57,25 @@ Hi, I'm interested in booking an enquiry for the following product:
     <>
       <Link
         href={`/product/${product.id}`}
-        className="w-full max-w-[95vw] mx-auto flex flex-col items-center rounded-lg overflow-hidden sm:max-w-[348px] md:max-w-[348px] lg:max-w-[284px]"
+        className="w-full max-w-[95vw] mx-auto flex flex-col items-center rounded-xl overflow-visible sm:max-w-[348px] md:max-w-[348px] lg:max-w-[284px] bg-white shadow-xl hover:shadow-2xl transition-all duration-300"
       >
         {/* Image Container */}
         <div
           className="
-            relative w-[84%] 
+            relative w-full 
             h-[430px] 
-            sm:h-[340px] sm:w-[255px]   /* 👈 Tablet view 348x380 */
-            md:h-[360px] md:w-[270px]   /* 👈 Consistent for md range */
-            lg:h-[380px] lg:w-[285px]   /* 👈 Desktop view */
-            rounded-lg overflow-hidden 
-            hover:-translate-y-5 
+            sm:h-[340px]   /* 👈 Tablet view */
+            md:h-[360px]   /* 👈 Consistent for md range */
+            lg:h-[380px]   /* 👈 Desktop view */
+            rounded-t-xl overflow-hidden 
+            hover:-translate-y-2 
             transition-transform duration-300
           "
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
           <Image
-            src={product.images[0]}
+            src={product.name === "Centrifugal Monobloc" ? assets.CenMono : product.images[0]}
             alt={product.name}
             fill
             className={`object-cover w-full h-full transition-transform duration-300 ${
@@ -83,62 +84,71 @@ Hi, I'm interested in booking an enquiry for the following product:
           />
         </div>
 
-        {/* Product Info */}
-        <div className="w-full flex justify-center items-start gap-2 mt-3 text-sm text-slate-800 px-2 sm:px-0">
-          <div className="flex flex-col">
+        {/* Product Info and Options Container - Merged with image */}
+        <div className="w-full bg-white rounded-b-xl p-6 border-t border-gray-100 overflow-visible">
+          {/* Product Info */}
+          <div className="flex justify-center items-center mb-6">
             <p
-              className="font-medium text-[17px] sm:text-lg truncate w-[200px] sm:w-[250px] text-center transition-all duration-300 hover:text-[#c31e5a] hover:scale-105 cursor-pointer"
+              className="font-bold text-[18px] sm:text-xl text-center transition-all duration-300 hover:text-[#c31e5a] hover:scale-105 cursor-pointer text-gray-800"
             >
               {product.name}
             </p>
           </div>
-        </div>
 
-        {/* Icon Buttons */}
-        <div className="flex flex-nowrap gap-7 sm:gap-4 mt-3 justify-between items-center">
-          <div className="relative group">
-            <button
-              onClick={(e) => handleAddToCart(e, product)}
-              className="flex items-center justify-center 
-                        w-10 h-10 sm:w-11 sm:h-11 
-                        text-black bg-gray-200
-                        hover:text-white
-                        hover:bg-[#c31e5a] 
-                        rounded-full 
-                        transition-all duration-300 transform "
-            >
-              <ShoppingCart size={18} />
-            </button>
-          </div>
+          {/* Options Container */}
+          <div className="flex justify-center items-center gap-6">
+            {/* Add to Cart Button */}
+            <div className="relative group">
+              <button
+                onClick={(e) => handleAddToCart(e, product)}
+                className="flex items-center justify-center 
+                          w-12 h-12 
+                          text-gray-600 bg-gray-100
+                          hover:text-white
+                          hover:bg-[#c31e5a] 
+                          rounded-full 
+                          transition-all duration-300 transform 
+                          shadow-md hover:shadow-lg hover:scale-110"
+                title="Add to Cart"
+              >
+                <ShoppingCart size={20} />
+              </button>
+            </div>
 
-          <div className="relative group">
-            <button
-              onClick={(e) => handleEnquiry(e, product)}
-              className="flex items-center justify-center 
-                        text-black bg-gray-200 
-                        hover:text-white
-                        hover:bg-[#f48638]
-                        rounded-lg px-5 py-3 sm:px-0 sm:py-0 sm:w-11 sm:h-11 sm:rounded-full  
-                        transition-all duration-300 transform"
-            >
-              <Send size={18} />
-              <span className="text-[15px] sm:hidden ml-2">Send Enquiry</span>
-            </button>
-          </div>
+            {/* Send Enquiry Button */}
+            <div className="relative group">
+              <button
+                onClick={(e) => handleEnquiry(e, product)}
+                className="flex items-center justify-center 
+                          text-gray-600 bg-gray-100 
+                          hover:text-white
+                          hover:bg-[#f48638]
+                          rounded-lg px-6 py-3 
+                          transition-all duration-300 transform
+                          shadow-md hover:shadow-lg hover:scale-105"
+                title="Send Enquiry"
+              >
+                <Send size={18} />
+                <span className="text-[15px] ml-2 font-medium">Send Enquiry</span>
+              </button>
+            </div>
 
-          <div className="relative group">
-            <button
-              className="flex items-center justify-center 
-                        w-10 h-10 sm:w-11 sm:h-11 
-                        text-black bg-gray-200 
-                        hover:text-white
-                        hover:bg-[rgb(55,50,46)]  
-                        border border-gray-300 
-                        rounded-full 
-                        transition-all duration-300 transform "
-            >
-              <ArrowRight size={18} />
-            </button>
+            {/* View Details Button */}
+            <div className="relative group">
+              <button
+                className="flex items-center justify-center 
+                          w-12 h-12 
+                          text-gray-600 bg-gray-100 
+                          hover:text-white
+                          hover:bg-[rgb(55,50,46)]  
+                          rounded-full 
+                          transition-all duration-300 transform
+                          shadow-md hover:shadow-lg hover:scale-110"
+                title="View Details"
+              >
+                <ArrowRight size={20} />
+              </button>
+            </div>
           </div>
         </div>
       </Link>

@@ -31,6 +31,240 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* Custom Scrollbar for Sidebar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(29 78 216) rgb(30 58 138);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgb(30 58 138);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(29 78 216);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(37 99 235);
+}
+
+/* Hide Next.js development indicator - Comprehensive Rules - INCLUDING BUTTON WATERMARK */
+#__next-build-watcher,
+.__next-dev-overlay,
+[data-nextjs-toast],
+[data-nextjs-dialog],
+[data-nextjs-router],
+.__next-dev-indicator,
+.__next-dev-indicator *,
+[class*="__next-dev-indicator"],
+[id*="__next-dev-indicator"],
+[data-nextjs-dev-indicator],
+[data-testid="nextjs-dev-indicator"],
+[data-testid*="nextjs"],
+[class*="nextjs-dev-indicator"],
+/* Target the specific button watermark */
+#next-logo,
+button#next-logo,
+button[data-next-mark],
+button[data-next-mark="true"],
+button[data-next-mark-loading],
+button[data-next-mark-loading="false"],
+button[data-nextjs-dev-tools-button],
+button[data-nextjs-dev-tools-button="true"],
+button[aria-label="Open Next.js Dev Tools"],
+[aria-controls="nextjs-dev-tools-menu"],
+/* Target the SVG inside the button */
+svg[data-next-mark-loading],
+svg[data-next-mark-loading="false"],
+svg[data-next-mark-loading="true"],
+svg[viewBox="0 0 40 40"],
+svg[width="40"][height="40"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide any fixed position elements that might be the N indicator */
+div[style*="position: fixed"][style*="bottom"],
+div[style*="position: fixed"][style*="left"],
+div[style*="position: fixed"][style*="z-index"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Additional aggressive hiding for fixed position elements */
+body > div[style*="position: fixed"][style*="bottom"],
+body > div[style*="position: fixed"][style*="left"],
+body > div[style*="position: fixed"][style*="z-index: 9999"],
+body > div[style*="position: fixed"][style*="z-index:9999"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Hide in sidebar specifically */
+aside div[style*="position: fixed"],
+aside [class*="__next"],
+aside [id*="__next"],
+aside [data-nextjs-dev-indicator],
+aside *[class*="__next"],
+aside *[id*="__next"],
+aside *[data-nextjs-dev-indicator] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Specifically target fixed elements near sidebar (bottom-left corner) - AGGRESSIVE */
+body > div[style*="position: fixed"][style*="left"][style*="bottom"],
+body > div[style*="position: fixed"][style*="left: 0"],
+body > div[style*="position: fixed"][style*="left:0"],
+body > div[style*="position:fixed"][style*="left"][style*="bottom"],
+body > div[style*="position:fixed"][style*="left:0"],
+body > div[style*="position:fixed"][style*="left: 0"],
+div[style*="position: fixed"][style*="left"][style*="bottom"],
+div[style*="position:fixed"][style*="left"][style*="bottom"],
+*[style*="position: fixed"][style*="left"][style*="bottom"],
+*[style*="position:fixed"][style*="left"][style*="bottom"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+
+
+/* Specific targeting for Next.js dev indicator - only target suspicious fixed divs */
+body > div[style*="position: fixed"][style*="bottom"][style*="left"]:not(header):not(nav):not([class*="modal"]):not([class*="dropdown"]):not([class*="toast"]):not([class*="notification"]) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Target the specific Next.js dev indicator button/circle */
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="width"][style*="height"],
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="border-radius"],
+div[style*="position: fixed"][style*="bottom"][style*="left"][style*="cursor: pointer"],
+div[style*="position:fixed"][style*="bottom"][style*="left"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Hide the black menu overlay that appears when clicking N */
+#nextjs-dev-tools-menu,
+[id="nextjs-dev-tools-menu"],
+[aria-labelledby="next-logo"],
+div[role="menu"],
+div[role="dialog"][aria-labelledby*="next"],
+/* Hide any black lines or borders */
+div[style*="background-color: black"],
+div[style*="background-color:rgb(0,0,0)"],
+div[style*="background-color:rgba(0,0,0"],
+div[style*="background: black"],
+div[style*="background:rgb(0,0,0)"],
+div[style*="background:rgba(0,0,0"],
+div[style*="border: 1px solid black"],
+div[style*="border:1px solid black"],
+div[style*="border-color: black"],
+div[style*="outline: 1px solid black"],
+div[style*="outline:1px solid black"],
+hr[style*="border-color: black"],
+hr[style*="background: black"],
+/* Hide any thin lines in bottom-left */
+div[style*="height: 1px"][style*="position: fixed"],
+div[style*="height:1px"][style*="position:fixed"],
+div[style*="width: 1px"][style*="position: fixed"],
+div[style*="width:1px"][style*="position:fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+
+/* Additional global rule to hide any watermark-like elements with "N" */
+*[style*="position: fixed"]:not(header):not(nav):not(main):not(article):not(section):not(footer),
+*[style*="position:fixed"]:not(header):not(nav):not(main):not(article):not(section):not(footer) {
+  /* This will be handled by JavaScript for precise detection */
+}
+
+/* Target fixed position elements in bottom-left corner - AGGRESSIVE */
+body > div[style*="position: fixed"][style*="left"],
+body > div[style*="position:fixed"][style*="left"],
+body > div[style*="position: fixed"][style*="bottom"],
+body > div[style*="position:fixed"][style*="bottom"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+
+/* Specifically target sidebar area and nearby elements */
+aside ~ div[style*="position: fixed"],
+aside ~ div[style*="position:fixed"],
+aside + div[style*="position: fixed"],
+aside + div[style*="position:fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide any small circular elements in bottom-left */
+div[style*="border-radius"][style*="position: fixed"],
+div[style*="border-radius"][style*="position:fixed"],
+div[style*="border-radius: 50%"][style*="position: fixed"],
+div[style*="border-radius:50%"][style*="position:fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* html, body {
   overflow-x: hidden;
 } */

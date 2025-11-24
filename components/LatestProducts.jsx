@@ -63,20 +63,24 @@ const LatestProducts = () => {
       />
 
       {/* Carousel for all screen sizes */}
-      <div className="relative overflow-hidden -mx-2 mt-6">
-        <div
-          className="flex transition-transform duration-500 ease-in-out snap-x snap-mandatory"
-          style={{ transform: `translateX(-${currentIndex * getTranslatePercentage()}%)` }}
-        >
-          {sortedProducts.map((product, i) => (
-            <div
-              key={i}
-              className={`flex-none ${getWidthClass()} snap-start px-2`}
-              style={{ flexShrink: 0 }}
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
+      <div className="relative -mx-2 mt-6">
+        <div className="overflow-x-auto scrollbar-hide pb-8">
+          <div
+            className="flex transition-transform duration-500 ease-in-out snap-x snap-mandatory"
+            style={{ transform: `translateX(-${currentIndex * getTranslatePercentage()}%)` }}
+          >
+            {sortedProducts.map((product, i) => (
+              <div
+                key={i}
+                className={`flex-none ${getWidthClass()} snap-start px-2`}
+                style={{ flexShrink: 0 }}
+              >
+                <div className="h-full">
+                  <ProductCard product={product} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Navigation Arrows */}
