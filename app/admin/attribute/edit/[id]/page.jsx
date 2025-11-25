@@ -1,19 +1,38 @@
 'use client'
 
-import { Settings } from "lucide-react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { createAttributeAsync } from "@/lib/features/attribute/attributeSlice"
+import { fetchAttributeByIdAsync, updateAttributeAsync } from "@/lib/features/attribute/attributeSlice"
 import toast from "react-hot-toast"
 
-export default function AddAttributePage() {
+export default function EditAttributePage() {
     const router = useRouter()
+    const params = useParams()
     const dispatch = useDispatch()
-    const { loading, error } = useSelector((state) => state.attribute)
+    const { currentAttribute, loading } = useSelector((state) => state.attribute)
     const [formData, setFormData] = useState({
         title: ''
     })
+
+    useEffect(() => {
+        if (params.id) {
+            dispatch(fetchAttributeByIdAsync(params.id))
+        }
+    }, [params.id, dispatch])
+
+    useEffect(() => {
+        if (currentAttribute && currentAttribute.data) {
+            const attribute = currentAttribute.data;
+            setFormData({
+                title: attribute.title || ''
+            })
+        } else if (currentAttribute && currentAttribute.title) {
+            setFormData({
+                title: currentAttribute.title || ''
+            })
+        }
+    }, [currentAttribute])
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
@@ -23,29 +42,25 @@ export default function AddAttributePage() {
         }))
     }
 
-    const handleReset = () => {
-        setFormData({
-            title: ''
-        })
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            await dispatch(createAttributeAsync(formData)).unwrap()
-            toast.success('Attribute created successfully!')
+            await dispatch(updateAttributeAsync({ id: params.id, data: formData })).unwrap()
+            toast.success('Attribute updated successfully!')
             router.push('/admin/attribute')
         } catch (err) {
-            toast.error(err || 'Failed to create attribute')
+            toast.error(err || 'Failed to update attribute')
         }
+    }
+
+    if (loading && !currentAttribute) {
+        return <div className="p-4 text-center">Loading...</div>
     }
 
     return (
         <div className="p-4">
-            {/* Form */}
             <div className="w-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Title Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Title <span className="text-red-500">*</span>
@@ -61,21 +76,20 @@ export default function AddAttributePage() {
                         />
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-3 pt-3">
                         <button
                             type="button"
-                            onClick={handleReset}
-                            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded transition"
+                            onClick={() => router.push('/admin/attribute')}
+                            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition"
                         >
-                            Reset
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Submitting...' : 'Submit'}
+                            {loading ? 'Updating...' : 'Update'}
                         </button>
                     </div>
                 </form>
@@ -83,3 +97,4 @@ export default function AddAttributePage() {
         </div>
     )
 }
+

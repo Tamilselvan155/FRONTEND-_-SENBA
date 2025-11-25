@@ -39,12 +39,12 @@ export default function AdminBanners() {
             key: 'photo',
             label: 'Photo',
             render: (value) => (
-                <div className="flex items-center gap-2">
-                    <ImageIcon size={20} className="text-gray-400" />
-                    <span className="text-xs text-gray-500 break-all max-w-xs">
+                                    <div className="flex items-center gap-2">
+                                        <ImageIcon size={20} className="text-gray-400" />
+                                        <span className="text-xs text-gray-500 break-all max-w-xs">
                         {value}
-                    </span>
-                </div>
+                                        </span>
+                                    </div>
             ),
         },
         {
@@ -63,7 +63,7 @@ export default function AdminBanners() {
                         : 'bg-gray-100 text-gray-800'
                 }`}>
                     {value}
-                </span>
+                                    </span>
             ),
         },
     ]

@@ -1,20 +1,24 @@
 'use client'
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
 import DataTable from "@/components/common/DataTable"
+import ConfirmModal from "@/components/common/ConfirmModal"
 import { ImageIcon } from "lucide-react"
+import { fetchCategoriesAsync, deleteCategoryAsync } from "@/lib/features/category/categorySlice"
+import toast from "react-hot-toast"
 
 export default function AdminCategory() {
     const router = useRouter()
+    const dispatch = useDispatch()
+    const { categories, loading } = useSelector((state) => state.category)
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState(null)
 
-    const categories = [
-        { id: 12, sn: 12, title: "PP ROPE", englishName: "PP ROPE", homepage: "Yes", slug: "PPROPE", isParent: "Yes", parentCategory: "", status: "active" },
-        { id: 13, sn: 13, title: "Monobloc pump", englishName: "Monobloc pump", homepage: "Yes", slug: "Monoblocpump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 14, sn: 14, title: "open well submersible pump", englishName: "open well submersible pump", homepage: "Yes", slug: "open-well-submersible-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 15, sn: 15, title: "Borewell submersible pump", englishName: "Borewell submersible pump", homepage: "Yes", slug: "Borewell-submersible-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 16, sn: 16, title: "Pressure booster pump", englishName: "Pressure booster pump", homepage: "Yes", slug: "Pressure-booster-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 17, sn: 17, title: "Borewell jet pump", englishName: "Borewell jet pump", homepage: "No", slug: "Borewell-jet-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-    ]
+    useEffect(() => {
+        dispatch(fetchCategoriesAsync())
+    }, [dispatch])
 
     const columns = [
         {
@@ -22,6 +26,7 @@ export default function AdminCategory() {
             label: 'S.N.',
             sortable: true,
             width: 80,
+            render: (_, record, index) => index + 1,
         },
         {
             key: 'title',
@@ -92,30 +97,67 @@ export default function AdminCategory() {
     ]
 
     const handleEdit = (category) => {
-        router.push(`/admin/category/edit/${category.id}`)
+        router.push(`/admin/category/edit/${category.id || category._id}`)
     }
 
     const handleDelete = (category) => {
-        // Implement delete logic here
-        console.log('Deleting category:', category)
+        setSelectedCategory(category)
+        setDeleteModalOpen(true)
     }
+
+    const confirmDelete = async () => {
+        if (selectedCategory) {
+            try {
+                await dispatch(deleteCategoryAsync(selectedCategory.id || selectedCategory._id)).unwrap()
+                toast.success('Category deleted successfully!')
+                dispatch(fetchCategoriesAsync()) // Refresh the list
+                setSelectedCategory(null)
+            } catch (err) {
+                toast.error(err || 'Failed to delete category')
+            }
+        }
+    }
+
+    // Format data for table
+    const formattedData = categories.map(cat => ({
+        ...cat,
+        id: cat.id || cat._id,
+    }))
 
     return (
         <div className="space-y-6">
-            <DataTable
-                columns={columns}
-                data={categories}
-                rowKey="id"
-                enableSearch={true}
-                searchPlaceholder="Search categories..."
-                enablePagination={true}
-                pageSize={10}
-                enableSorting={true}
-                enableFiltering={true}
-                enableExport={true}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                showActions={true}
+            {loading && formattedData.length === 0 ? (
+                <div className="text-center py-8">Loading...</div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={formattedData}
+                    rowKey="id"
+                    enableSearch={true}
+                    searchPlaceholder="Search categories..."
+                    enablePagination={true}
+                    pageSize={10}
+                    enableSorting={true}
+                    enableFiltering={true}
+                    enableExport={true}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    showActions={true}
+                />
+            )}
+            
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    setDeleteModalOpen(false)
+                    setSelectedCategory(null)
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Category"
+                message={selectedCategory ? `Are you sure you want to delete "${selectedCategory.title}"? This action cannot be undone.` : 'Are you sure you want to delete this category?'}
+                confirmText="Delete"
+                cancelText="Cancel"
+                type="danger"
             />
         </div>
     )

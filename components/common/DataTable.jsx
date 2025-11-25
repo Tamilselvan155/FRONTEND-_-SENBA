@@ -791,18 +791,19 @@ const DataTable = ({
       )}
 
       {/* Table */}
-      {filteredData.length > 0 || !searchText ? (
+      {filteredData.length > 0 ? (
         <div className="p-0">
           <Table
             {...tableProps}
             className="custom-data-table"
             style={tableStyle}
+            locale={{
+              emptyText: null // Disable Ant Design's default empty state
+            }}
           />
         </div>
-      ) : null}
-
-      {/* Empty State */}
-      {filteredData.length === 0 && (
+      ) : (
+        /* Empty State */
         <div className="text-center py-12 px-4">
           <SearchOutlined style={{ fontSize: 48, color: '#d1d5db', marginBottom: 16 }} />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

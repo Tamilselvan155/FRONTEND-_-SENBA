@@ -2,16 +2,17 @@
 
 import { ChevronDown } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { createAttributeValueAsync } from "@/lib/features/attributeValue/attributeValueSlice"
+import { fetchAttributeValueByIdAsync, updateAttributeValueAsync } from "@/lib/features/attributeValue/attributeValueSlice"
 import { fetchAttributesAsync } from "@/lib/features/attribute/attributeSlice"
 import toast from "react-hot-toast"
 
-export default function AddAttributeValuePage() {
+export default function EditAttributeValuePage() {
     const router = useRouter()
+    const params = useParams()
     const dispatch = useDispatch()
-    const { loading, error } = useSelector((state) => state.attributeValue)
+    const { currentAttributeValue, loading } = useSelector((state) => state.attributeValue)
     const { attributes } = useSelector((state) => state.attribute)
     const [formData, setFormData] = useState({
         attribute: '',
@@ -19,8 +20,21 @@ export default function AddAttributeValuePage() {
     })
 
     useEffect(() => {
-        dispatch(fetchAttributesAsync())
-    }, [dispatch])
+        if (params.id) {
+            dispatch(fetchAttributeValueByIdAsync(params.id))
+            dispatch(fetchAttributesAsync())
+        }
+    }, [params.id, dispatch])
+
+    useEffect(() => {
+        if (currentAttributeValue) {
+            const attrValue = currentAttributeValue.data || currentAttributeValue;
+            setFormData({
+                attribute: attrValue.attributeId ? (attrValue.attributeId._id || attrValue.attributeId.id || attrValue.attributeId) : '',
+                value: attrValue.value || ''
+            })
+        }
+    }, [currentAttributeValue])
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
@@ -30,35 +44,32 @@ export default function AddAttributeValuePage() {
         }))
     }
 
-    const handleReset = () => {
-        setFormData({
-            attribute: '',
-            value: ''
-        })
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            await dispatch(createAttributeValueAsync({
-                attributeId: formData.attribute,
-                value: formData.value
+            await dispatch(updateAttributeValueAsync({
+                id: params.id,
+                data: {
+                    attributeId: formData.attribute,
+                    value: formData.value
+                }
             })).unwrap()
-            toast.success('Attribute value created successfully!')
+            toast.success('Attribute value updated successfully!')
             router.push('/admin/attribute-value')
         } catch (err) {
-            toast.error(err || 'Failed to create attribute value')
+            toast.error(err || 'Failed to update attribute value')
         }
+    }
+
+    if (loading && !currentAttributeValue) {
+        return <div className="p-4 text-center">Loading...</div>
     }
 
     return (
         <div className="p-4">
-            {/* Form */}
             <div className="w-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Two Column Layout */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Attribute Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Select Attribute <span className="text-red-500">*</span>
@@ -85,7 +96,6 @@ export default function AddAttributeValuePage() {
                             </div>
                         </div>
 
-                        {/* Value Input */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Value <span className="text-red-500">*</span>
@@ -102,21 +112,20 @@ export default function AddAttributeValuePage() {
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-3 pt-3">
                         <button
                             type="button"
-                            onClick={handleReset}
-                            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded transition"
+                            onClick={() => router.push('/admin/attribute-value')}
+                            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition"
                         >
-                            Reset
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Submitting...' : 'Submit'}
+                            {loading ? 'Updating...' : 'Update'}
                         </button>
                     </div>
                 </form>
@@ -124,3 +133,4 @@ export default function AddAttributeValuePage() {
         </div>
     )
 }
+

@@ -2,11 +2,66 @@
 
 import { FolderTree, Package, ClipboardList, FolderOpen, Store, Tag, ImageIcon } from "lucide-react"
 import Link from "next/link"
-import { useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useMemo, memo } from "react"
+
+// Memoize module card to prevent unnecessary re-renders
+const ModuleCard = memo(({ module, getIconColorClass }) => (
+    <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 flex flex-col overflow-hidden">
+        {/* Main Card Content */}
+        <Link
+            href={module.route}
+            className="w-full p-6 text-left cursor-pointer flex-shrink-0 block hover:bg-gray-50 transition-colors duration-150"
+        >
+            <div className="flex items-start justify-between w-full">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getIconColorClass(module.color)}`}>
+                        <module.icon className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            {module.name}
+                        </h3>
+                        {module.count !== undefined ? (
+                            <p className="text-sm text-gray-500 mt-0.5">
+                                {`${module.count.toLocaleString()} items`}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-gray-500 mt-0.5 h-5">
+                                &nbsp;
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <svg className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
+        </Link>
+
+        {/* Sub-Navigation */}
+        {module.subNav && module.subNav.length > 0 && (
+            <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 flex-shrink-0">
+                <div className={`grid ${module.subNav.length === 4 ? 'grid-cols-2' : module.subNav.length === 3 ? 'grid-cols-3' : 'grid-cols-1'} gap-2`}>
+                    {module.subNav.map((subNavItem, index) => (
+                        <Link
+                            key={index}
+                            href={subNavItem.route}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-white border border-gray-200 hover:border-gray-300 transition-all duration-150"
+                        >
+                            <subNavItem.icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{subNavItem.label}</span>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        )}
+    </div>
+));
+
+ModuleCard.displayName = 'ModuleCard';
 
 export default function AdminDashboard() {
-    const router = useRouter()
     
     // Sample data - replace with actual API calls
     const stats = useMemo(() => ({
@@ -101,7 +156,7 @@ export default function AdminDashboard() {
         },
     ], [stats])
 
-    const getIconColorClass = useCallback((color) => {
+    const getIconColorClass = useMemo(() => {
         const colorMap = {
             blue: 'bg-blue-500 text-white',
             purple: 'bg-purple-500 text-white',
@@ -115,12 +170,9 @@ export default function AdminDashboard() {
             violet: 'bg-violet-500 text-white',
             slate: 'bg-slate-500 text-white',
         };
-        return colorMap[color] || 'bg-gray-500 text-white';
+        return (color) => colorMap[color] || 'bg-gray-500 text-white';
     }, []);
 
-    const handleModuleClick = useCallback((route) => {
-        router.push(route)
-    }, [router])
 
     return (
         <div className="h-full w-full">
@@ -138,60 +190,11 @@ export default function AdminDashboard() {
                 {modules.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
                         {modules.map((module) => (
-                            <div
+                            <ModuleCard
                                 key={module.id}
-                                className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 flex flex-col overflow-hidden"
-                            >
-                                {/* Main Card Content */}
-                                <button
-                                    onClick={() => handleModuleClick(module.route)}
-                                    className="w-full p-6 text-left cursor-pointer flex-shrink-0"
-                                >
-                                    <div className="flex items-start justify-between w-full">
-                                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getIconColorClass(module.color)}`}>
-                                                <module.icon className="w-6 h-6" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-semibold text-gray-900 truncate">
-                                                    {module.name}
-                                                </h3>
-                                                {module.count !== undefined ? (
-                                                    <p className="text-sm text-gray-500 mt-0.5">
-                                                        {`${module.count.toLocaleString()} items`}
-                                                    </p>
-                                                ) : (
-                                                    <p className="text-sm text-gray-500 mt-0.5 h-5">
-                                                        &nbsp;
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </div>
-                                </button>
-
-                                {/* Sub-Navigation */}
-                                {module.subNav && module.subNav.length > 0 && (
-                                    <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 flex-shrink-0">
-                                        <div className={`grid ${module.subNav.length === 4 ? 'grid-cols-2' : module.subNav.length === 3 ? 'grid-cols-3' : 'grid-cols-1'} gap-2`}>
-                                            {module.subNav.map((subNavItem, index) => (
-                                                <Link
-                                                    key={index}
-                                                    href={subNavItem.route}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-white border border-gray-200 hover:border-gray-300 transition-all duration-150"
-                                                >
-                                                    <subNavItem.icon className="w-4 h-4 flex-shrink-0" />
-                                                    <span className="truncate">{subNavItem.label}</span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                                module={module}
+                                getIconColorClass={getIconColorClass}
+                            />
                         ))}
                     </div>
                 )}

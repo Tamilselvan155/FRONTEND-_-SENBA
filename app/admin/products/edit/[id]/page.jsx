@@ -2,19 +2,20 @@
 
 import { ChevronDown, Plus, X } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { createProductAsync } from "@/lib/features/product/productSlice"
+import { fetchProductByIdAsync, updateProductAsync } from "@/lib/features/product/productSlice"
 import { fetchCategoriesForDropdownAsync } from "@/lib/features/category/categorySlice"
 import { fetchBrandsForDropdownAsync } from "@/lib/features/brand/brandSlice"
 import { fetchAttributesAsync } from "@/lib/features/attribute/attributeSlice"
 import { fetchAttributeValuesByAttributeAsync } from "@/lib/features/attributeValue/attributeValueSlice"
 import toast from "react-hot-toast"
 
-export default function AddProductPage() {
+export default function EditProductPage() {
     const router = useRouter()
+    const params = useParams()
     const dispatch = useDispatch()
-    const { loading: productLoading } = useSelector((state) => state.product)
+    const { currentProduct, loading: productLoading } = useSelector((state) => state.product)
     const { categoriesForDropdown } = useSelector((state) => state.category)
     const { brandsForDropdown } = useSelector((state) => state.brand)
     const { attributes } = useSelector((state) => state.attribute)
@@ -35,22 +36,27 @@ export default function AddProductPage() {
     const [specificationGroups, setSpecificationGroups] = useState([])
     const [brandVariants, setBrandVariants] = useState([])
     const [attributeValuesMap, setAttributeValuesMap] = useState({})
+    const [loadedAttributeIds, setLoadedAttributeIds] = useState(new Set())
 
     useEffect(() => {
-        dispatch(fetchCategoriesForDropdownAsync())
-        dispatch(fetchBrandsForDropdownAsync())
-        dispatch(fetchAttributesAsync())
-    }, [dispatch])
+        if (params.id) {
+            dispatch(fetchProductByIdAsync(params.id))
+            dispatch(fetchCategoriesForDropdownAsync())
+            dispatch(fetchBrandsForDropdownAsync())
+            dispatch(fetchAttributesAsync())
+        }
+    }, [params.id, dispatch])
 
     // Fetch attribute values when attributes change
     useEffect(() => {
         attributes.forEach(attr => {
             const attrId = attr.id || attr._id;
-            if (attrId && !attributeValuesMap[attrId]) {
+            if (attrId && !loadedAttributeIds.has(attrId)) {
                 dispatch(fetchAttributeValuesByAttributeAsync(attrId))
+                setLoadedAttributeIds(prev => new Set([...prev, attrId]))
             }
         })
-    }, [attributes, dispatch])
+    }, [attributes, dispatch, loadedAttributeIds])
 
     // Update attribute values map when attributeValues change
     useEffect(() => {
@@ -73,6 +79,81 @@ export default function AddProductPage() {
         setAttributeValuesMap(map);
     }, [attributeValues])
 
+    // Populate form when product data is loaded
+    useEffect(() => {
+        if (currentProduct) {
+            let product = currentProduct;
+            if (currentProduct.data) {
+                product = currentProduct.data;
+            } else if (currentProduct.success && currentProduct.data) {
+                product = currentProduct.data;
+            }
+
+            // Load attribute values for variant attributes
+            if (product.brandVariants && product.brandVariants.length > 0) {
+                product.brandVariants.forEach(variant => {
+                    if (variant.attributes) {
+                        variant.attributes.forEach(attr => {
+                            const attrId = attr.attributeId?._id || attr.attributeId?.id || attr.attributeId;
+                            if (attrId && !loadedAttributeIds.has(attrId)) {
+                                dispatch(fetchAttributeValuesByAttributeAsync(attrId))
+                                setLoadedAttributeIds(prev => new Set([...prev, attrId]))
+                            }
+                        })
+                    }
+                })
+            }
+
+            setFormData({
+                title: product.title || '',
+                isFeatured: product.isFeatured || false,
+                category: product.categoryId?._id || product.categoryId?.id || product.categoryId || '',
+                selectedBrands: product.brandIds ? product.brandIds.map(b => b._id || b.id || b) : [],
+                hasVariants: product.hasVariants || false,
+                price: product.price?.toString() || '',
+                discount: product.discount?.toString() || '',
+                stock: product.stock?.toString() || '',
+                sku: product.sku || '',
+                status: product.status || 'active'
+            })
+
+            // Set specification groups
+            if (product.specificationGroups) {
+                setSpecificationGroups(product.specificationGroups.map((group, idx) => ({
+                    id: Date.now() + idx,
+                    groupLabel: group.groupLabel || '',
+                    specifications: group.specifications.map((spec, specIdx) => ({
+                        id: Date.now() + idx * 100 + specIdx,
+                        featureName: spec.featureName || '',
+                        featureValue: spec.featureValue || ''
+                    }))
+                })))
+            }
+
+            // Set brand variants
+            if (product.brandVariants && product.brandVariants.length > 0) {
+                setBrandVariants(product.brandVariants.map((variant, idx) => ({
+                    id: Date.now() + idx * 1000,
+                    brand: variant.brandId?._id || variant.brandId?.id || variant.brandId || '',
+                    attributes: variant.attributes ? variant.attributes.map((attr, attrIdx) => ({
+                        id: Date.now() + idx * 1000 + attrIdx * 100,
+                        name: attr.attributeId?._id || attr.attributeId?.id || attr.attributeId || '',
+                        value: attr.attributeValueId?._id || attr.attributeValueId?.id || attr.attributeValueId || ''
+                    })) : [],
+                    specifications: variant.specifications ? variant.specifications.map((spec, specIdx) => ({
+                        id: Date.now() + idx * 1000 + specIdx * 10,
+                        name: spec.name || '',
+                        value: spec.value || ''
+                    })) : [],
+                    price: variant.price?.toString() || '',
+                    discount: variant.discount?.toString() || '',
+                    stock: variant.stock?.toString() || '',
+                    sku: variant.sku || ''
+                })))
+            }
+        }
+    }, [currentProduct, dispatch, loadedAttributeIds])
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
         setFormData(prev => {
@@ -84,7 +165,7 @@ export default function AddProductPage() {
             if (name === 'hasVariants' && !checked) {
                 setBrandVariants([])
             }
-            // Clear selected brands if hasVariants is checked (since brands will be in variants)
+            // Clear selected brands if hasVariants is checked
             if (name === 'hasVariants' && checked) {
                 newData.selectedBrands = []
             }
@@ -296,23 +377,6 @@ export default function AddProductPage() {
         )
     }
 
-    const handleReset = () => {
-        setFormData({
-            title: '',
-            isFeatured: true,
-            category: '',
-            selectedBrands: [],
-            hasVariants: false,
-            price: '',
-            discount: '',
-            stock: '',
-            sku: '',
-            status: 'active'
-        })
-        setSpecificationGroups([])
-        setBrandVariants([])
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
@@ -320,10 +384,10 @@ export default function AddProductPage() {
             const mappedBrandVariants = formData.hasVariants ? brandVariants.map(variant => ({
                 brandId: variant.brand,
                 attributes: variant.attributes.map(attr => {
-                    const selectedAttr = attributes.find(a => (a.id || a._id) === attr.name || a.title === attr.name);
+                    const selectedAttr = attributes.find(a => (a.id || a._id) === attr.name);
                     const selectedValue = attributeValues.find(av => 
                         (av.attributeId?._id || av.attributeId?.id || av.attributeId) === (selectedAttr?.id || selectedAttr?._id) &&
-                        (av.value === attr.value || av._id === attr.value)
+                        (av._id === attr.value || av.id === attr.value)
                     );
                     return {
                         attributeId: selectedAttr?.id || selectedAttr?._id,
@@ -363,12 +427,30 @@ export default function AddProductPage() {
                 })
             }
 
-            await dispatch(createProductAsync(submitData)).unwrap()
-            toast.success('Product created successfully!')
+            await dispatch(updateProductAsync({ id: params.id, data: submitData })).unwrap()
+            toast.success('Product updated successfully!')
             router.push('/admin/products')
         } catch (err) {
-            toast.error(err || 'Failed to create product')
+            toast.error(err || 'Failed to update product')
         }
+    }
+
+    if (productLoading && !currentProduct) {
+        return <div className="p-4 text-center">Loading product data...</div>
+    }
+
+    if (!productLoading && !currentProduct && params.id) {
+        return (
+            <div className="p-4 text-center">
+                <p className="text-red-500">Product not found</p>
+                <button
+                    onClick={() => router.push('/admin/products')}
+                    className="mt-4 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+                >
+                    Back to Products
+                </button>
+            </div>
+        )
     }
 
     return (
@@ -508,71 +590,39 @@ export default function AddProductPage() {
                         {formData.hasVariants && brandVariants.length > 0 && (
                             <div className="space-y-4">
                                 {brandVariants.map((variant, index) => (
-                    <div key={variant.id} className="bg-gray-50 p-6 rounded-lg space-y-4">
-                        {/* Variant Header */}
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-800">
-                                Brand Variant {index + 1}
-                            </h3>
-                            <button
-                                type="button"
-                                onClick={() => handleRemoveBrandVariant(variant.id)}
-                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
-                                title="Remove variant"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
+                                    <div key={variant.id} className="bg-gray-50 p-6 rounded-lg space-y-4">
+                                        {/* Variant Header */}
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-semibold text-gray-800">
+                                                Brand Variant {index + 1}
+                                            </h3>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveBrandVariant(variant.id)}
+                                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+                                                title="Remove variant"
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
 
-                        {/* Brand Field */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Brand
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={variant.brand}
-                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'brand', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                                >
-                                    <option value="">Choose Brand</option>
-                                    {brandsForDropdown.map((brand) => {
-                                        const brandId = brand._id || brand.id;
-                                        return (
-                                            <option key={brandId} value={brandId}>
-                                                {brand.title}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                                <ChevronDown 
-                                    size={20} 
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Attributes Section */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Attributes
-                            </label>
-                            <div className="space-y-3">
-                                {variant.attributes.map((attr) => (
-                                    <div key={attr.id} className="flex items-end gap-3">
-                                        <div className="flex-1">
+                                        {/* Brand Field */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Brand
+                                            </label>
                                             <div className="relative">
                                                 <select
-                                                    value={attr.name}
-                                                    onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'name', e.target.value)}
+                                                    value={variant.brand}
+                                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'brand', e.target.value)}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                                                 >
-                                                    <option value="">Select Attribute</option>
-                                                    {attributes.map((att) => {
-                                                        const attrId = att.id || att._id;
+                                                    <option value="">Choose Brand</option>
+                                                    {brandsForDropdown.map((brand) => {
+                                                        const brandId = brand._id || brand.id;
                                                         return (
-                                                            <option key={attrId} value={attrId}>
-                                                                {att.title}
+                                                            <option key={brandId} value={brandId}>
+                                                                {brand.title}
                                                             </option>
                                                         );
                                                     })}
@@ -583,153 +633,185 @@ export default function AddProductPage() {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="relative">
-                                                <select
-                                                    value={attr.value}
-                                                    onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'value', e.target.value)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                                                    disabled={!attr.name}
-                                                >
-                                                    <option value="">Select Value</option>
-                                                    {attributeValuesMap[attr.name]?.map((val) => (
-                                                        <option key={val.id} value={val.id}>
-                                                            {val.value}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown 
-                                                    size={20} 
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+
+                                        {/* Attributes Section */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Attributes
+                                            </label>
+                                            <div className="space-y-3">
+                                                {variant.attributes.map((attr) => (
+                                                    <div key={attr.id} className="flex items-end gap-3">
+                                                        <div className="flex-1">
+                                                            <div className="relative">
+                                                                <select
+                                                                    value={attr.name}
+                                                                    onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'name', e.target.value)}
+                                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                                                                >
+                                                                    <option value="">Select Attribute</option>
+                                                                    {attributes.map((att) => {
+                                                                        const attrId = att.id || att._id;
+                                                                        return (
+                                                                            <option key={attrId} value={attrId}>
+                                                                                {att.title}
+                                                                            </option>
+                                                                        );
+                                                                    })}
+                                                                </select>
+                                                                <ChevronDown 
+                                                                    size={20} 
+                                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="relative">
+                                                                <select
+                                                                    value={attr.value}
+                                                                    onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'value', e.target.value)}
+                                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                                                                    disabled={!attr.name}
+                                                                >
+                                                                    <option value="">Select Value</option>
+                                                                    {attributeValuesMap[attr.name]?.map((val) => (
+                                                                        <option key={val.id} value={val.id}>
+                                                                            {val.value}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <ChevronDown 
+                                                                    size={20} 
+                                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveVariantAttribute(variant.id, attr.id)}
+                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
+                                                            title="Remove attribute"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddVariantAttribute(variant.id)}
+                                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition text-sm"
+                                            >
+                                                <Plus size={16} />
+                                                Add Attribute
+                                            </button>
+                                        </div>
+
+                                        {/* Specifications Section */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Specifications
+                                            </label>
+                                            <div className="space-y-3">
+                                                {variant.specifications.map((spec) => (
+                                                    <div key={spec.id} className="flex items-end gap-3">
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="text"
+                                                                value={spec.name}
+                                                                onChange={(e) => handleUpdateVariantSpec(variant.id, spec.id, 'name', e.target.value)}
+                                                                placeholder="Spec name"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="text"
+                                                                value={spec.value}
+                                                                onChange={(e) => handleUpdateVariantSpec(variant.id, spec.id, 'value', e.target.value)}
+                                                                placeholder="Spec value"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveVariantSpec(variant.id, spec.id)}
+                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
+                                                            title="Remove specification"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddVariantSpec(variant.id)}
+                                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition text-sm"
+                                            >
+                                                <Plus size={16} />
+                                                Add Spec
+                                            </button>
+                                        </div>
+
+                                        {/* Pricing and Stock Fields for Variant */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Price
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={variant.price}
+                                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'price', e.target.value)}
+                                                    placeholder="Enter price"
+                                                    step="0.01"
+                                                    min="0"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Discount (%)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={variant.discount}
+                                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'discount', e.target.value)}
+                                                    placeholder="Enter discount"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max="100"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Stock
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={variant.stock}
+                                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'stock', e.target.value)}
+                                                    placeholder="Enter stock quantity"
+                                                    min="0"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    SKU
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={variant.sku}
+                                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'sku', e.target.value)}
+                                                    placeholder="Enter SKU"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 />
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveVariantAttribute(variant.id, attr.id)}
-                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
-                                            title="Remove attribute"
-                                        >
-                                            <X size={16} />
-                                        </button>
                                     </div>
-                                ))}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => handleAddVariantAttribute(variant.id)}
-                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition text-sm"
-                            >
-                                <Plus size={16} />
-                                Add Attribute
-                            </button>
-                        </div>
-
-                        {/* Specifications Section */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Specifications
-                            </label>
-                            <div className="space-y-3">
-                                {variant.specifications.map((spec) => (
-                                    <div key={spec.id} className="flex items-end gap-3">
-                                        <div className="flex-1">
-                                            <input
-                                                type="text"
-                                                value={spec.name}
-                                                onChange={(e) => handleUpdateVariantSpec(variant.id, spec.id, 'name', e.target.value)}
-                                                placeholder="Spec name"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <input
-                                                type="text"
-                                                value={spec.value}
-                                                onChange={(e) => handleUpdateVariantSpec(variant.id, spec.id, 'value', e.target.value)}
-                                                placeholder="Spec value"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveVariantSpec(variant.id, spec.id)}
-                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
-                                            title="Remove specification"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => handleAddVariantSpec(variant.id)}
-                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition text-sm"
-                            >
-                                <Plus size={16} />
-                                Add Spec
-                            </button>
-                        </div>
-
-                        {/* Pricing and Stock Fields for Variant */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Price
-                                </label>
-                                <input
-                                    type="number"
-                                    value={variant.price}
-                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'price', e.target.value)}
-                                    placeholder="Enter price"
-                                    step="0.01"
-                                    min="0"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Discount (%)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={variant.discount}
-                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'discount', e.target.value)}
-                                    placeholder="Enter discount"
-                                    step="0.01"
-                                    min="0"
-                                    max="100"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Stock
-                                </label>
-                                <input
-                                    type="number"
-                                    value={variant.stock}
-                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'stock', e.target.value)}
-                                    placeholder="Enter stock quantity"
-                                    min="0"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    SKU
-                                </label>
-                                <input
-                                    type="text"
-                                    value={variant.sku}
-                                    onChange={(e) => handleUpdateBrandVariant(variant.id, 'sku', e.target.value)}
-                                    placeholder="Enter SKU"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
                                 ))}
                             </div>
                         )}
@@ -895,7 +977,6 @@ export default function AddProductPage() {
                     </div>
                 )}
 
-
                 {/* Status Field */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -923,17 +1004,17 @@ export default function AddProductPage() {
                 <div className="flex items-center justify-end gap-3 pt-4">
                     <button
                         type="button"
-                        onClick={handleReset}
-                        className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition"
+                        onClick={() => router.push('/admin/products')}
+                        className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition"
                     >
-                        Reset
+                        Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={productLoading}
                         className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {productLoading ? 'Submitting...' : 'Submit'}
+                        {productLoading ? 'Updating...' : 'Update'}
                     </button>
                 </div>
             </form>

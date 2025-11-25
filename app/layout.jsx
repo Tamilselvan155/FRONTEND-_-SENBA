@@ -190,13 +190,37 @@ export default function RootLayout({ children }) {
                                 if (document.readyState === 'loading') {
                                     document.addEventListener('DOMContentLoaded', function() {
                                         removeIndicator();
-                                        // Run every 5ms for maximum aggressiveness
-                                        setInterval(removeIndicator, 5);
+                                        // Use requestAnimationFrame for better performance
+                                        let rafId;
+                                        function checkAndRemove() {
+                                            removeIndicator();
+                                            rafId = requestAnimationFrame(checkAndRemove);
+                                        }
+                                        rafId = requestAnimationFrame(checkAndRemove);
+                                        // Fallback: check every 500ms as backup
+                                        const intervalId = setInterval(removeIndicator, 500);
+                                        // Clean up after 10 seconds (indicator should be gone by then)
+                                        setTimeout(() => {
+                                            if (rafId) cancelAnimationFrame(rafId);
+                                            clearInterval(intervalId);
+                                        }, 10000);
                                     });
                                 } else {
                                     removeIndicator();
-                                    // Run every 5ms for maximum aggressiveness
-                                    setInterval(removeIndicator, 5);
+                                    // Use requestAnimationFrame for better performance
+                                    let rafId;
+                                    function checkAndRemove() {
+                                        removeIndicator();
+                                        rafId = requestAnimationFrame(checkAndRemove);
+                                    }
+                                    rafId = requestAnimationFrame(checkAndRemove);
+                                    // Fallback: check every 500ms as backup
+                                    const intervalId = setInterval(removeIndicator, 500);
+                                    // Clean up after 10 seconds (indicator should be gone by then)
+                                    setTimeout(() => {
+                                        if (rafId) cancelAnimationFrame(rafId);
+                                        clearInterval(intervalId);
+                                    }, 10000);
                                 }
                                 
                                 // Use MutationObserver

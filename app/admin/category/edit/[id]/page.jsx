@@ -2,15 +2,16 @@
 
 import { ChevronDown } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { createCategoryAsync, fetchCategoriesForDropdownAsync } from "@/lib/features/category/categorySlice"
+import { fetchCategoryByIdAsync, updateCategoryAsync, fetchCategoriesForDropdownAsync } from "@/lib/features/category/categorySlice"
 import toast from "react-hot-toast"
 
-export default function AddCategoryPage() {
+export default function EditCategoryPage() {
     const router = useRouter()
+    const params = useParams()
     const dispatch = useDispatch()
-    const { loading, error, categoriesForDropdown } = useSelector((state) => state.category)
+    const { currentCategory, loading, categoriesForDropdown } = useSelector((state) => state.category)
     const [formData, setFormData] = useState({
         title: '',
         isParent: true,
@@ -28,6 +29,68 @@ export default function AddCategoryPage() {
         status: 'active'
     })
 
+    useEffect(() => {
+        if (params.id) {
+            dispatch(fetchCategoryByIdAsync(params.id))
+            dispatch(fetchCategoriesForDropdownAsync())
+        }
+    }, [params.id, dispatch])
+
+    useEffect(() => {
+        if (currentCategory) {
+            // Handle different response structures from backend
+            // Backend returns: { success: true, data: category }
+            // Redux stores: response.data which is { success: true, data: category }
+            let category = currentCategory;
+            
+            // Extract category from nested structure
+            if (currentCategory.data && typeof currentCategory.data === 'object') {
+                category = currentCategory.data;
+            } else if (currentCategory.success && currentCategory.data) {
+                category = currentCategory.data;
+            }
+            
+            // Handle parentId - could be populated object or just ID string
+            let parentId = '';
+            if (category.parentId) {
+                if (typeof category.parentId === 'object' && category.parentId !== null) {
+                    // Populated parentId object
+                    parentId = category.parentId._id || category.parentId.id || String(category.parentId) || '';
+                } else {
+                    // Just the ID string
+                    parentId = String(category.parentId);
+                }
+            }
+            
+            // Determine isParent - if parentId exists and is not empty, it's not a parent
+            const isParentValue = category.isParent !== undefined 
+                ? Boolean(category.isParent)
+                : (!parentId || parentId === '' || parentId === 'null');
+            
+            // Set form data with all fields properly mapped
+            setFormData({
+                title: String(category.title || ''),
+                isParent: isParentValue,
+                parentCategory: parentId || '',
+                englishName: String(category.englishName || ''),
+                slug: String(category.slug || ''),
+                menuPosition: category.menuPosition !== undefined && category.menuPosition !== null 
+                    ? String(category.menuPosition) 
+                    : '',
+                sortOrder: category.sortOrder !== undefined && category.sortOrder !== null 
+                    ? String(category.sortOrder) 
+                    : '0',
+                showOnHomepage: Boolean(category.showOnHomepage || false),
+                displayPosition: String(category.displayPosition || 'Center'),
+                photo: null,
+                photoName: String(category.photo || ''),
+                type: String(category.type || 'Common'),
+                summary: String(category.summary || ''),
+                status: String(category.status || 'active')
+            })
+        }
+    }, [currentCategory])
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
         setFormData(prev => {
@@ -35,7 +98,6 @@ export default function AddCategoryPage() {
                 ...prev,
                 [name]: type === 'checkbox' ? checked : value
             }
-            // If isParent is checked, clear parentCategory
             if (name === 'isParent' && checked) {
                 newData.parentCategory = ''
             }
@@ -53,29 +115,6 @@ export default function AddCategoryPage() {
             }))
         }
     }
-
-    const handleReset = () => {
-        setFormData({
-            title: '',
-            isParent: true,
-            parentCategory: '',
-            englishName: '',
-            slug: '',
-            menuPosition: '',
-            sortOrder: '0',
-            showOnHomepage: false,
-            displayPosition: 'Center',
-            photo: null,
-            photoName: '',
-            type: 'Common',
-            summary: '',
-            status: 'active'
-        })
-    }
-
-    useEffect(() => {
-        dispatch(fetchCategoriesForDropdownAsync())
-    }, [dispatch])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -95,12 +134,30 @@ export default function AddCategoryPage() {
                 type: formData.type || null,
                 summary: formData.summary || null,
             }
-            await dispatch(createCategoryAsync(categoryData)).unwrap()
-            toast.success('Category created successfully!')
+            await dispatch(updateCategoryAsync({ id: params.id, data: categoryData })).unwrap()
+            toast.success('Category updated successfully!')
             router.push('/admin/category')
         } catch (err) {
-            toast.error(err || 'Failed to create category')
+            toast.error(err || 'Failed to update category')
         }
+    }
+
+    if (loading && !currentCategory) {
+        return <div className="p-4 text-center">Loading category data...</div>
+    }
+
+    if (!loading && !currentCategory && params.id) {
+        return (
+            <div className="p-4 text-center">
+                <p className="text-red-500">Category not found</p>
+                <button
+                    onClick={() => router.push('/admin/category')}
+                    className="mt-4 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+                >
+                    Back to Categories
+                </button>
+            </div>
+        )
     }
 
     return (
@@ -153,9 +210,9 @@ export default function AddCategoryPage() {
                                 >
                                     <option value="">--Select any category--</option>
                                     {categoriesForDropdown
-                                        .filter(cat => cat.isParent)
+                                        .filter(cat => cat.isParent && (cat._id !== params.id && cat.id !== params.id))
                                         .map((cat) => (
-                                            <option key={cat._id} value={cat._id}>
+                                            <option key={cat._id || cat.id} value={cat._id || cat.id}>
                                                 {cat.title}
                                             </option>
                                         ))}
@@ -182,7 +239,7 @@ export default function AddCategoryPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                slug
+                                Slug
                             </label>
                             <input
                                 type="text"
@@ -348,17 +405,17 @@ export default function AddCategoryPage() {
                     <div className="flex items-center justify-end gap-3 pt-3">
                         <button
                             type="button"
-                            onClick={handleReset}
-                            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded transition"
+                            onClick={() => router.push('/admin/category')}
+                            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition"
                         >
-                            Reset
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Submitting...' : 'Submit'}
+                            {loading ? 'Updating...' : 'Update'}
                         </button>
                     </div>
                 </form>
@@ -366,3 +423,4 @@ export default function AddCategoryPage() {
         </div>
     )
 }
+

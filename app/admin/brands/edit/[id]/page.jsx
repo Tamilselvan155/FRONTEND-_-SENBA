@@ -1,64 +1,81 @@
 'use client'
 
-import { ChevronDown, Tag } from "lucide-react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { createBrandAsync } from "@/lib/features/brand/brandSlice"
+import { ChevronDown } from "lucide-react"
+import { fetchBrandByIdAsync, updateBrandAsync } from "@/lib/features/brand/brandSlice"
 import toast from "react-hot-toast"
 
-export default function AddBrandPage() {
+export default function EditBrandPage() {
     const router = useRouter()
+    const params = useParams()
     const dispatch = useDispatch()
-    const { loading, error } = useSelector((state) => state.brand)
+    const { currentBrand, loading } = useSelector((state) => state.brand)
     const [formData, setFormData] = useState({
         title: '',
         slug: '',
         status: 'active'
     })
 
+    useEffect(() => {
+        if (params.id) {
+            dispatch(fetchBrandByIdAsync(params.id))
+        }
+    }, [params.id, dispatch])
+
+    useEffect(() => {
+        if (currentBrand && currentBrand.data) {
+            const brand = currentBrand.data;
+            setFormData({
+                title: brand.title || '',
+                slug: brand.slug || '',
+                status: brand.status || 'active'
+            })
+        } else if (currentBrand && currentBrand.title) {
+            setFormData({
+                title: currentBrand.title || '',
+                slug: currentBrand.slug || '',
+                status: currentBrand.status || 'active'
+            })
+        }
+    }, [currentBrand])
+
     const handleInputChange = (e) => {
         const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: value,
-            // Auto-generate slug from title
             ...(name === 'title' && { slug: value.toLowerCase().replace(/\s+/g, '-') })
         }))
     }
 
-    const handleReset = () => {
-        setFormData({
-            title: '',
-            slug: '',
-            status: 'active'
-        })
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
-        if (!formData.slug) {
-            formData.slug = formData.title.toLowerCase().replace(/\s+/g, '-')
-        }
         try {
-            await dispatch(createBrandAsync({
-                title: formData.title,
-                slug: formData.slug,
-                status: formData.status.toLowerCase()
+            await dispatch(updateBrandAsync({ 
+                id: params.id, 
+                data: {
+                    title: formData.title,
+                    slug: formData.slug,
+                    status: formData.status
+                }
             })).unwrap()
-            toast.success('Brand created successfully!')
+            toast.success('Brand updated successfully!')
             router.push('/admin/brands')
         } catch (err) {
-            toast.error(err || 'Failed to create brand')
+            toast.error(err || 'Failed to update brand')
         }
+    }
+
+    if (loading && !currentBrand) {
+        return <div className="p-4 text-center">Loading...</div>
     }
 
     return (
         <div className="p-4">
-            {/* Form */}
             <div className="w-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Title Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Title <span className="text-red-500">*</span>
@@ -74,7 +91,6 @@ export default function AddBrandPage() {
                         />
                     </div>
 
-                    {/* Slug Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Slug <span className="text-red-500">*</span>
@@ -84,13 +100,12 @@ export default function AddBrandPage() {
                             name="slug"
                             value={formData.slug}
                             onChange={handleInputChange}
-                            placeholder="Enter slug (auto-generated from title)"
+                            placeholder="Enter slug"
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         />
                     </div>
 
-                    {/* Status Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Status <span className="text-red-500">*</span>
@@ -113,21 +128,20 @@ export default function AddBrandPage() {
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-3 pt-3">
                         <button
                             type="button"
-                            onClick={handleReset}
-                            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded transition"
+                            onClick={() => router.push('/admin/brands')}
+                            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition"
                         >
-                            Reset
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Submitting...' : 'Submit'}
+                            {loading ? 'Updating...' : 'Update'}
                         </button>
                     </div>
                 </form>
@@ -135,3 +149,4 @@ export default function AddBrandPage() {
         </div>
     )
 }
+
