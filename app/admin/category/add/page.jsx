@@ -1,11 +1,12 @@
 'use client'
 
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, ImageIcon } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
 import { createCategoryAsync, fetchCategoriesForDropdownAsync } from "@/lib/features/category/categorySlice"
 import toast from "react-hot-toast"
+import axiosInstance from "@/lib/api/axios"
 
 export default function AddCategoryPage() {
     const router = useRouter()
@@ -27,6 +28,8 @@ export default function AddCategoryPage() {
         summary: '',
         status: 'active'
     })
+    const [photoPreview, setPhotoPreview] = useState(null)
+    const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -46,11 +49,56 @@ export default function AddCategoryPage() {
     const handleFileChange = (e) => {
         const file = e.target.files[0]
         if (file) {
+            // Validate file type and size
+            const isValidType = file.type.startsWith('image/')
+            const isValidSize = file.size <= 5 * 1024 * 1024 // 5MB
+            
+            if (!isValidType) {
+                toast.error('Please select a valid image file')
+                return
+            }
+            if (!isValidSize) {
+                toast.error('Image size must be less than 5MB')
+                return
+            }
+
             setFormData(prev => ({
                 ...prev,
                 photo: file,
                 photoName: file.name
             }))
+            
+            // Create preview
+            const preview = URL.createObjectURL(file)
+            setPhotoPreview(preview)
+        }
+    }
+
+    const uploadPhoto = async () => {
+        if (!formData.photo) return null
+
+        setUploadingPhoto(true)
+        try {
+            const uploadFormData = new FormData()
+            uploadFormData.append('photo', formData.photo)
+
+            const response = await axiosInstance.post('/upload/category', uploadFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            })
+
+            if (response.data.success) {
+                // Return only the relative path, not the full URL
+                return response.data.url
+            }
+            return null
+        } catch (error) {
+            console.error('Error uploading photo:', error)
+            toast.error(error.response?.data?.error || 'Failed to upload photo')
+            return null
+        } finally {
+            setUploadingPhoto(false)
         }
     }
 
@@ -71,6 +119,10 @@ export default function AddCategoryPage() {
             summary: '',
             status: 'active'
         })
+        if (photoPreview) {
+            URL.revokeObjectURL(photoPreview)
+            setPhotoPreview(null)
+        }
     }
 
     useEffect(() => {
@@ -80,6 +132,16 @@ export default function AddCategoryPage() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
+            // Upload photo first if one was selected
+            let photoUrl = null
+            if (formData.photo) {
+                photoUrl = await uploadPhoto()
+                if (!photoUrl) {
+                    toast.error('Failed to upload photo. Please try again.')
+                    return
+                }
+            }
+
             const categoryData = {
                 title: formData.title,
                 englishName: formData.englishName || formData.title,
@@ -88,7 +150,7 @@ export default function AddCategoryPage() {
                 parentId: formData.isParent ? null : (formData.parentCategory || null),
                 showOnHomepage: formData.showOnHomepage,
                 status: formData.status.toLowerCase(),
-                photo: formData.photoName || null,
+                photo: photoUrl || null,
                 menuPosition: formData.menuPosition ? parseInt(formData.menuPosition) : null,
                 sortOrder: formData.sortOrder ? parseInt(formData.sortOrder) : null,
                 displayPosition: formData.displayPosition || null,
@@ -269,23 +331,47 @@ export default function AddCategoryPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Photo
                         </label>
-                        <div className="flex items-center gap-2">
-                            <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded cursor-pointer transition">
-                                Choose
+                        <div className="space-y-3">
+                            {photoPreview && (
+                                <div className="relative w-48 h-32 rounded-lg border-2 border-gray-300 overflow-hidden bg-gray-100">
+                                    <img
+                                        src={photoPreview}
+                                        alt="Preview"
+                                        className="object-cover w-full h-full"
+                                        style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            display: 'block',
+                                            objectFit: 'cover'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded cursor-pointer transition">
+                                    {formData.photo ? 'Change Photo' : 'Choose Photo'}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                        disabled={uploadingPhoto}
+                                    />
+                                </label>
                                 <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                    className="hidden"
+                                    type="text"
+                                    value={formData.photoName}
+                                    readOnly
+                                    placeholder="No file chosen"
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm"
                                 />
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.photoName}
-                                readOnly
-                                placeholder="No file chosen"
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm"
-                            />
+                            </div>
+                            {uploadingPhoto && (
+                                <p className="text-sm text-blue-600">Uploading photo...</p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                                Maximum 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                            </p>
                         </div>
                     </div>
 

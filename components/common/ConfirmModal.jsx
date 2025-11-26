@@ -40,12 +40,12 @@ export default function ConfirmModal({
       onClick={onClose}
     >
       {/* Backdrop with blur to obscure table */}
-      <div className="fixed inset-0 bg-gray-100 bg-opacity-60 backdrop-blur-sm" />
+      <div className="fixed inset-0 backdrop-blur-md" />
       
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4 relative">
         <div 
-          className={`relative bg-white rounded-lg shadow-xl max-w-md w-full border-2 ${borderColor}`}
+          className={`relative bg-white bg-opacity-95 rounded-lg shadow-xl max-w-md w-full`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
