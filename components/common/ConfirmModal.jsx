@@ -35,16 +35,19 @@ export default function ConfirmModal({
   const borderColor = type === 'danger' ? 'border-red-200' : 'border-yellow-200'
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-      />
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto"
+      onClick={onClose}
+    >
+      {/* Backdrop with blur to obscure table */}
+      <div className="fixed inset-0 bg-gray-100 bg-opacity-60 backdrop-blur-sm" />
       
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className={`relative bg-white rounded-lg shadow-xl max-w-md w-full border-2 ${borderColor}`}>
+      <div className="flex min-h-full items-center justify-center p-4 relative">
+        <div 
+          className={`relative bg-white rounded-lg shadow-xl max-w-md w-full border-2 ${borderColor}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">

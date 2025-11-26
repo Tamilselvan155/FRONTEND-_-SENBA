@@ -12,6 +12,7 @@ import { fetchAttributeValuesByAttributeAsync } from "@/lib/features/attributeVa
 import toast from "react-hot-toast"
 import axiosInstance from "@/lib/api/axios"
 import Image from "next/image"
+import { getImageUrl } from "@/lib/utils/imageUtils"
 
 export default function EditProductPage() {
     const router = useRouter()
@@ -618,38 +619,49 @@ export default function EditProductPage() {
                     </label>
                     <div className="flex flex-wrap gap-4">
                         {/* Existing Images */}
-                        {existingImages.map((imageUrl, index) => (
-                            <div key={`existing-${index}`} className="relative group">
-                                <div className="w-32 h-32 rounded-lg border-2 border-gray-300 overflow-hidden bg-gray-100">
-                                    <Image
-                                        src={imageUrl}
-                                        alt={`Existing ${index + 1}`}
-                                        width={128}
-                                        height={128}
-                                        className="object-cover w-full h-full"
-                                    />
+                        {existingImages.map((imageUrl, index) => {
+                            const fullImageUrl = getImageUrl(imageUrl)
+                            return (
+                                <div key={`existing-${index}`} className="relative group">
+                                    <div className="w-32 h-32 rounded-lg border-2 border-gray-300 overflow-hidden bg-gray-100">
+                                        {fullImageUrl ? (
+                                            <img
+                                                src={fullImageUrl}
+                                                alt={`Existing ${index + 1}`}
+                                                className="object-cover w-full h-full"
+                                                style={{ width: '100%', height: '100%' }}
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none'
+                                                    e.target.parentElement.innerHTML = '<div class="flex items-center justify-center w-full h-full text-gray-400">Image not found</div>'
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="flex items-center justify-center w-full h-full text-gray-400">
+                                                No image
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeExistingImage(index)}
+                                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition"
+                                        title="Remove image"
+                                    >
+                                        <X size={16} />
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => removeExistingImage(index)}
-                                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition"
-                                    title="Remove image"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        ))}
+                            )
+                        })}
                         
                         {/* Preview new images */}
                         {imagePreviews.map((preview, index) => (
                             <div key={`new-${index}`} className="relative group">
                                 <div className="w-32 h-32 rounded-lg border-2 border-blue-300 overflow-hidden bg-gray-100">
-                                    <Image
+                                    <img
                                         src={preview}
                                         alt={`Preview ${index + 1}`}
-                                        width={128}
-                                        height={128}
                                         className="object-cover w-full h-full"
+                                        style={{ width: '100%', height: '100%' }}
                                     />
                                 </div>
                                 <button

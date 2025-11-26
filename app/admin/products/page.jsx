@@ -25,7 +25,6 @@ export default function AdminProducts() {
             label: 'S.N.',
             sortable: true,
             width: 80,
-            render: (_, record, index) => index + 1,
         },
         {
             key: 'title',
@@ -91,7 +90,7 @@ export default function AdminProducts() {
         }
     }
 
-    // Format data for table
+    // Format data for table (serial numbers will be calculated by DataTable based on pagination)
     const formattedData = products.map(product => ({
         ...product,
         id: product.id || product._id,

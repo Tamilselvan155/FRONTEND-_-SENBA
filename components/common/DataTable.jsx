@@ -176,6 +176,8 @@ const DataTable = ({
   const [columnFilters, setColumnFilters] = useState({}); // { columnKey: filterValue }
   const [sortField, setSortField] = useState(defaultSortField);
   const [sortOrder, setSortOrder] = useState(defaultSortOrder);
+  const [currentPageInternal, setCurrentPageInternal] = useState(1);
+  const [pageSizeInternal, setPageSizeInternal] = useState(pageSize);
 
   // Memoize callbacks to prevent unnecessary re-renders
   const memoizedOnSearchChange = useCallback((text) => {
@@ -263,9 +265,30 @@ const DataTable = ({
         }) : undefined,
         
         // Custom render function (maintain backward compatibility)
+        // Ant Design Table's render receives (text, record, index)
+        // index is the index within the current page
         render: col.render
-          ? (text, record) => col.render(text, record)
-          : (text) => {
+          ? (text, record, index) => {
+              // For 'sn' key, calculate global serial number with pagination
+              if (col.key === 'sn') {
+                const globalIndex = (currentPageInternal - 1) * pageSizeInternal + index + 1;
+                return globalIndex;
+              }
+              // Pass index to custom render function if it accepts 3 parameters
+              // Otherwise, call with just (text, record) for backward compatibility
+              try {
+                return col.render(text, record, index);
+              } catch (e) {
+                // Fallback if render function doesn't accept index
+                return col.render(text, record);
+              }
+            }
+          : (text, record, index) => {
+              // For 'sn' key, calculate global serial number with pagination
+              if (col.key === 'sn') {
+                const globalIndex = (currentPageInternal - 1) * pageSizeInternal + index + 1;
+                return globalIndex;
+              }
               // Default rendering
               if (text === null || text === undefined) return '-';
               if (typeof text === 'boolean') return text ? 'Yes' : 'No';
@@ -294,7 +317,7 @@ const DataTable = ({
       
       return column;
     });
-  }, [columns, enableSorting, enableFiltering, serverSide, sortField, sortOrder, handleSort]);
+  }, [columns, enableSorting, enableFiltering, serverSide, sortField, sortOrder, handleSort, currentPageInternal, pageSizeInternal]);
 
   // Add Actions column if actions are enabled
   const finalColumns = useMemo(() => {
@@ -605,8 +628,14 @@ const DataTable = ({
             pageSizeOptions: pageSizeOptions,
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} items`,
-            onChange: serverSidePagination ? handlePaginationChange : undefined,
-            onShowSizeChange: serverSidePagination ? handlePaginationChange : undefined,
+            onChange: serverSidePagination ? handlePaginationChange : (page, size) => {
+              setCurrentPageInternal(page);
+              if (size) setPageSizeInternal(size);
+            },
+            onShowSizeChange: serverSidePagination ? handlePaginationChange : (current, size) => {
+              setCurrentPageInternal(1); // Reset to page 1 when page size changes
+              setPageSizeInternal(size);
+            },
           }
         : false,
       onRow: (onRowClick || onView)

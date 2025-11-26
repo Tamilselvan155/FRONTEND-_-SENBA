@@ -26,7 +26,6 @@ export default function AdminCategory() {
             label: 'S.N.',
             sortable: true,
             width: 80,
-            render: (_, record, index) => index + 1,
         },
         {
             key: 'title',
@@ -118,10 +117,11 @@ export default function AdminCategory() {
         }
     }
 
-    // Format data for table
-    const formattedData = categories.map(cat => ({
+    // Format data for table and add serial numbers
+    const formattedData = categories.map((cat, index) => ({
         ...cat,
         id: cat.id || cat._id,
+        sn: index + 1,
     }))
 
     return (

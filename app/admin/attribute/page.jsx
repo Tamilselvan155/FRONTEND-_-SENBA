@@ -56,10 +56,11 @@ export default function AdminAttribute() {
         }
     }
 
-    // Format data for table (handle both id and _id)
-    const formattedData = attributes.map(attr => ({
+    // Format data for table (handle both id and _id) and add serial numbers
+    const formattedData = attributes.map((attr, index) => ({
         ...attr,
         id: attr.id || attr._id,
+        sn: index + 1,
     }))
 
     return (

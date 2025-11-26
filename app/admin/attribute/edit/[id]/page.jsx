@@ -22,14 +22,19 @@ export default function EditAttributePage() {
     }, [params.id, dispatch])
 
     useEffect(() => {
-        if (currentAttribute && currentAttribute.data) {
-            const attribute = currentAttribute.data;
+        if (currentAttribute) {
+            // Handle different response structures
+            let attribute = currentAttribute;
+            
+            // If response has nested data structure
+            if (currentAttribute.data && typeof currentAttribute.data === 'object' && !Array.isArray(currentAttribute.data)) {
+                attribute = currentAttribute.data;
+            } else if (currentAttribute.success && currentAttribute.data) {
+                attribute = currentAttribute.data;
+            }
+
             setFormData({
                 title: attribute.title || ''
-            })
-        } else if (currentAttribute && currentAttribute.title) {
-            setFormData({
-                title: currentAttribute.title || ''
             })
         }
     }, [currentAttribute])
@@ -44,8 +49,19 @@ export default function EditAttributePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        
+        if (!formData.title || !formData.title.trim()) {
+            toast.error('Title is required')
+            return
+        }
+
         try {
-            await dispatch(updateAttributeAsync({ id: params.id, data: formData })).unwrap()
+            await dispatch(updateAttributeAsync({ 
+                id: params.id, 
+                data: {
+                    title: formData.title.trim()
+                }
+            })).unwrap()
             toast.success('Attribute updated successfully!')
             router.push('/admin/attribute')
         } catch (err) {
@@ -54,7 +70,21 @@ export default function EditAttributePage() {
     }
 
     if (loading && !currentAttribute) {
-        return <div className="p-4 text-center">Loading...</div>
+        return <div className="p-4 text-center">Loading attribute data...</div>
+    }
+
+    if (!loading && !currentAttribute && params.id) {
+        return (
+            <div className="p-4 text-center">
+                <p className="text-red-500">Attribute not found</p>
+                <button
+                    onClick={() => router.push('/admin/attribute')}
+                    className="mt-4 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+                >
+                    Back to Attributes
+                </button>
+            </div>
+        )
     }
 
     return (
@@ -70,7 +100,7 @@ export default function EditAttributePage() {
                             name="title"
                             value={formData.title}
                             onChange={handleInputChange}
-                            placeholder="Enter title"
+                            placeholder="Enter attribute title"
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         />

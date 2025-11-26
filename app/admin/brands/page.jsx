@@ -25,7 +25,6 @@ export default function AdminBrands() {
             label: 'S.N.',
             sortable: true,
             width: 80,
-            render: (_, record, index) => index + 1,
         },
         {
             key: 'title',
@@ -80,10 +79,11 @@ export default function AdminBrands() {
         }
     }
 
-    // Format data for table
-    const formattedData = brands.map(brand => ({
+    // Format data for table and add serial numbers
+    const formattedData = brands.map((brand, index) => ({
         ...brand,
         id: brand.id || brand._id,
+        sn: index + 1,
     }))
 
     return (
