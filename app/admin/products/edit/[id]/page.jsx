@@ -1,10 +1,10 @@
 'use client'
 
 import { ChevronDown, Plus, X } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
-import { fetchProductByIdAsync, updateProductAsync } from "@/lib/features/product/productSlice"
+import { fetchProductByIdAsync, updateProductAsync, clearCurrentProduct, fetchProductsAsync } from "@/lib/features/product/productSlice"
 import { fetchCategoriesForDropdownAsync } from "@/lib/features/category/categorySlice"
 import { fetchBrandsForDropdownAsync } from "@/lib/features/brand/brandSlice"
 import { fetchAttributesAsync } from "@/lib/features/attribute/attributeSlice"
@@ -44,9 +44,16 @@ export default function EditProductPage() {
     const [imagePreviews, setImagePreviews] = useState([])
     const [existingImages, setExistingImages] = useState([])
     const [uploadingImages, setUploadingImages] = useState(false)
+    const formInitializedRef = useRef(false)
+    const initializedProductIdRef = useRef(null)
 
     useEffect(() => {
         if (params.id) {
+            // Reset form initialization when product ID changes
+            if (initializedProductIdRef.current !== params.id) {
+                formInitializedRef.current = false
+                initializedProductIdRef.current = null
+            }
             dispatch(fetchProductByIdAsync(params.id))
             dispatch(fetchCategoriesForDropdownAsync())
             dispatch(fetchBrandsForDropdownAsync())
@@ -86,7 +93,7 @@ export default function EditProductPage() {
         setAttributeValuesMap(map);
     }, [attributeValues])
 
-    // Populate form when product data is loaded
+    // Populate form when product data is loaded (only once per product)
     useEffect(() => {
         if (currentProduct) {
             let product = currentProduct;
@@ -96,77 +103,94 @@ export default function EditProductPage() {
                 product = currentProduct.data;
             }
 
-            // Load attribute values for variant attributes
-            if (product.brandVariants && product.brandVariants.length > 0) {
-                product.brandVariants.forEach(variant => {
-                    if (variant.attributes) {
-                        variant.attributes.forEach(attr => {
-                            const attrId = attr.attributeId?._id || attr.attributeId?.id || attr.attributeId;
-                            if (attrId && !loadedAttributeIds.has(attrId)) {
-                                dispatch(fetchAttributeValuesByAttributeAsync(attrId))
-                                setLoadedAttributeIds(prev => new Set([...prev, attrId]))
-                            }
-                        })
-                    }
+            const productId = product._id || product.id || params.id;
+            const currentProductId = String(productId);
+            const initializedId = initializedProductIdRef.current ? String(initializedProductIdRef.current) : null;
+            
+            // Only initialize if this is a different product or form hasn't been initialized
+            if (!formInitializedRef.current || initializedId !== currentProductId) {
+                // Load attribute values for variant attributes
+                if (product.brandVariants && product.brandVariants.length > 0) {
+                    product.brandVariants.forEach(variant => {
+                        if (variant.attributes) {
+                            variant.attributes.forEach(attr => {
+                                const attrId = attr.attributeId?._id || attr.attributeId?.id || attr.attributeId;
+                                if (attrId && !loadedAttributeIds.has(attrId)) {
+                                    dispatch(fetchAttributeValuesByAttributeAsync(attrId))
+                                    setLoadedAttributeIds(prev => new Set([...prev, attrId]))
+                                }
+                            })
+                        }
+                    })
+                }
+
+                setFormData({
+                    title: product.title || '',
+                    isFeatured: product.isFeatured || false,
+                    category: product.categoryId?._id || product.categoryId?.id || product.categoryId || '',
+                    selectedBrands: product.brandIds ? product.brandIds.map(b => b._id || b.id || b) : [],
+                    hasVariants: product.hasVariants || false,
+                    price: product.price?.toString() || '',
+                    discount: product.discount?.toString() || '',
+                    stock: product.stock?.toString() || '',
+                    sku: product.sku || '',
+                    status: product.status || 'active'
                 })
-            }
 
-            setFormData({
-                title: product.title || '',
-                isFeatured: product.isFeatured || false,
-                category: product.categoryId?._id || product.categoryId?.id || product.categoryId || '',
-                selectedBrands: product.brandIds ? product.brandIds.map(b => b._id || b.id || b) : [],
-                hasVariants: product.hasVariants || false,
-                price: product.price?.toString() || '',
-                discount: product.discount?.toString() || '',
-                stock: product.stock?.toString() || '',
-                sku: product.sku || '',
-                status: product.status || 'active'
-            })
+                // Set existing images
+                if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                    setExistingImages(product.images)
+                } else {
+                    setExistingImages([])
+                }
 
-            // Set existing images
-            if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-                setExistingImages(product.images)
-            } else {
-                setExistingImages([])
-            }
+                // Set specification groups - only if not already initialized for this product
+                if (!formInitializedRef.current || initializedId !== currentProductId) {
+                    if (product.specificationGroups) {
+                        setSpecificationGroups(product.specificationGroups.map((group, idx) => ({
+                            id: Date.now() + idx,
+                            groupLabel: group.groupLabel || '',
+                            specifications: group.specifications.map((spec, specIdx) => ({
+                                id: Date.now() + idx * 100 + specIdx,
+                                featureName: spec.featureName || '',
+                                featureValue: spec.featureValue || ''
+                            }))
+                        })))
+                    } else {
+                        setSpecificationGroups([])
+                    }
 
-            // Set specification groups
-            if (product.specificationGroups) {
-                setSpecificationGroups(product.specificationGroups.map((group, idx) => ({
-                    id: Date.now() + idx,
-                    groupLabel: group.groupLabel || '',
-                    specifications: group.specifications.map((spec, specIdx) => ({
-                        id: Date.now() + idx * 100 + specIdx,
-                        featureName: spec.featureName || '',
-                        featureValue: spec.featureValue || ''
-                    }))
-                })))
-            }
+                    // Set brand variants
+                    if (product.brandVariants && product.brandVariants.length > 0) {
+                        setBrandVariants(product.brandVariants.map((variant, idx) => ({
+                            id: Date.now() + idx * 1000,
+                            brand: variant.brandId?._id || variant.brandId?.id || variant.brandId || '',
+                            attributes: variant.attributes ? variant.attributes.map((attr, attrIdx) => ({
+                                id: Date.now() + idx * 1000 + attrIdx * 100,
+                                name: attr.attributeId?._id || attr.attributeId?.id || attr.attributeId || '',
+                                value: attr.attributeValueId?._id || attr.attributeValueId?.id || attr.attributeValueId || ''
+                            })) : [],
+                            specifications: variant.specifications ? variant.specifications.map((spec, specIdx) => ({
+                                id: Date.now() + idx * 1000 + specIdx * 10,
+                                name: spec.name || '',
+                                value: spec.value || ''
+                            })) : [],
+                            price: variant.price?.toString() || '',
+                            discount: variant.discount?.toString() || '',
+                            stock: variant.stock?.toString() || '',
+                            sku: variant.sku || ''
+                        })))
+                    } else {
+                        setBrandVariants([])
+                    }
+                }
 
-            // Set brand variants
-            if (product.brandVariants && product.brandVariants.length > 0) {
-                setBrandVariants(product.brandVariants.map((variant, idx) => ({
-                    id: Date.now() + idx * 1000,
-                    brand: variant.brandId?._id || variant.brandId?.id || variant.brandId || '',
-                    attributes: variant.attributes ? variant.attributes.map((attr, attrIdx) => ({
-                        id: Date.now() + idx * 1000 + attrIdx * 100,
-                        name: attr.attributeId?._id || attr.attributeId?.id || attr.attributeId || '',
-                        value: attr.attributeValueId?._id || attr.attributeValueId?.id || attr.attributeValueId || ''
-                    })) : [],
-                    specifications: variant.specifications ? variant.specifications.map((spec, specIdx) => ({
-                        id: Date.now() + idx * 1000 + specIdx * 10,
-                        name: spec.name || '',
-                        value: spec.value || ''
-                    })) : [],
-                    price: variant.price?.toString() || '',
-                    discount: variant.discount?.toString() || '',
-                    stock: variant.stock?.toString() || '',
-                    sku: variant.sku || ''
-                })))
+                formInitializedRef.current = true
+                initializedProductIdRef.current = currentProductId
             }
         }
-    }, [currentProduct, dispatch, loadedAttributeIds])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentProduct, dispatch, params.id])
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -470,6 +494,17 @@ export default function EditProductPage() {
         console.log('Processing specifications into pairs (Edit)...')
         console.log('Original specifications:', specifications)
 
+        // Check if specifications are already in "Pair" format - if so, don't transform
+        const isAlreadyPaired = specifications.some(spec => {
+            const name = (spec.featureName || '').toString().trim()
+            return name.toLowerCase().startsWith('pair')
+        })
+
+        if (isAlreadyPaired) {
+            console.log('Specifications already in Pair format, skipping transformation')
+            return specifications
+        }
+
         // Parse all specifications and extract their values
         const parsedSpecs = specifications.map(spec => {
             const name = (spec.featureName || '').toString().trim()
@@ -621,8 +656,16 @@ export default function EditProductPage() {
             }
 
             await dispatch(updateProductAsync({ id: params.id, data: submitData })).unwrap()
+            // Refresh products list before navigating and wait for it to complete
+            await dispatch(fetchProductsAsync()).unwrap()
             toast.success('Product updated successfully!')
-            router.push('/admin/products')
+            // Use replace instead of push to ensure we fully navigate away
+            // Clear currentProduct after navigation to prevent form re-population
+            router.replace('/admin/products')
+            // Clear currentProduct after navigation completes
+            setTimeout(() => {
+                dispatch(clearCurrentProduct())
+            }, 200)
         } catch (err) {
             toast.error(err || 'Failed to update product')
         }
@@ -632,7 +675,10 @@ export default function EditProductPage() {
         return <div className="p-4 text-center">Loading product data...</div>
     }
 
-    if (!productLoading && !currentProduct && params.id) {
+    // Only show "Product not found" if we're actually trying to load a product
+    // and it's not loading, and we have an ID, and the form hasn't been initialized
+    // This prevents showing the error when we're navigating away after update
+    if (!productLoading && !currentProduct && params.id && !formInitializedRef.current) {
         return (
             <div className="p-4 text-center">
                 <p className="text-red-500">Product not found</p>

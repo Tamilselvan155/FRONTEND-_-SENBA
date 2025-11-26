@@ -16,6 +16,7 @@ export default function AdminProducts() {
     const [selectedProduct, setSelectedProduct] = useState(null)
 
     useEffect(() => {
+        // Always fetch to ensure we have the latest data
         dispatch(fetchProductsAsync())
     }, [dispatch])
 
@@ -91,14 +92,18 @@ export default function AdminProducts() {
     }
 
     // Format data for table (serial numbers will be calculated by DataTable based on pagination)
-    const formattedData = products.map(product => ({
+    const formattedData = products && Array.isArray(products) ? products.map(product => ({
         ...product,
         id: product.id || product._id,
-    }))
+    })) : []
+
+    // Show loading if we're loading AND there are no products yet
+    // If products exist in Redux (from pre-fetch), show them immediately
+    const isLoading = loading && formattedData.length === 0
 
     return (
         <div className="space-y-6">
-            {loading && formattedData.length === 0 ? (
+            {isLoading ? (
                 <div className="text-center py-8">Loading...</div>
             ) : (
                 <DataTable
