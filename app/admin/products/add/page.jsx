@@ -2,6 +2,7 @@
 
 import { ChevronDown, Plus, X } from "lucide-react"
 import { useState, useEffect } from "react"
+import CustomSelect from "@/components/common/CustomSelect"
 import { useRouter } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
 import { createProductAsync } from "@/lib/features/product/productSlice"
@@ -89,10 +90,6 @@ export default function AddProductPage() {
             // Clear variants if hasVariants is unchecked
             if (name === 'hasVariants' && !checked) {
                 setBrandVariants([])
-            }
-            // Clear selected brands if hasVariants is checked (since brands will be in variants)
-            if (name === 'hasVariants' && checked) {
-                newData.selectedBrands = []
             }
             // Clear subcategory when parent category changes
             if (name === 'category') {
@@ -207,21 +204,12 @@ export default function AddProductPage() {
                     ? {
                           ...variant,
                           attributes: variant.attributes.map(attr =>
-                              attr.id === attrId ? { ...attr, [field]: value, ...(field === 'name' ? { value: '' } : {}) } : attr
+                              attr.id === attrId ? { ...attr, [field]: value } : attr
                           )
                       }
                     : variant
             )
         )
-        
-        // Fetch attribute values when attribute is selected
-        if (field === 'name' && value) {
-            const attrIdToLoad = value;
-            if (!loadedAttributeIds.has(attrIdToLoad)) {
-                dispatch(fetchAttributeValuesByAttributeAsync(attrIdToLoad))
-                setLoadedAttributeIds(prev => new Set([...prev, attrIdToLoad]))
-            }
-        }
     }
 
     const handleAddVariantSpec = (variantId) => {
@@ -232,7 +220,7 @@ export default function AddProductPage() {
                           ...variant,
                           specifications: [
                               ...variant.specifications,
-                              { id: Date.now(), name: '', value: '' }
+                              { id: Date.now(), content: '' }
                           ]
                       }
                     : variant
@@ -253,14 +241,14 @@ export default function AddProductPage() {
         )
     }
 
-    const handleUpdateVariantSpec = (variantId, specId, field, value) => {
+    const handleUpdateVariantSpecContent = (variantId, specId, content) => {
         setBrandVariants(prev =>
             prev.map(variant =>
                 variant.id === variantId
                     ? {
                           ...variant,
                           specifications: variant.specifications.map(spec =>
-                              spec.id === specId ? { ...spec, [field]: value } : spec
+                              spec.id === specId ? { ...spec, content: content } : spec
                           )
                       }
                     : variant
@@ -454,21 +442,49 @@ export default function AddProductPage() {
             // Map brand variants to backend format
             const mappedBrandVariants = formData.hasVariants ? brandVariants.map(variant => ({
                 brandId: variant.brand,
-                attributes: variant.attributes.map(attr => {
-                    const selectedAttr = attributes.find(a => (a.id || a._id) === attr.name || a.title === attr.name);
-                    const selectedValue = attributeValues.find(av => 
-                        (av.attributeId?._id || av.attributeId?.id || av.attributeId) === (selectedAttr?.id || selectedAttr?._id) &&
-                        (av.value === attr.value || av._id === attr.value)
-                    );
-                    return {
-                        attributeId: selectedAttr?.id || selectedAttr?._id,
-                        attributeValueId: selectedValue?._id || selectedValue?.id || attr.value
-                    };
-                }).filter(attr => attr.attributeId),
-                specifications: variant.specifications.map(spec => ({
-                    name: spec.name,
-                    value: spec.value
-                })),
+                attributes: variant.attributes
+                    .filter(attr => attr.name && attr.value)
+                    .map(attr => {
+                        // Save text values directly
+                        return {
+                            attributeName: attr.name,
+                            attributeValue: attr.value
+                        };
+                    }),
+                specifications: variant.specifications.map(spec => {
+                    // Parse textarea content in format: "Key : values ? Key2 : values2"
+                    let specificationsObject = {};
+                    if (spec.content && spec.content.trim()) {
+                        // Split by '?' to get each key-value pair
+                        const pairs = spec.content.split('?').map(p => p.trim()).filter(p => p);
+                        
+                        pairs.forEach(pair => {
+                            // Split by ':' to separate key and values
+                            const colonIndex = pair.indexOf(':');
+                            if (colonIndex > 0) {
+                                const key = pair.substring(0, colonIndex).trim();
+                                const valuesStr = pair.substring(colonIndex + 1).trim();
+                                
+                                if (key && valuesStr) {
+                                    // Parse comma-separated values into array
+                                    const valuesArray = valuesStr.split(',').map(v => v.trim()).filter(v => v);
+                                    
+                                    // Find the corresponding attribute to get the unit
+                                    const matchingAttr = variant.attributes.find(attr => 
+                                        attr.name && attr.name.toLowerCase() === key.toLowerCase()
+                                    );
+                                    
+                                    // Store as object with values array and unit
+                                    specificationsObject[key] = {
+                                        values: valuesArray,
+                                        unit: matchingAttr?.value || ''
+                                    };
+                                }
+                            }
+                        });
+                    }
+                    return specificationsObject;
+                }),
                 price: variant.price ? parseFloat(variant.price) : 0,
                 discount: variant.discount ? parseFloat(variant.discount) : 0,
                 stock: variant.stock ? parseInt(variant.stock) : 0,
@@ -496,10 +512,17 @@ export default function AddProductPage() {
                             const featureName = item.substring(0, colonIndex).trim()
                             const featureValue = item.substring(colonIndex + 1).trim()
                             // Add to specifications object with feature name as key
-                            specifications[featureName || `Item ${index + 1}`] = featureValue
+                            if (featureName) {
+                                specifications[featureName] = featureValue
+                            }
                         } else {
-                            // If no colon separator, use the whole item as value
-                            specifications[`Item ${index + 1}`] = item.trim()
+                            // If no colon separator, save as-is without "Item" prefix
+                            // Use the item content directly as the value
+                            const itemContent = item.trim()
+                            if (itemContent) {
+                                // Save with a simple key based on index, or use the content itself
+                                specifications[itemContent] = itemContent
+                            }
                         }
                     })
                 }
@@ -534,11 +557,20 @@ export default function AddProductPage() {
             // Debug: Log the processed specification groups
             console.log('Processed Specification Groups (AFTER processing):', JSON.stringify(processedSpecificationGroups, null, 2))
 
+            // Determine categoryId - use subcategory if provided, otherwise use category
+            const finalCategoryId = formData.subcategory || formData.category;
+            
+            if (!finalCategoryId || finalCategoryId === '') {
+                toast.error('Please select a category or subcategory');
+                return;
+            }
+
             const submitData = {
                 title: formData.title,
                 isFeatured: formData.isFeatured,
-                category: formData.category, // Parent category
-                subcategory: formData.subcategory || null, // Subcategory (optional)
+                category: formData.category && formData.category !== '' ? formData.category : null, // Parent category
+                subcategory: formData.subcategory && formData.subcategory !== '' ? formData.subcategory : null, // Subcategory (optional)
+                categoryId: finalCategoryId, // Final category ID for backend
                 brandIds: formData.selectedBrands,
                 hasVariants: formData.hasVariants,
                 status: formData.status,
@@ -564,66 +596,45 @@ export default function AddProductPage() {
     return (
         <div className="bg-white">
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6 w-full">
-                {/* Title Field */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Title <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
-                        placeholder="Enter title"
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-5 w-full">
+                {/* Title and Category in same row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* Title Field */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                            Title <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleInputChange}
+                            placeholder="Enter title"
+                            required
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                    </div>
 
-                {/* Is Featured Checkbox */}
-                <div className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        name="isFeatured"
-                        id="isFeatured"
-                        checked={formData.isFeatured}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
-                        Is Featured
-                    </label>
-                    {formData.isFeatured && (
-                        <span className="text-sm text-gray-500">✔ Yes</span>
-                    )}
-                </div>
-
-                {/* Category Field */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Category <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                        <select
+                    {/* Category Field */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                            Category <span className="text-red-500">*</span>
+                        </label>
+                        <CustomSelect
                             name="category"
                             value={formData.category}
                             onChange={handleInputChange}
-                            required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                        >
-                            <option value="">--Select any category--</option>
-                            {categoriesForDropdown
-                                .filter(cat => cat.isParent)
-                                .map((cat) => (
-                                    <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                                        {cat.title}
-                                    </option>
-                                ))}
-                        </select>
-                        <ChevronDown 
-                            size={20} 
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                            required={true}
+                            placeholder="--Select any category--"
+                            options={[
+                                { value: '', label: '--Select any category--' },
+                                ...categoriesForDropdown
+                                    .filter(cat => cat.isParent)
+                                    .map((cat) => ({
+                                        value: cat._id || cat.id,
+                                        label: cat.title
+                                    }))
+                            ]}
                         />
                     </div>
                 </div>
@@ -642,38 +653,50 @@ export default function AddProductPage() {
                     
                     if (subcategories.length > 0) {
                         return (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <div className="w-full lg:w-[calc(50%-0.625rem)]">
+                                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                     Subcategory
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        name="subcategory"
-                                        value={formData.subcategory}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                                    >
-                                        <option value="">--Select subcategory--</option>
-                                        {subcategories.map((cat) => (
-                                            <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                                                {cat.title}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown 
-                                        size={20} 
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                                    />
-                                </div>
+                                <CustomSelect
+                                    name="subcategory"
+                                    value={formData.subcategory}
+                                    onChange={handleInputChange}
+                                    placeholder="--Select subcategory--"
+                                    options={[
+                                        { value: '', label: '--Select subcategory--' },
+                                        ...subcategories.map((cat) => ({
+                                            value: cat._id || cat.id,
+                                            label: cat.title
+                                        }))
+                                    ]}
+                                />
                             </div>
                         );
                     }
                     return null;
                 })()}
 
+                {/* Is Featured Checkbox */}
+                <div className="flex items-center gap-2 pt-1">
+                    <input
+                        type="checkbox"
+                        name="isFeatured"
+                        id="isFeatured"
+                        checked={formData.isFeatured}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                    <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700 cursor-pointer">
+                        Is Featured
+                    </label>
+                    {formData.isFeatured && (
+                        <span className="text-xs text-gray-500 font-medium">✓</span>
+                    )}
+                </div>
+
                 {/* Product Images Section */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Product Images
                     </label>
                     <div className="flex flex-wrap gap-4">
@@ -724,33 +747,31 @@ export default function AddProductPage() {
                     </p>
                 </div>
 
-                {/* Select Brands - Only show when product does NOT have variants */}
-                {!formData.hasVariants && (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Select Brands
-                        </label>
-                        <div className="space-y-2">
-                            {brandsForDropdown.map((brand) => {
-                                const brandId = brand._id || brand.id;
-                                return (
-                                    <div key={brandId} className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id={`brand-${brandId}`}
-                                            checked={formData.selectedBrands.includes(brandId)}
-                                            onChange={() => handleBrandChange(brandId)}
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                        />
-                                        <label htmlFor={`brand-${brandId}`} className="text-sm text-gray-700">
-                                            {brand.title}
-                                        </label>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                {/* Select Brands */}
+                <div>
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                        Select Brands
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {brandsForDropdown.map((brand) => {
+                            const brandId = brand._id || brand.id;
+                            return (
+                                <div key={brandId} className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id={`brand-${brandId}`}
+                                        checked={formData.selectedBrands.includes(brandId)}
+                                        onChange={() => handleBrandChange(brandId)}
+                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                    />
+                                    <label htmlFor={`brand-${brandId}`} className="text-sm text-gray-700 cursor-pointer">
+                                        {brand.title}
+                                    </label>
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
+                </div>
 
                 {/* Product Variants Checkbox */}
                 <div className="flex items-center gap-2">
@@ -768,23 +789,23 @@ export default function AddProductPage() {
                 </div>
 
                 {/* Add Brand Variant and Specification Group Buttons - Show in a row */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {formData.hasVariants && (
                         <button
                             type="button"
                             onClick={handleAddBrandVariant}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition"
                         >
-                            <Plus size={18} />
+                            <Plus size={14} />
                             Add Brand Variant
                         </button>
                     )}
                     <button
                         type="button"
                         onClick={handleAddSpecificationGroup}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition"
                     >
-                        <Plus size={18} />
+                        <Plus size={14} />
                         Add Specification Group
                     </button>
                 </div>
@@ -796,32 +817,32 @@ export default function AddProductPage() {
                         {formData.hasVariants && brandVariants.length > 0 && (
                             <div className="space-y-4">
                                 {brandVariants.map((variant, index) => (
-                    <div key={variant.id} className="bg-gray-50 p-6 rounded-lg space-y-4">
+                    <div key={variant.id} className="bg-gray-50 p-4 rounded-lg space-y-3">
                         {/* Variant Header */}
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-800">
+                            <h3 className="text-sm font-semibold text-gray-700">
                                 Brand Variant {index + 1}
                             </h3>
                             <button
                                 type="button"
                                 onClick={() => handleRemoveBrandVariant(variant.id)}
-                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition"
                                 title="Remove variant"
                             >
-                                <X size={18} />
+                                <X size={16} />
                             </button>
                         </div>
 
                         {/* Brand Field */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                 Brand
                             </label>
                             <div className="relative">
                                 <select
                                     value={variant.brand}
                                     onChange={(e) => handleUpdateBrandVariant(variant.id, 'brand', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white transition-colors"
                                 >
                                     <option value="">Choose Brand</option>
                                     {brandsForDropdown.map((brand) => {
@@ -834,71 +855,45 @@ export default function AddProductPage() {
                                     })}
                                 </select>
                                 <ChevronDown 
-                                    size={20} 
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                                    size={16} 
+                                    className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
                                 />
                             </div>
                         </div>
 
                         {/* Attributes Section */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                 Attributes
                             </label>
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {variant.attributes.map((attr) => (
-                                    <div key={attr.id} className="flex items-end gap-3">
+                                    <div key={attr.id} className="flex items-end gap-2">
                                         <div className="flex-1">
-                                            <div className="relative">
-                                                <select
-                                                    value={attr.name}
-                                                    onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'name', e.target.value)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                                                >
-                                                    <option value="">Select Attribute</option>
-                                                    {attributes.map((att) => {
-                                                        const attrId = att.id || att._id;
-                                                        return (
-                                                            <option key={attrId} value={attrId}>
-                                                                {att.title}
-                                                            </option>
-                                                        );
-                                                    })}
-                                                </select>
-                                                <ChevronDown 
-                                                    size={20} 
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                                                />
-                                            </div>
+                                            <input
+                                                type="text"
+                                                value={attr.name || ''}
+                                                onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'name', e.target.value)}
+                                                placeholder="Select Attribute"
+                                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            />
                                         </div>
                                         <div className="flex-1">
-                                            <div className="relative">
-                                                <select
-                                                    value={attr.value}
-                                                    onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'value', e.target.value)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                                                    disabled={!attr.name}
-                                                >
-                                                    <option value="">Select Value</option>
-                                                    {attributeValuesMap[attr.name]?.map((val) => (
-                                                        <option key={val.id} value={val.id}>
-                                                            {val.value}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown 
-                                                    size={20} 
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                                                />
-                                            </div>
+                                            <input
+                                                type="text"
+                                                value={attr.value || ''}
+                                                onChange={(e) => handleUpdateVariantAttribute(variant.id, attr.id, 'value', e.target.value)}
+                                                placeholder="Select Value"
+                                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            />
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveVariantAttribute(variant.id, attr.id)}
-                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
+                                            className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition"
                                             title="Remove attribute"
                                         >
-                                            <X size={16} />
+                                            <X size={14} />
                                         </button>
                                     </div>
                                 ))}
@@ -906,58 +901,73 @@ export default function AddProductPage() {
                             <button
                                 type="button"
                                 onClick={() => handleAddVariantAttribute(variant.id)}
-                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition text-sm"
+                                className="mt-2 flex items-center gap-1.5 px-2.5 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition"
                             >
-                                <Plus size={16} />
+                                <Plus size={12} />
                                 Add Attribute
                             </button>
                         </div>
 
                         {/* Specifications Section */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Specifications
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                                Specifications <span className="text-gray-500 text-xs font-normal normal-case">(Enter values separated by '?' - will be paired with attributes in order)</span>
                             </label>
-                            <div className="space-y-3">
-                                {variant.specifications.map((spec) => (
-                                    <div key={spec.id} className="flex items-end gap-3">
-                                        <div className="flex-1">
-                                            <input
-                                                type="text"
-                                                value={spec.name}
-                                                onChange={(e) => handleUpdateVariantSpec(variant.id, spec.id, 'name', e.target.value)}
-                                                placeholder="Spec name"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <input
-                                                type="text"
-                                                value={spec.value}
-                                                onChange={(e) => handleUpdateVariantSpec(variant.id, spec.id, 'value', e.target.value)}
-                                                placeholder="Spec value"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
+                            {(() => {
+                                // Get attribute names and units for this variant
+                                const attributeInfo = variant.attributes
+                                    .filter(attr => attr.name && attr.value)
+                                    .map(attr => {
+                                        return {
+                                            name: attr.name || '',
+                                            unit: attr.value || ''
+                                        };
+                                    })
+                                    .filter(info => info.name);
+
+                                const placeholderText = attributeInfo.length > 0
+                                    ? attributeInfo.map(info => `${info.name} : ${info.unit}`).join(' ? ')
+                                    : "Enter values separated by '?' (e.g., 6,12,15,18 ? 30,20,14,8)";
+
+                                return (
+                                    <>
+                                        {attributeInfo.length > 0 && (
+                                            <div className="mb-2 p-2 bg-blue-50 rounded text-xs text-gray-600">
+                                                <span className="font-semibold">Attributes:</span> {attributeInfo.map(info => `${info.name} (${info.unit})`).join(', ')}
+                                            </div>
+                                        )}
+                                        <div className="space-y-2">
+                                            {variant.specifications.map((spec) => (
+                                                <div key={spec.id} className="flex items-start gap-2">
+                                                    <textarea
+                                                        value={spec.content || ''}
+                                                        onChange={(e) => handleUpdateVariantSpecContent(variant.id, spec.id, e.target.value)}
+                                                        placeholder={placeholderText}
+                                                        rows={3}
+                                                        className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-vertical transition-colors"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveVariantSpec(variant.id, spec.id)}
+                                                        className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition mt-0.5"
+                                                        title="Remove specification"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => handleRemoveVariantSpec(variant.id, spec.id)}
-                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition mb-0.5"
-                                            title="Remove specification"
+                                            onClick={() => handleAddVariantSpec(variant.id)}
+                                            className="mt-2 flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition"
                                         >
-                                            <X size={16} />
+                                            <Plus size={12} />
+                                            Add Spec
                                         </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => handleAddVariantSpec(variant.id)}
-                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition text-sm"
-                            >
-                                <Plus size={16} />
-                                Add Spec
-                            </button>
+                                    </>
+                                );
+                            })()}
                         </div>
 
                         {/* Pricing and Stock Fields for Variant */}
@@ -1024,27 +1034,27 @@ export default function AddProductPage() {
 
                         {/* Specification Groups Section - Right Half or Full Width with 2 columns */}
                         {specificationGroups.length > 0 && (
-                            <div className={formData.hasVariants && brandVariants.length > 0 ? "space-y-4" : "grid grid-cols-1 lg:grid-cols-2 gap-6"}>
+                            <div className={formData.hasVariants && brandVariants.length > 0 ? "space-y-4" : "grid grid-cols-1 lg:grid-cols-2 gap-5"}>
                                 {specificationGroups.map((group, index) => (
-                                    <div key={group.id} className="bg-white p-6 border border-gray-200 rounded-lg space-y-4">
+                                    <div key={group.id} className="space-y-3">
                                         {/* Group Header */}
                                         <div className="flex items-center justify-between">
-                                            <h3 className="text-lg font-semibold text-gray-800">
+                                            <h3 className="text-sm font-semibold text-gray-700">
                                                 Specification Group {index + 1}
                                             </h3>
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveSpecificationGroup(group.id)}
-                                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+                                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition"
                                                 title="Remove Group"
                                             >
-                                                <X size={18} />
+                                                <X size={16} />
                                             </button>
                                         </div>
 
                                         {/* Group Label Field */}
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                                 Group Label
                                             </label>
                                             <input
@@ -1052,21 +1062,21 @@ export default function AddProductPage() {
                                                 value={group.groupLabel}
                                                 onChange={(e) => handleUpdateGroupLabel(group.id, e.target.value)}
                                                 placeholder="Enter group label"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                             />
                                         </div>
 
                                         {/* Specification Content Textarea */}
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Specifications <span className="text-gray-500 text-xs">(Separate each item with '?' and use 'Key : Value' format)</span>
+                                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                                                Specifications <span className="text-gray-500 text-xs font-normal normal-case">(Separate each item with '?' and use 'Key : Value' format)</span>
                                             </label>
                                             <textarea
                                                 value={group.content || ''}
                                                 onChange={(e) => handleUpdateSpecificationContent(group.id, e.target.value)}
                                                 placeholder="Power : 0.5 HP,1 HP,1.5 HP,2 HP ? Speed : 2780 rpm ? Voltage range: 180v-240v (1ph)—50 HZ"
-                                                rows={6}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical"
+                                                rows={5}
+                                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-vertical transition-colors"
                                             />
                                         </div>
                                     </div>
@@ -1081,7 +1091,7 @@ export default function AddProductPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Price Field */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                 Price
                             </label>
                             <input
@@ -1092,13 +1102,13 @@ export default function AddProductPage() {
                                 placeholder="Enter price"
                                 step="0.01"
                                 min="0"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             />
                         </div>
 
                         {/* Discount Field */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                 Discount (%)
                             </label>
                             <input
@@ -1110,13 +1120,13 @@ export default function AddProductPage() {
                                 step="0.01"
                                 min="0"
                                 max="100"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             />
                         </div>
 
                         {/* Stock Field */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                 Stock
                             </label>
                             <input
@@ -1126,13 +1136,13 @@ export default function AddProductPage() {
                                 onChange={handleInputChange}
                                 placeholder="Enter stock quantity"
                                 min="0"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             />
                         </div>
 
                         {/* SKU Field */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                                 SKU
                             </label>
                             <input
@@ -1141,7 +1151,7 @@ export default function AddProductPage() {
                                 value={formData.sku}
                                 onChange={handleInputChange}
                                 placeholder="Enter SKU"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             />
                         </div>
                     </div>
@@ -1149,41 +1159,35 @@ export default function AddProductPage() {
 
 
                 {/* Status Field */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="w-full md:w-1/3">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Status <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleInputChange}
-                            required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                        >
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                        <ChevronDown 
-                            size={20} 
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-                        />
-                    </div>
+                    <CustomSelect
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        required={true}
+                        options={[
+                            { value: 'active', label: 'Active' },
+                            { value: 'inactive', label: 'Inactive' }
+                        ]}
+                    />
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-4">
+                <div className="flex items-center justify-end gap-2 pt-4">
                     <button
                         type="button"
                         onClick={handleReset}
-                        className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition"
+                        className="px-4 py-1.5 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded transition"
                     >
                         Reset
                     </button>
                     <button
                         type="submit"
                         disabled={productLoading}
-                        className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {productLoading ? 'Submitting...' : 'Submit'}
                     </button>

@@ -278,3 +278,17 @@ div[style*="border-radius:50%"][style*="position:fixed"] {
 /* * {
   outline: 1px solid red;
 } */
+
+/* Limit native select dropdown height - shows ~6-7 items with scroll */
+/* Note: Native HTML select dropdowns cannot be fully styled - the dropdown list is rendered by the browser */
+/* This CSS attempts to limit dropdown height but has limited browser support */
+
+/* For better control, a custom dropdown component would be needed */
+/* The following styles may work in some browsers but are not guaranteed */
+select {
+    /* Native select dropdown height cannot be directly controlled via CSS */
+    /* Browser renders the dropdown list and controls its appearance */
+}
+
+/* Workaround: Using size attribute changes behavior to always-visible list (not recommended) */
+/* Best solution: Use a custom dropdown component for full control */

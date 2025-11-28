@@ -73,6 +73,10 @@ export default function AdminProducts() {
         router.push(`/admin/products/edit/${product.id || product._id}`)
     }
 
+    const handleView = (product) => {
+        router.push(`/admin/products/view/${product.id || product._id}`)
+    }
+
     const handleDelete = (product) => {
         setSelectedProduct(product)
         setDeleteModalOpen(true)
@@ -118,6 +122,7 @@ export default function AdminProducts() {
                     enableFiltering={true}
                     enableExport={true}
                     onEdit={handleEdit}
+                    onView={handleView}
                     onDelete={handleDelete}
                     showActions={true}
                 />

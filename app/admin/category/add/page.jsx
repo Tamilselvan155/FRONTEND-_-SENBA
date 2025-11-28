@@ -435,18 +435,18 @@ export default function AddCategoryPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-end gap-3 pt-3">
+                    <div className="flex items-center justify-end gap-2 pt-3">
                         <button
                             type="button"
                             onClick={handleReset}
-                            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded transition"
+                            className="px-4 py-1.5 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded transition"
                         >
                             Reset
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Submitting...' : 'Submit'}
                         </button>

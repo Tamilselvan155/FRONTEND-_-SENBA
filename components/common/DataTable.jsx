@@ -8,7 +8,8 @@ import {
   DeleteOutlined, 
   MoreOutlined,
   DownloadOutlined,
-  FilterFilled
+  FilterFilled,
+  EyeOutlined
 } from '@ant-design/icons';
 
 // Memoized styles component to prevent forced reflows
@@ -343,7 +344,17 @@ const DataTable = ({
         const iconActions = [];
         const dropdownActions = [];
 
-        // Edit as icon button (View is handled by row click)
+        // View goes to dropdown
+        if (onView) {
+          dropdownActions.push({
+            key: 'view',
+            label: 'View Details',
+            icon: <EyeOutlined />,
+            onClick: () => onView(record),
+          });
+        }
+
+        // Edit as icon button
         if (onEdit) {
           iconActions.push({
             key: 'edit',
