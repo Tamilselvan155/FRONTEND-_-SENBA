@@ -643,15 +643,22 @@ export default function EditProductPage() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
+            console.log('Form submission started')
+            
             // Upload new images first
-            const newImageUrls = await uploadImages()
-            if (images.length > 0 && newImageUrls.length === 0) {
-                toast.error('Failed to upload images. Please try again.')
-                return
+            let newImageUrls = []
+            if (images.length > 0) {
+                newImageUrls = await uploadImages()
+                if (newImageUrls.length === 0) {
+                    // Warn but don't block - allow update to proceed
+                    toast.error('Failed to upload new images. Product will be updated without new images.')
+                }
             }
 
             // Combine existing images (that weren't removed) with new images
             const allImageUrls = [...existingImages, ...newImageUrls]
+            
+            console.log('Images processed:', { existing: existingImages.length, new: newImageUrls.length, total: allImageUrls.length })
 
             // Map brand variants to backend format
             const mappedBrandVariants = formData.hasVariants ? brandVariants.map(variant => ({
@@ -665,40 +672,42 @@ export default function EditProductPage() {
                             attributeValue: attr.value
                         };
                     }),
-                specifications: variant.specifications.map(spec => {
-                    // Parse textarea content in format: "Key : values ? Key2 : values2"
-                    let specificationsObject = {};
-                    if (spec.content && spec.content.trim()) {
-                        // Split by '?' to get each key-value pair
-                        const pairs = spec.content.split('?').map(p => p.trim()).filter(p => p);
-                        
-                        pairs.forEach(pair => {
-                            // Split by ':' to separate key and values
-                            const colonIndex = pair.indexOf(':');
-                            if (colonIndex > 0) {
-                                const key = pair.substring(0, colonIndex).trim();
-                                const valuesStr = pair.substring(colonIndex + 1).trim();
-                                
-                                if (key && valuesStr) {
-                                    // Parse comma-separated values into array
-                                    const valuesArray = valuesStr.split(',').map(v => v.trim()).filter(v => v);
+                specifications: variant.specifications
+                    .map(spec => {
+                        // Parse textarea content in format: "Key : values ? Key2 : values2"
+                        let specificationsObject = {};
+                        if (spec.content && spec.content.trim()) {
+                            // Split by '?' to get each key-value pair
+                            const pairs = spec.content.split('?').map(p => p.trim()).filter(p => p);
+                            
+                            pairs.forEach(pair => {
+                                // Split by ':' to separate key and values
+                                const colonIndex = pair.indexOf(':');
+                                if (colonIndex > 0) {
+                                    const key = pair.substring(0, colonIndex).trim();
+                                    const valuesStr = pair.substring(colonIndex + 1).trim();
                                     
-                                    // Find the corresponding attribute to get the unit
-                                    const matchingAttr = variant.attributes.find(attr => 
-                                        attr.name && attr.name.toLowerCase() === key.toLowerCase()
-                                    );
-                                    
-                                    // Store as object with values array and unit
-                                    specificationsObject[key] = {
-                                        values: valuesArray,
-                                        unit: matchingAttr?.value || ''
-                                    };
+                                    if (key && valuesStr) {
+                                        // Parse comma-separated values into array
+                                        const valuesArray = valuesStr.split(',').map(v => v.trim()).filter(v => v);
+                                        
+                                        // Find the corresponding attribute to get the unit
+                                        const matchingAttr = variant.attributes.find(attr => 
+                                            attr.name && attr.name.toLowerCase() === key.toLowerCase()
+                                        );
+                                        
+                                        // Store as object with values array and unit
+                                        specificationsObject[key] = {
+                                            values: valuesArray,
+                                            unit: matchingAttr?.value || ''
+                                        };
+                                    }
                                 }
-                            }
-                        });
-                    }
-                    return specificationsObject;
-                }),
+                            });
+                        }
+                        return specificationsObject;
+                    })
+                    .filter(specObj => Object.keys(specObj).length > 0), // Filter out empty objects
                 price: variant.price ? parseFloat(variant.price) : 0,
                 discount: variant.discount ? parseFloat(variant.discount) : 0,
                 stock: variant.stock ? parseInt(variant.stock) : 0,
@@ -796,7 +805,15 @@ export default function EditProductPage() {
                 })
             }
 
+            console.log('Submitting update request with data:', {
+                id: params.id,
+                hasVariants: formData.hasVariants,
+                brandVariantsCount: mappedBrandVariants.length,
+                specificationsCount: mappedBrandVariants.reduce((sum, v) => sum + (v.specifications?.length || 0), 0)
+            })
+            
             await dispatch(updateProductAsync({ id: params.id, data: submitData })).unwrap()
+            console.log('Update request completed successfully')
             // Refresh products list before navigating and wait for it to complete
             await dispatch(fetchProductsAsync()).unwrap()
             toast.success('Product updated successfully!')

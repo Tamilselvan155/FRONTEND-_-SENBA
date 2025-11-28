@@ -14,7 +14,7 @@ const AdminNavbar = () => {
 
     // Check if we're on a module page (not dashboard)
     const isModulePage = pathname !== '/admin' && pathname !== '/admin/'
-    const isAddOrEditPage = pathname.includes('/add') || pathname.includes('/edit')
+    const isAddOrEditPage = pathname.includes('/add') || pathname.includes('/edit') || pathname.includes('/view')
     
     // Get module name from path
     const getModuleName = (path) => {
@@ -22,6 +22,7 @@ const AdminNavbar = () => {
         if (path.includes('/products')) {
             if (path.includes('/add')) return 'Add Product'
             if (path.includes('/edit')) return 'Edit Product'
+            if (path.includes('/view')) return 'View Product'
             return 'Products'
         }
         if (path.includes('/category')) {
@@ -85,7 +86,7 @@ const AdminNavbar = () => {
     }
 
     const handleBack = () => {
-        // If on edit or add page, go to list page; otherwise go to dashboard
+        // If on edit, add, or view page, go to list page; otherwise go to dashboard
         if (isAddOrEditPage) {
             const listRoute = getListRoute(pathname)
             router.push(listRoute)

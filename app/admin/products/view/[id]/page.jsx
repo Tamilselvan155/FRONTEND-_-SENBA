@@ -314,10 +314,21 @@ export default function ViewProductPage() {
 
                             // Process specifications helper
                             const processSpecs = (specs) => {
-                                if (Array.isArray(specs) && specs.length > 0) {
-                                    return specs;
-                                } else if (typeof specs === 'object' && !Array.isArray(specs)) {
-                                    return [specs];
+                                if (!specs) return [];
+                                
+                                if (Array.isArray(specs)) {
+                                    // Filter out empty objects from array
+                                    return specs.filter(spec => {
+                                        if (typeof spec === 'object' && spec !== null) {
+                                            return Object.keys(spec).length > 0;
+                                        }
+                                        return true;
+                                    });
+                                } else if (typeof specs === 'object' && specs !== null) {
+                                    // Single object - check if it has any keys
+                                    if (Object.keys(specs).length > 0) {
+                                        return [specs];
+                                    }
                                 }
                                 return [];
                             };
