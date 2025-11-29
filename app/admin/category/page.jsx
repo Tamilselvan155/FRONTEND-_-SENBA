@@ -1,20 +1,44 @@
 'use client'
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
 import DataTable from "@/components/common/DataTable"
-import { ImageIcon } from "lucide-react"
+import ConfirmModal from "@/components/common/ConfirmModal"
+import { fetchCategoriesAsync, deleteCategoryAsync } from "@/lib/features/category/categorySlice"
+import toast from "react-hot-toast"
+
+// Helper function to get full image URL
+const getImageUrl = (photoPath) => {
+    // Check if photoPath is null, undefined, or empty string
+    if (!photoPath || photoPath === '' || photoPath.trim() === '') {
+        return null;
+    }
+    // If it's already a full URL, return as is
+    if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+        return photoPath;
+    }
+    // Get the API base URL
+    let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Remove /api from the base URL since static files are served directly from root, not under /api
+    // For example: http://localhost:3001/api -> http://localhost:3001
+    baseUrl = baseUrl.replace(/\/api$/, '');
+    
+    // Ensure path starts with / and doesn't have double slashes
+    const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
+    return `${baseUrl}${cleanPath}`;
+};
 
 export default function AdminCategory() {
     const router = useRouter()
+    const dispatch = useDispatch()
+    const { categories, loading } = useSelector((state) => state.category)
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState(null)
 
-    const categories = [
-        { id: 12, sn: 12, title: "PP ROPE", englishName: "PP ROPE", homepage: "Yes", slug: "PPROPE", isParent: "Yes", parentCategory: "", status: "active" },
-        { id: 13, sn: 13, title: "Monobloc pump", englishName: "Monobloc pump", homepage: "Yes", slug: "Monoblocpump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 14, sn: 14, title: "open well submersible pump", englishName: "open well submersible pump", homepage: "Yes", slug: "open-well-submersible-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 15, sn: 15, title: "Borewell submersible pump", englishName: "Borewell submersible pump", homepage: "Yes", slug: "Borewell-submersible-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 16, sn: 16, title: "Pressure booster pump", englishName: "Pressure booster pump", homepage: "Yes", slug: "Pressure-booster-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-        { id: 17, sn: 17, title: "Borewell jet pump", englishName: "Borewell jet pump", homepage: "No", slug: "Borewell-jet-pump", isParent: "No", parentCategory: "Water-Pumps", status: "active" },
-    ]
+    useEffect(() => {
+        dispatch(fetchCategoriesAsync())
+    }, [dispatch])
 
     const columns = [
         {
@@ -22,6 +46,50 @@ export default function AdminCategory() {
             label: 'S.N.',
             sortable: true,
             width: 80,
+        },
+        {
+            key: 'photo',
+            label: 'Photo',
+            width: 100,
+            align: 'center',
+            render: (value, row) => {
+                // Get photo from row.photo or value, handle both cases
+                const photoPath = row?.photo || value || '';
+                const photoUrl = getImageUrl(photoPath);
+                
+                if (photoUrl) {
+                    return (
+                        <div className="flex items-center justify-center w-full">
+                            <img
+                                src={photoUrl}
+                                alt={row?.title || 'Category photo'}
+                                className="w-[50px] h-[50px] object-cover rounded border border-gray-200"
+                                onError={(e) => {
+                                    // Hide the image and show placeholder
+                                    const img = e.target;
+                                    img.style.display = 'none';
+                                    const placeholder = img.nextElementSibling;
+                                    if (placeholder) {
+                                        placeholder.style.display = 'flex';
+                                    }
+                                }}
+                                loading="lazy"
+                            />
+                            <div className="hidden items-center justify-center w-[50px] h-[50px] bg-gray-100 rounded border border-gray-200">
+                                <span className="text-xs text-gray-400">No Image</span>
+                            </div>
+                        </div>
+                    );
+                }
+                // No photo URL available
+                return (
+                    <div className="flex items-center justify-center w-full">
+                        <div className="flex items-center justify-center w-[50px] h-[50px] bg-gray-100 rounded border border-gray-200">
+                            <span className="text-xs text-gray-400">No Image</span>
+                        </div>
+                    </div>
+                );
+            },
         },
         {
             key: 'title',
@@ -66,11 +134,6 @@ export default function AdminCategory() {
             render: (value) => value || '-',
         },
         {
-            key: 'photo',
-            label: 'Photo',
-            render: () => <ImageIcon size={20} className="text-gray-400" />,
-        },
-        {
             key: 'status',
             label: 'Status',
             sortable: true,
@@ -92,30 +155,69 @@ export default function AdminCategory() {
     ]
 
     const handleEdit = (category) => {
-        router.push(`/admin/category/edit/${category.id}`)
+        router.push(`/admin/category/edit/${category.id || category._id}`)
     }
 
     const handleDelete = (category) => {
-        // Implement delete logic here
-        console.log('Deleting category:', category)
+        setSelectedCategory(category)
+        setDeleteModalOpen(true)
     }
+
+    const confirmDelete = async () => {
+        if (selectedCategory) {
+            try {
+                await dispatch(deleteCategoryAsync(selectedCategory.id || selectedCategory._id)).unwrap()
+                toast.success('Category deleted successfully!')
+                dispatch(fetchCategoriesAsync()) // Refresh the list
+                setSelectedCategory(null)
+            } catch (err) {
+                toast.error(err || 'Failed to delete category')
+            }
+        }
+    }
+
+    // Format data for table and add serial numbers
+    const formattedData = categories.map((cat, index) => ({
+        ...cat,
+        id: cat.id || cat._id,
+        sn: index + 1,
+        photo: cat.photo || '', // Ensure photo field is included
+    }))
 
     return (
         <div className="space-y-6">
-            <DataTable
-                columns={columns}
-                data={categories}
-                rowKey="id"
-                enableSearch={true}
-                searchPlaceholder="Search categories..."
-                enablePagination={true}
-                pageSize={10}
-                enableSorting={true}
-                enableFiltering={true}
-                enableExport={true}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                showActions={true}
+            {loading && formattedData.length === 0 ? (
+                <div className="text-center py-8">Loading...</div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={formattedData}
+                    rowKey="id"
+                    enableSearch={true}
+                    searchPlaceholder="Search categories..."
+                    enablePagination={true}
+                    pageSize={10}
+                    enableSorting={true}
+                    enableFiltering={true}
+                    enableExport={true}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    showActions={true}
+                />
+            )}
+            
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    setDeleteModalOpen(false)
+                    setSelectedCategory(null)
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Category"
+                message={selectedCategory ? `Are you sure you want to delete "${selectedCategory.title}"? This action cannot be undone.` : 'Are you sure you want to delete this category?'}
+                confirmText="Delete"
+                cancelText="Cancel"
+                type="danger"
             />
         </div>
     )

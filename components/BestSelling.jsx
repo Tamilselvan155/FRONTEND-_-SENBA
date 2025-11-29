@@ -1,15 +1,16 @@
 'use client';
 import Title from './Title';
 import ProductCard from './ProductCard';
-import { useSelector } from 'react-redux';
+import { productDummyData } from '@/assets/assets';
 import React from 'react';
 const BestSelling = () => {
-  const products = useSelector((state) => state.product.list);
-  const categories = [...new Set(products.map((p) => p.category))];
+  const products = productDummyData;
+  const safeProducts = products && Array.isArray(products) ? products : [];
+  const categories = safeProducts.length > 0 ? [...new Set(safeProducts.map((p) => p.category))] : [];
 
   const groupedProducts = categories.map((category) => ({
     category,
-    items: products.filter((p) => p.category === category),
+    items: safeProducts.filter((p) => p.category === category),
   }));
 
   return (

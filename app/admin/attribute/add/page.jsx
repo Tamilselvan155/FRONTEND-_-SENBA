@@ -3,9 +3,14 @@
 import { Settings } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
+import { createAttributeAsync } from "@/lib/features/attribute/attributeSlice"
+import toast from "react-hot-toast"
 
 export default function AddAttributePage() {
     const router = useRouter()
+    const dispatch = useDispatch()
+    const { loading, error } = useSelector((state) => state.attribute)
     const [formData, setFormData] = useState({
         title: ''
     })
@@ -24,10 +29,15 @@ export default function AddAttributePage() {
         })
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log('Form submitted:', formData)
+        try {
+            await dispatch(createAttributeAsync(formData)).unwrap()
+            toast.success('Attribute created successfully!')
         router.push('/admin/attribute')
+        } catch (err) {
+            toast.error(err || 'Failed to create attribute')
+        }
     }
 
     return (
@@ -62,9 +72,10 @@ export default function AddAttributePage() {
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition"
+                            disabled={loading}
+                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit
+                            {loading ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                 </form>

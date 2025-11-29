@@ -14,7 +14,7 @@ const AdminNavbar = () => {
 
     // Check if we're on a module page (not dashboard)
     const isModulePage = pathname !== '/admin' && pathname !== '/admin/'
-    const isAddOrEditPage = pathname.includes('/add') || pathname.includes('/edit')
+    const isAddOrEditPage = pathname.includes('/add') || pathname.includes('/edit') || pathname.includes('/view')
     
     // Get module name from path
     const getModuleName = (path) => {
@@ -22,6 +22,7 @@ const AdminNavbar = () => {
         if (path.includes('/products')) {
             if (path.includes('/add')) return 'Add Product'
             if (path.includes('/edit')) return 'Edit Product'
+            if (path.includes('/view')) return 'View Product'
             return 'Products'
         }
         if (path.includes('/category')) {
@@ -72,8 +73,26 @@ const AdminNavbar = () => {
     const addRoute = getAddRoute(pathname)
     const showAddButton = isModulePage && !isAddOrEditPage && addRoute
 
+    // Get list route for current module
+    const getListRoute = (path) => {
+        if (path.includes('/products')) return '/admin/products'
+        if (path.includes('/category')) return '/admin/category'
+        if (path.includes('/brands')) return '/admin/brands'
+        if (path.includes('/banners')) return '/admin/banners'
+        if (path.includes('/attribute-value')) return '/admin/attribute-value'
+        if (path.includes('/attribute')) return '/admin/attribute'
+        if (path.includes('/asset-manager')) return '/admin/asset-manager'
+        return '/admin'
+    }
+
     const handleBack = () => {
-        router.push('/admin')
+        // If on edit, add, or view page, go to list page; otherwise go to dashboard
+        if (isAddOrEditPage) {
+            const listRoute = getListRoute(pathname)
+            router.push(listRoute)
+        } else {
+            router.push('/admin')
+        }
     }
 
     const handleLogout = () => {
@@ -101,11 +120,11 @@ const AdminNavbar = () => {
                             <Image 
                                 src={assets.gs_logo || assets.WV_logo} 
                                 alt="logo" 
-                                width={50} 
-                                height={50} 
+                                width={100} 
+                                height={100} 
                                 className="cursor-pointer" 
                             />
-                            <h1 className="text-2xl font-bold text-[#009fe3]">
+                            <h1 className="text-2xl font-bold text-black">
                                 GoCart Admin
                             </h1>
                         </div>

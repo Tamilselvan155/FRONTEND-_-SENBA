@@ -13,6 +13,7 @@ const Hero = () => {
   const images = [assets.banner3, assets.banner1, assets.banner2, assets.banner3];
 
   const [current, setCurrent] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   // You can change these to different images + texts later
   const slides = [
@@ -42,13 +43,20 @@ const Hero = () => {
       subtitle: "Crafted with care and cutting-edge tech",
     },
   ];
-   // Auto slide every 4 seconds
+  
+  // Set mounted flag to prevent hydration mismatch
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Auto slide every 4 seconds - only after mount
+  useEffect(() => {
+    if (!mounted) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, [slides.length]);
+  }, [mounted, slides.length]);
 
     return (
         <div className='bg-[#F7F7F7] py-1 px-5 sm:pt-6 sm:pb-10'>
@@ -58,38 +66,42 @@ const Hero = () => {
           {/* Slide Images */}
       <div className="relative w-full h-[230px] sm:h-[350px] md:h-[450px] transition-all duration-700 ease-in-out">
         <Image
-          src={slides[current].image}
-          alt={slides[current].title}
+          src={mounted ? slides[current].image : slides[0].image}
+          alt={mounted ? slides[current].title : slides[0].title}
           width={1200}
           height={500}
           priority
           className="w-full h-full object-cover sm:rounded-3xl"
         />
-        {/* Text Overlay */}
-        <div className="absolute left-2 top-10 flex flex-col justify-center items-center text-center text-white px-4 sm:px-8 transition-opacity duration-700">
-          <div className="w-40 absolute left-7 top-6 sm:top-20 text-left text-[16px] sm:text-2xl md:text-4xl md:w-100 font-bold mb-2 drop-shadow-md text-[rgb(55,50,46)] ">
-            {slides[current].title}
+        {/* Text Overlay - Only render after mount to prevent hydration mismatch */}
+        {mounted && (
+          <div className="absolute left-2 top-10 flex flex-col justify-center items-center text-center text-white px-4 sm:px-8 transition-opacity duration-700">
+            <div className="w-40 absolute left-7 top-6 sm:top-20 text-left text-[16px] sm:text-2xl md:text-4xl md:w-100 font-bold mb-2 drop-shadow-md text-[rgb(55,50,46)] ">
+              {slides[current].title}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 rounded-full">
+        <div className="absolute bottom-5 left-4 sm:bottom-6 sm:left-6 rounded-full" suppressHydrationWarning>
             <Link href="/category/products"><button className="hidden sm:flex text-white bg-[rgb(55,50,46)] p-2 sm:p-3  rounded-xl text-sm sm:text-lg">View More</button></Link> 
             <Link href="/category/products"> <p className='text-sm sm:text-xl sm:hidden flex items-center  mt-4 text-[#c31e5a]'>View more <ArrowRightIcon className='group-hover:ml-2 mt-1 transition-all' size={15} /> </p></Link>
         </div>
       </div>
 
-      {/* Dots */}
-      <div className="absolute bottom-6 flex gap-2">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrent(index)}
-            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${
-              current === index ? "bg-black scale-110" : "bg-gray-400"
-            }`}
-          ></button>
-        ))}
-      </div>
+      {/* Dots - Only render after mount to prevent hydration mismatch */}
+      {mounted && (
+        <div className="absolute bottom-6 flex gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrent(index)}
+              className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${
+                current === index ? "bg-black scale-110" : "bg-gray-400"
+              }`}
+            ></button>
+          ))}
+        </div>
+      )}
            </div>
                 </div>
 

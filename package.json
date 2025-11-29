@@ -16,6 +16,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "antd": "^6.0.0",
     "apexcharts": "^5.3.6",
+    "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.525.0",

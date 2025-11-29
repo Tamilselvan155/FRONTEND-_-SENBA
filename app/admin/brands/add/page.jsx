@@ -3,33 +3,54 @@
 import { ChevronDown, Tag } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
+import { createBrandAsync } from "@/lib/features/brand/brandSlice"
+import toast from "react-hot-toast"
 
 export default function AddBrandPage() {
     const router = useRouter()
+    const dispatch = useDispatch()
+    const { loading, error } = useSelector((state) => state.brand)
     const [formData, setFormData] = useState({
         title: '',
-        status: 'Active'
+        slug: '',
+        status: 'active'
     })
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: value,
+            // Auto-generate slug from title
+            ...(name === 'title' && { slug: value.toLowerCase().replace(/\s+/g, '-') })
         }))
     }
 
     const handleReset = () => {
         setFormData({
             title: '',
-            status: 'Active'
+            slug: '',
+            status: 'active'
         })
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log('Form submitted:', formData)
-        router.push('/admin/brands')
+        if (!formData.slug) {
+            formData.slug = formData.title.toLowerCase().replace(/\s+/g, '-')
+        }
+        try {
+            await dispatch(createBrandAsync({
+                title: formData.title,
+                slug: formData.slug,
+                status: formData.status.toLowerCase()
+            })).unwrap()
+            toast.success('Brand created successfully!')
+            router.push('/admin/brands')
+        } catch (err) {
+            toast.error(err || 'Failed to create brand')
+        }
     }
 
     return (
@@ -53,6 +74,22 @@ export default function AddBrandPage() {
                         />
                     </div>
 
+                    {/* Slug Field */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Slug <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="slug"
+                            value={formData.slug}
+                            onChange={handleInputChange}
+                            placeholder="Enter slug (auto-generated from title)"
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                    </div>
+
                     {/* Status Field */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -66,8 +103,8 @@ export default function AddBrandPage() {
                                 required
                                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm"
                             >
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
                             </select>
                             <ChevronDown 
                                 size={16} 
@@ -87,9 +124,10 @@ export default function AddBrandPage() {
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition"
+                            disabled={loading}
+                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit
+                            {loading ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                 </form>

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { usePathname } from "next/navigation"
 import Loading from "../Loading"
 import Link from "next/link"
@@ -11,16 +11,16 @@ const AdminLayout = ({ children }) => {
     const [loading, setLoading] = useState(true)
     const pathname = usePathname()
 
-    const fetchIsAdmin = async () => {
+    const fetchIsAdmin = useCallback(async () => {
         setIsAdmin(true)
         setLoading(false)
-    }
+    }, [])
 
     useEffect(() => {
         fetchIsAdmin()
-    }, [])
+    }, [fetchIsAdmin])
 
-    const isDashboard = pathname === '/admin' || pathname === '/admin/'
+    const isDashboard = useMemo(() => pathname === '/admin' || pathname === '/admin/', [pathname])
 
     return loading ? (
         <Loading />

@@ -1,12 +1,12 @@
 'use client';
 import Title from './Title';
 import ProductCard from './ProductCard';
-import { useSelector } from 'react-redux';
+import { productDummyData } from '@/assets/assets';
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const LatestProducts = () => {
-  const products = useSelector((state) => state.product.list);
+  const products = productDummyData;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -35,9 +35,11 @@ const LatestProducts = () => {
   };
 
   // Sort products by creation date (newest first)
-  const sortedProducts = products
-    .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const sortedProducts = products && Array.isArray(products) && products.length > 0
+    ? products
+        .slice()
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : [];
 
   // Determine width class based on screen size
   const getWidthClass = () => {

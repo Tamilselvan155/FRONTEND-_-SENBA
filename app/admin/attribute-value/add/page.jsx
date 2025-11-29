@@ -1,22 +1,26 @@
 'use client'
 
 import { ChevronDown } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
+import { createAttributeValueAsync } from "@/lib/features/attributeValue/attributeValueSlice"
+import { fetchAttributesAsync } from "@/lib/features/attribute/attributeSlice"
+import toast from "react-hot-toast"
 
 export default function AddAttributeValuePage() {
     const router = useRouter()
+    const dispatch = useDispatch()
+    const { loading, error } = useSelector((state) => state.attributeValue)
+    const { attributes } = useSelector((state) => state.attribute)
     const [formData, setFormData] = useState({
         attribute: '',
         value: ''
     })
 
-    const attributes = [
-        { id: 1, name: "kw" },
-        { id: 2, name: "Type" },
-        { id: 3, name: "Pipe Size" },
-        { id: 4, name: "HP" },
-    ]
+    useEffect(() => {
+        dispatch(fetchAttributesAsync())
+    }, [dispatch])
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
@@ -33,10 +37,18 @@ export default function AddAttributeValuePage() {
         })
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log('Form submitted:', formData)
-        router.push('/admin/attribute-value')
+        try {
+            await dispatch(createAttributeValueAsync({
+                attributeId: formData.attribute,
+                value: formData.value
+            })).unwrap()
+            toast.success('Attribute value created successfully!')
+            router.push('/admin/attribute-value')
+        } catch (err) {
+            toast.error(err || 'Failed to create attribute value')
+        }
     }
 
     return (
@@ -61,8 +73,8 @@ export default function AddAttributeValuePage() {
                                 >
                                     <option value="">--Choose Attribute--</option>
                                     {attributes.map((attr) => (
-                                        <option key={attr.id} value={attr.id}>
-                                            {attr.name}
+                                        <option key={attr.id || attr._id} value={attr.id || attr._id}>
+                                            {attr.title}
                                         </option>
                                     ))}
                                 </select>
@@ -101,9 +113,10 @@ export default function AddAttributeValuePage() {
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition"
+                            disabled={loading}
+                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit
+                            {loading ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                 </form>

@@ -1,64 +1,24 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
 import DataTable from "@/components/common/DataTable"
+import ConfirmModal from "@/components/common/ConfirmModal"
+import { fetchProductsAsync, deleteProductAsync } from "@/lib/features/product/productSlice"
+import toast from "react-hot-toast"
 
 export default function AdminProducts() {
     const router = useRouter()
+    const dispatch = useDispatch()
+    const { products, loading } = useSelector((state) => state.product)
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [selectedProduct, setSelectedProduct] = useState(null)
 
-    const products = [
-        {
-            id: 1,
-            sn: 33,
-            title: "CAR WASHING TRIPLE PISTON PUMP (three phase motor)",
-            category: "Water-Pumps SS monobloc pump",
-            isFeatured: "Yes",
-            status: "active"
-        },
-        {
-            id: 2,
-            sn: 28,
-            title: "CAR WASHING TRIPLE PISTON PUMP (single phase motor)",
-            category: "Water-Pumps SS monobloc pump",
-            isFeatured: "Yes",
-            status: "active"
-        },
-        {
-            id: 3,
-            sn: 26,
-            title: "MINI PETROL GENERATOR",
-            category: "Water-Pumps Petrol engine pump",
-            isFeatured: "Yes",
-            status: "active"
-        },
-        {
-            id: 4,
-            sn: 25,
-            title: "BARE PETROL ENGINE",
-            category: "Water-Pumps Petrol engine pump",
-            isFeatured: "Yes",
-            status: "active"
-        },
-        {
-            id: 5,
-            sn: 24,
-            title: "PETROL ENGINE WATER PUMP",
-            category: "Water-Pumps Petrol engine pump",
-            isFeatured: "Yes",
-            status: "active"
-        },
-        {
-            id: 6,
-            sn: 21,
-            title: "STAINLESS STEEL MONOBLOC PUMP",
-            category: "Water-Pumps SS monobloc pump",
-            isFeatured: "Yes",
-            status: "active"
-        }
-    ]
+    useEffect(() => {
+        // Always fetch to ensure we have the latest data
+        dispatch(fetchProductsAsync())
+    }, [dispatch])
 
     const columns = [
         {
@@ -110,7 +70,11 @@ export default function AdminProducts() {
     ]
 
     const handleEdit = (product) => {
-        router.push(`/admin/products/edit/${product.id}`)
+        router.push(`/admin/products/edit/${product.id || product._id}`)
+    }
+
+    const handleView = (product) => {
+        router.push(`/admin/products/view/${product.id || product._id}`)
     }
 
     const handleDelete = (product) => {
@@ -118,29 +82,64 @@ export default function AdminProducts() {
         setDeleteModalOpen(true)
     }
 
-    const confirmDelete = () => {
-        // Implement delete logic here
-        console.log('Deleting product:', selectedProduct)
-        setDeleteModalOpen(false)
-        setSelectedProduct(null)
+    const confirmDelete = async () => {
+        if (selectedProduct) {
+            try {
+                await dispatch(deleteProductAsync(selectedProduct.id || selectedProduct._id)).unwrap()
+                toast.success('Product deleted successfully!')
+                dispatch(fetchProductsAsync()) // Refresh the list
+                setSelectedProduct(null)
+            } catch (err) {
+                toast.error(err || 'Failed to delete product')
+            }
+        }
     }
+
+    // Format data for table (serial numbers will be calculated by DataTable based on pagination)
+    const formattedData = products && Array.isArray(products) ? products.map(product => ({
+        ...product,
+        id: product.id || product._id,
+    })) : []
+
+    // Show loading if we're loading AND there are no products yet
+    // If products exist in Redux (from pre-fetch), show them immediately
+    const isLoading = loading && formattedData.length === 0
 
     return (
         <div className="space-y-6">
-            <DataTable
-                columns={columns}
-                data={products}
-                rowKey="id"
-                enableSearch={true}
-                searchPlaceholder="Search products..."
-                enablePagination={true}
-                pageSize={10}
-                enableSorting={true}
-                enableFiltering={true}
-                enableExport={true}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                showActions={true}
+            {isLoading ? (
+                <div className="text-center py-8">Loading...</div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={formattedData}
+                    rowKey="id"
+                    enableSearch={true}
+                    searchPlaceholder="Search products..."
+                    enablePagination={true}
+                    pageSize={10}
+                    enableSorting={true}
+                    enableFiltering={true}
+                    enableExport={true}
+                    onEdit={handleEdit}
+                    onView={handleView}
+                    onDelete={handleDelete}
+                    showActions={true}
+                />
+            )}
+            
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    setDeleteModalOpen(false)
+                    setSelectedProduct(null)
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Product"
+                message={selectedProduct ? `Are you sure you want to delete "${selectedProduct.title}"? This action cannot be undone.` : 'Are you sure you want to delete this product?'}
+                confirmText="Delete"
+                cancelText="Cancel"
+                type="danger"
             />
         </div>
     )

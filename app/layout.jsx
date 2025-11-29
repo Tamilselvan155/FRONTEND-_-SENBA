@@ -1,9 +1,9 @@
-import { Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import "./globals.css";
 
-const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export const metadata = {
     title: "Senba Pumps & Motors",
@@ -190,13 +190,37 @@ export default function RootLayout({ children }) {
                                 if (document.readyState === 'loading') {
                                     document.addEventListener('DOMContentLoaded', function() {
                                         removeIndicator();
-                                        // Run every 5ms for maximum aggressiveness
-                                        setInterval(removeIndicator, 5);
+                                        // Use requestAnimationFrame for better performance
+                                        let rafId;
+                                        function checkAndRemove() {
+                                            removeIndicator();
+                                            rafId = requestAnimationFrame(checkAndRemove);
+                                        }
+                                        rafId = requestAnimationFrame(checkAndRemove);
+                                        // Fallback: check every 500ms as backup
+                                        const intervalId = setInterval(removeIndicator, 500);
+                                        // Clean up after 10 seconds (indicator should be gone by then)
+                                        setTimeout(() => {
+                                            if (rafId) cancelAnimationFrame(rafId);
+                                            clearInterval(intervalId);
+                                        }, 10000);
                                     });
                                 } else {
                                     removeIndicator();
-                                    // Run every 5ms for maximum aggressiveness
-                                    setInterval(removeIndicator, 5);
+                                    // Use requestAnimationFrame for better performance
+                                    let rafId;
+                                    function checkAndRemove() {
+                                        removeIndicator();
+                                        rafId = requestAnimationFrame(checkAndRemove);
+                                    }
+                                    rafId = requestAnimationFrame(checkAndRemove);
+                                    // Fallback: check every 500ms as backup
+                                    const intervalId = setInterval(removeIndicator, 500);
+                                    // Clean up after 10 seconds (indicator should be gone by then)
+                                    setTimeout(() => {
+                                        if (rafId) cancelAnimationFrame(rafId);
+                                        clearInterval(intervalId);
+                                    }, 10000);
                                 }
                                 
                                 // Use MutationObserver
@@ -409,7 +433,7 @@ export default function RootLayout({ children }) {
                     }}
                 />
             </head>
-            <body className={`${outfit.className} antialiased`} style={{ overflowX: 'hidden' }}>
+            <body className={`${inter.className} antialiased`} style={{ overflowX: 'hidden' }}>
                 <StoreProvider>
                     <Toaster />
 
