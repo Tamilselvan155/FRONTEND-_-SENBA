@@ -253,12 +253,29 @@ export default function ViewProductPage() {
                         {(() => {
                             // Get all unique attribute names from all variants (case-insensitive to avoid duplicates)
                             const attributeNameMap = new Map(); // key: normalized (lowercase), value: original name
+                            let pipeSizeName = null; // Track pipe size to avoid duplicates
                             product.brandVariants.forEach(v => {
                                 if (v.attributes && Array.isArray(v.attributes)) {
                                     v.attributes.forEach(attr => {
                                         const name = attr.attributeId?.title || attr.attributeName || '';
                                         if (name && name !== 'N/A') {
                                             const normalizedName = name.trim().toLowerCase();
+                                            // Check if this is a pipe size variation
+                                            const isPipeSize = normalizedName === 'pipe size' || 
+                                                               normalizedName === 'pipesize' || 
+                                                               normalizedName === 'pipe sizes' ||
+                                                               normalizedName === 'pipesizes';
+                                            
+                                            // If it's a pipe size variation, only keep the first one
+                                            if (isPipeSize) {
+                                                if (!pipeSizeName) {
+                                                    pipeSizeName = normalizedName;
+                                                    attributeNameMap.set(normalizedName, name.trim());
+                                                }
+                                                // Skip other pipe size variations
+                                                return;
+                                            }
+                                            
                                             // Store the first occurrence (or prefer the one with proper casing)
                                             if (!attributeNameMap.has(normalizedName)) {
                                                 attributeNameMap.set(normalizedName, name.trim());
