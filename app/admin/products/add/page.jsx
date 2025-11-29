@@ -630,12 +630,12 @@ export default function AddProductPage() {
                             placeholder="--Select any category--"
                             options={[
                                 { value: '', label: '--Select any category--' },
-                                ...categoriesForDropdown
-                                    .filter(cat => cat.isParent)
+                                ...(Array.isArray(categoriesForDropdown) ? categoriesForDropdown
+                                    .filter(cat => cat && (cat.isParent === true || cat.isParent === 'true'))
                                     .map((cat) => ({
-                                        value: cat._id || cat.id,
-                                        label: cat.title
-                                    }))
+                                        value: cat._id || cat.id || '',
+                                        label: cat.title || cat.name || 'Untitled Category'
+                                    })) : [])
                             ]}
                         />
                     </div>
@@ -644,14 +644,15 @@ export default function AddProductPage() {
                 {/* Subcategory Field - Only show if parent category has subcategories */}
                 {formData.category && (() => {
                     const selectedParentId = formData.category;
-                    const subcategories = categoriesForDropdown.filter(cat => {
-                        if (cat.isParent) return false;
+                    const subcategories = Array.isArray(categoriesForDropdown) ? categoriesForDropdown.filter(cat => {
+                        if (!cat) return false;
+                        if (cat.isParent === true || cat.isParent === 'true') return false;
                         if (!cat.parentId) return false;
                         
                         // Handle different parentId structures (populated object or ID string)
                         const parentId = cat.parentId._id || cat.parentId.id || cat.parentId;
                         return parentId && parentId.toString() === selectedParentId.toString();
-                    });
+                    }) : [];
                     
                     if (subcategories.length > 0) {
                         return (
@@ -667,8 +668,8 @@ export default function AddProductPage() {
                                     options={[
                                         { value: '', label: '--Select subcategory--' },
                                         ...subcategories.map((cat) => ({
-                                            value: cat._id || cat.id,
-                                            label: cat.title
+                                            value: cat._id || cat.id || '',
+                                            label: cat.title || cat.name || 'Untitled Subcategory'
                                         }))
                                     ]}
                                 />
