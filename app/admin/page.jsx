@@ -1,9 +1,10 @@
 'use client'
 
+import { useState, useEffect, useMemo, memo } from "react"
+import { useSelector, useDispatch } from "react-redux"
+import { useRouter } from "next/navigation"
 import { FolderTree, Package, ClipboardList, FolderOpen, Store, Tag, ImageIcon } from "lucide-react"
 import Link from "next/link"
-import { useMemo, memo, useEffect } from "react"
-import { useSelector, useDispatch } from "react-redux"
 import { fetchCategoriesAsync } from "@/lib/features/category/categorySlice"
 import { fetchProductsAsync } from "@/lib/features/product/productSlice"
 import { fetchBrandsAsync } from "@/lib/features/brand/brandSlice"
@@ -11,6 +12,7 @@ import { fetchAttributesAsync } from "@/lib/features/attribute/attributeSlice"
 import { fetchAttributeValuesAsync } from "@/lib/features/attributeValue/attributeValueSlice"
 import { fetchBannersAsync } from "@/lib/features/banner/bannerSlice"
 import { fetchAllMediaFilesAsync } from "@/lib/features/asset/assetSlice"
+import AdminLogin from "@/components/admin/AdminLogin"
 
 // Memoize module card to prevent unnecessary re-renders
 const ModuleCard = memo(({ module, getIconColorClass }) => (
@@ -71,6 +73,63 @@ ModuleCard.displayName = 'ModuleCard';
 
 export default function AdminDashboard() {
     const dispatch = useDispatch()
+    const router = useRouter()
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [isChecking, setIsChecking] = useState(true)
+    
+    // Get auth state from Redux
+    const { email } = useSelector((state) => state.auth)
+    
+    // Check authentication on mount and when email changes
+    useEffect(() => {
+        const checkAuth = () => {
+            // Check if user is logged in via Redux state
+            const hasEmail = email && email.trim() !== ''
+            
+            // Also check localStorage for token (backup check)
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+            const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+            
+            // Check user role FIRST before setting authenticated state
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr)
+                    // If user is not admin, redirect to homepage immediately
+                    if (user.role !== 'admin') {
+                        router.replace('/')
+                        setIsChecking(false)
+                        return
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e)
+                }
+            }
+            
+            const authenticated = hasEmail || (token !== null && userStr !== null)
+            setIsAuthenticated(authenticated)
+            setIsChecking(false)
+        }
+        
+        checkAuth()
+        
+        // Also listen for storage changes (in case login/logout happens in another tab)
+        if (typeof window !== 'undefined') {
+            const handleStorageChange = (e) => {
+                if (e.key === 'token' || e.key === 'user') {
+                    checkAuth()
+                }
+            }
+            
+            window.addEventListener('storage', handleStorageChange)
+            // Also listen for custom logout event
+            window.addEventListener('adminLogout', checkAuth)
+            
+            return () => {
+                window.removeEventListener('storage', handleStorageChange)
+                window.removeEventListener('adminLogout', checkAuth)
+            }
+        }
+    }, [email, router])
     
     // Get data from Redux store
     const categories = useSelector((state) => state.category.categories || [])
@@ -81,16 +140,18 @@ export default function AdminDashboard() {
     const banners = useSelector((state) => state.banner.banners || [])
     const assetManager = useSelector((state) => state.asset.mediaFiles?.length || 0)
     
-    // Fetch data on mount
+    // Fetch data on mount only if authenticated
     useEffect(() => {
-        dispatch(fetchCategoriesAsync())
-        dispatch(fetchProductsAsync())
-        dispatch(fetchBrandsAsync())
-        dispatch(fetchAttributesAsync())
-        dispatch(fetchAttributeValuesAsync())
-        dispatch(fetchBannersAsync())
-        dispatch(fetchAllMediaFilesAsync())
-    }, [dispatch])
+        if (isAuthenticated && !isChecking) {
+            dispatch(fetchCategoriesAsync())
+            dispatch(fetchProductsAsync())
+            dispatch(fetchBrandsAsync())
+            dispatch(fetchAttributesAsync())
+            dispatch(fetchAttributeValuesAsync())
+            dispatch(fetchBannersAsync())
+            dispatch(fetchAllMediaFilesAsync())
+        }
+    }, [dispatch, isAuthenticated, isChecking])
     
     // Calculate actual counts from Redux store
     const stats = useMemo(() => ({
@@ -203,6 +264,21 @@ export default function AdminDashboard() {
     }, []);
 
 
+    // Show loading state while checking authentication
+    if (isChecking) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        )
+    }
+
+    // Show login page if not authenticated
+    if (!isAuthenticated) {
+        return <AdminLogin />
+    }
+
+    // Show dashboard if authenticated
     return (
         <div className="h-full w-full">
             {/* Main Content */}

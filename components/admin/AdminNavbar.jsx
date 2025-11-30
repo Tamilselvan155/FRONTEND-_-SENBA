@@ -6,10 +6,15 @@ import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
 import { useState } from "react"
+import { useDispatch } from "react-redux"
+import { signOut } from "@/lib/features/login/authSlice"
+import { clearAuthData } from "@/lib/utils/authUtils"
+import toast from "react-hot-toast"
 
 const AdminNavbar = () => {
     const pathname = usePathname()
     const router = useRouter()
+    const dispatch = useDispatch()
     const [showUserMenu, setShowUserMenu] = useState(false)
 
     // Check if we're on a module page (not dashboard)
@@ -95,9 +100,66 @@ const AdminNavbar = () => {
         }
     }
 
-    const handleLogout = () => {
-        // Implement logout logic
-        router.push('/login')
+    const handleLogout = async () => {
+        try {
+            // Show loading state
+            const logoutToast = toast.loading('Logging out...')
+            
+            // Optional: Call logout API endpoint (if you want to invalidate token on server)
+            // This is optional but recommended for security
+            try {
+                const token = localStorage.getItem('token')
+                if (token) {
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    }).catch(() => {
+                        // Ignore API errors - still proceed with client-side logout
+                    })
+                }
+            } catch (apiError) {
+                // Ignore API errors - still proceed with client-side logout
+                console.log('Logout API call failed, proceeding with client-side logout')
+            }
+            
+            // Clear Redux state
+            dispatch(signOut())
+            
+            // Clear all authentication data (localStorage, sessionStorage, etc.)
+            clearAuthData()
+            
+            // Dismiss loading toast and show success
+            toast.dismiss(logoutToast)
+            toast.success('Logged out successfully', { duration: 2000 })
+            
+            // Dispatch custom event to notify other components
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('adminLogout'))
+            }
+            
+            // Small delay to ensure state is cleared before navigation
+            setTimeout(() => {
+                // Navigate to login page (root route)
+                router.push('/')
+                // Force a hard refresh to clear any cached state
+                router.refresh()
+            }, 100)
+        } catch (error) {
+            console.error('Logout error:', error)
+            toast.error('Error during logout. Redirecting...')
+            
+            // Even if there's an error, clear everything and redirect
+            dispatch(signOut())
+            clearAuthData()
+            
+            setTimeout(() => {
+                router.push('/')
+                router.refresh()
+            }, 500)
+        }
     }
 
     return (

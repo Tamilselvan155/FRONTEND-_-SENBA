@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { signOut } from '../../../lib/features/login/authSlice';
+import { clearAuthData } from '../../../lib/utils/authUtils';
 import {
   LayoutGrid,
   ShoppingBag,
@@ -24,7 +25,14 @@ const SignOut = () => {
   const handleSignOut = (e) => {
     e.preventDefault();
     dispatch(signOut());
+    clearAuthData();
     setShowPopup(true);
+    
+    // Auto-navigate to login page after 2 seconds
+    setTimeout(() => {
+      router.push('/');
+      router.refresh();
+    }, 2000);
   };
 
   return (
@@ -88,7 +96,8 @@ const SignOut = () => {
             <button
               onClick={() => {
                 setShowPopup(false);
-                router.push('/login');
+                router.push('/');
+                router.refresh();
               }}
               className="w-full bg-[#f48638] text-white py-2.5 rounded-lg font-medium hover:bg-[#c31e5a] transition"
             >
