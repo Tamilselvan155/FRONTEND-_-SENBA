@@ -5,7 +5,7 @@ import { ChevronLeft, User, Settings, LogOut, ChevronDown, Plus } from "lucide-r
 import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useDispatch } from "react-redux"
 import { signOut } from "@/lib/features/login/authSlice"
 import { clearAuthData } from "@/lib/utils/authUtils"
@@ -16,6 +16,24 @@ const AdminNavbar = () => {
     const router = useRouter()
     const dispatch = useDispatch()
     const [showUserMenu, setShowUserMenu] = useState(false)
+    const [userEmail, setUserEmail] = useState('admin@gocart.com')
+    const [userName, setUserName] = useState('Admin')
+
+    // Get user data from localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const userStr = localStorage.getItem('user')
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr)
+                    setUserEmail(user.email || 'admin@gocart.com')
+                    setUserName(user.name || 'Admin')
+                } catch (e) {
+                    console.error('Error parsing user data:', e)
+                }
+            }
+        }
+    }, [])
 
     // Check if we're on a module page (not dashboard)
     const isModulePage = pathname !== '/admin' && pathname !== '/admin/'
@@ -235,8 +253,8 @@ const AdminNavbar = () => {
                                     />
                                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
                                         <div className="px-4 py-3 border-b border-gray-200">
-                                            <div className="font-semibold text-gray-900 text-sm">Admin</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">admin@gocart.com</div>
+                                            <div className="font-semibold text-gray-900 text-sm">{userName}</div>
+                                            <div className="text-xs text-gray-500 mt-0.5">{userEmail}</div>
                                         </div>
                                         <Link
                                             href="/admin/profile"
