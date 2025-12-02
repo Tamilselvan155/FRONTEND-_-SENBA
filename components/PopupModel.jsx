@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, PhoneCall, User,MessageCircle , Phone} from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { addEnquiry } from '@/lib/features/enquiry/enquirySlice';
+import { addToGoogleSheet } from '@/lib/actions/googleSheetActions';
 import toast from 'react-hot-toast';
 
 const ModalPopup = ({
@@ -39,7 +40,7 @@ const ModalPopup = ({
     return true;
   };
 
-  const handleSubmitEnquiry = () => {
+  const handleSubmitEnquiry = async () => {
     if (!validateInputs()) return;
 
     const enhancedItems = items.map((item) => {
@@ -61,7 +62,13 @@ const ModalPopup = ({
 
     dispatch(addEnquiry(enquiryData));
 
-    toast.success('Enquiry submitted successfully!');
+    try {
+      await addToGoogleSheet(enquiryData);
+      toast.success('Enquiry submitted successfully!');
+    } catch (error) {
+      console.error('Error sending enquiry to Google Sheet:', error);
+      toast.error('Enquiry saved locally, but failed to sync with Google Sheet.');
+    }
 
     // Reset form
     setShowForm(false);

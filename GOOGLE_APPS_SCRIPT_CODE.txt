@@ -1,0 +1,79 @@
+// ============================================
+// COPY THIS ENTIRE CODE INTO YOUR APPS SCRIPT
+// ============================================
+// 
+// INSTRUCTIONS:
+// 1. Open your Google Sheet
+// 2. Go to Extensions → Apps Script
+// 3. DELETE ALL existing code
+// 4. COPY AND PASTE THIS ENTIRE CODE
+// 5. Click Save (Ctrl+S)
+// 6. Click Deploy → Manage deployments
+// 7. Click Edit (pencil icon) → New version → Deploy
+// 8. Done!
+//
+// ============================================
+
+function doPost(e) {
+  try {
+    // Parse the incoming data from contact form
+    var body = JSON.parse(e.postData.contents);
+    
+    // Get the active spreadsheet (script MUST be bound to sheet)
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // Get Sheet1 (or first sheet if Sheet1 doesn't exist)
+    var sheet = ss.getSheetByName('Sheet1');
+    if (!sheet) {
+      sheet = ss.getSheets()[0];
+    }
+    
+    // Append the row: Name, Email, Message, Timestamp
+    sheet.appendRow([
+      body.name || 'N/A',
+      body.email || 'N/A',
+      body.message || 'N/A',
+      new Date(),
+    ]);
+    
+    // Return success response with proper CORS handling
+    var result = { 
+      success: true, 
+      message: 'Data saved successfully' 
+    };
+    
+    // Use HtmlService for better CORS support, then redirect to success
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (err) {
+    // Error response
+    var result = { 
+      success: false, 
+      error: err.toString(),
+      message: err.message || 'Unknown error occurred'
+    };
+    
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ============================================
+// TEST FUNCTION - Run this to verify it works
+// ============================================
+function testSheetAccess() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Sheet1') || ss.getSheets()[0];
+    sheet.appendRow(['TEST', 'test@test.com', 'Test message', new Date()]);
+    Logger.log('✅ SUCCESS! Test row added.');
+    return 'SUCCESS: Test row added successfully!';
+  } catch (err) {
+    Logger.log('❌ ERROR: ' + err.toString());
+    return 'ERROR: ' + err.toString();
+  }
+}
+

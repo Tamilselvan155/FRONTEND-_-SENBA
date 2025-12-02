@@ -60,6 +60,100 @@
   background-color: rgb(37 99 235);
 }
 
+/* Ensure toast container is visible - must be before other fixed position rules */
+div[data-sonner-toaster],
+div[data-sonner-toast],
+div[id*="react-hot-toast"],
+div[class*="react-hot-toast"],
+div[class*="toast"],
+[data-react-hot-toast],
+div[role="status"],
+div[role="alert"],
+/* Target react-hot-toast specific classes */
+div[class*="react-hot-toast-container"],
+div[class*="react-hot-toast-wrapper"],
+div[class*="react-hot-toast-toast"],
+/* Target any div with toast-related attributes */
+div[aria-live],
+div[aria-atomic],
+/* Target the specific toast classes from react-hot-toast */
+div.go2072408551,
+div.go3958317564,
+div[class*="go2072408551"],
+div[class*="go3958317564"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+  z-index: 99999 !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateY(0) !important;
+  animation: toastEnter 0.3s ease-out forwards !important;
+}
+
+/* Toast enter animation */
+@keyframes toastEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Force toast opacity to 1 - override inline styles */
+div[class*="go2072408551"][style*="opacity"],
+div[class*="go3958317564"][style*="opacity"],
+div.contact-success-toast[style*="opacity"],
+div[role="status"][style*="opacity"],
+div[role="alert"][style*="opacity"] {
+  opacity: 1 !important;
+}
+
+/* Force toast to be fixed position and visible - CRITICAL */
+div[class*="go2072408551"],
+div[class*="go3958317564"],
+div.contact-success-toast,
+div[role="status"],
+div[role="alert"] {
+  position: fixed !important;
+  top: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(0) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 90vw !important;
+  margin: 0 !important;
+}
+
+/* CRITICAL: Force parent container to be visible */
+div[class*="go4109123758"],
+div[class*="go4109123758"] > * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
 /* Hide Next.js development indicator - Comprehensive Rules - INCLUDING BUTTON WATERMARK */
 #__next-build-watcher,
 .__next-dev-overlay,
@@ -140,16 +234,17 @@ aside *[data-nextjs-dev-indicator] {
 }
 
 /* Specifically target fixed elements near sidebar (bottom-left corner) - AGGRESSIVE */
-body > div[style*="position: fixed"][style*="left"][style*="bottom"],
-body > div[style*="position: fixed"][style*="left: 0"],
-body > div[style*="position: fixed"][style*="left:0"],
-body > div[style*="position:fixed"][style*="left"][style*="bottom"],
-body > div[style*="position:fixed"][style*="left:0"],
-body > div[style*="position:fixed"][style*="left: 0"],
-div[style*="position: fixed"][style*="left"][style*="bottom"],
-div[style*="position:fixed"][style*="left"][style*="bottom"],
-*[style*="position: fixed"][style*="left"][style*="bottom"],
-*[style*="position:fixed"][style*="left"][style*="bottom"] {
+/* Exclude toast containers */
+body > div[style*="position: fixed"][style*="left"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+body > div[style*="position: fixed"][style*="left: 0"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+body > div[style*="position: fixed"][style*="left:0"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+body > div[style*="position:fixed"][style*="left"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+body > div[style*="position:fixed"][style*="left:0"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+body > div[style*="position:fixed"][style*="left: 0"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+div[style*="position: fixed"][style*="left"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+div[style*="position:fixed"][style*="left"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+*[style*="position: fixed"][style*="left"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]),
+*[style*="position:fixed"][style*="left"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([data-react-hot-toast]) {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -231,10 +326,11 @@ div[style*="width:1px"][style*="position:fixed"] {
 }
 
 /* Target fixed position elements in bottom-left corner - AGGRESSIVE */
-body > div[style*="position: fixed"][style*="left"],
-body > div[style*="position:fixed"][style*="left"],
-body > div[style*="position: fixed"][style*="bottom"],
-body > div[style*="position:fixed"][style*="bottom"] {
+/* BUT EXCLUDE toast containers */
+body > div[style*="position: fixed"][style*="left"]:not([class*="toast"]):not([id*="toast"]):not([role="status"]):not([role="alert"]):not([aria-live]),
+body > div[style*="position:fixed"][style*="left"]:not([class*="toast"]):not([id*="toast"]):not([role="status"]):not([role="alert"]):not([aria-live]),
+body > div[style*="position: fixed"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([role="status"]):not([role="alert"]):not([aria-live]),
+body > div[style*="position:fixed"][style*="bottom"]:not([class*="toast"]):not([id*="toast"]):not([role="status"]):not([role="alert"]):not([aria-live]) {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -292,3 +388,73 @@ select {
 
 /* Workaround: Using size attribute changes behavior to always-visible list (not recommended) */
 /* Best solution: Use a custom dropdown component for full control */
+
+/* Professional Toast Styles */
+.custom-toast {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  padding: 16px 20px !important;
+  min-width: 320px !important;
+  max-width: 420px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  border-left: 4px solid transparent !important;
+}
+
+.custom-toast.Toastify__toast--success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border-left-color: #047857 !important;
+}
+
+.custom-toast.Toastify__toast--error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border-left-color: #b91c1c !important;
+}
+
+.custom-toast.Toastify__toast--info {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border-left-color: #1d4ed8 !important;
+}
+
+.custom-toast.Toastify__toast--warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: #ffffff !important;
+  border-left-color: #b45309 !important;
+}
+
+.custom-toast-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.custom-toast-progress {
+  background: rgba(255, 255, 255, 0.3) !important;
+  height: 3px !important;
+}
+
+/* Toast icon styling */
+.Toastify__toast-icon {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Toast close button */
+.Toastify__close-button {
+  color: rgba(255, 255, 255, 0.8) !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+  color: #ffffff !important;
+}
