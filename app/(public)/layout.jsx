@@ -1,6 +1,7 @@
 'use client'
 
-import { Toaster } from 'react-hot-toast';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
@@ -51,7 +52,24 @@ export default function PublicLayout({ children }) {
 
     return (
         <>
-            <Toaster position="top-center" reverseOrder={false} />
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={true}
+              newestOnTop={true}
+              closeOnClick={false}
+              rtl={false}
+              pauseOnFocusLoss
+              draggable={false}
+              pauseOnHover
+              theme="light"
+              toastClassName="custom-toast"
+              bodyClassName="custom-toast-body"
+              progressClassName="custom-toast-progress"
+              style={{
+                zIndex: 9999,
+              }}
+            />
             {shouldShowNavbar && (
                 <>
                     <Banner />
