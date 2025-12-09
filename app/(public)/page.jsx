@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-// import BestSelling from "@/components/BestSelling";
+import BestSelling from "@/components/BestSelling";
+import ProductTabs from "@/components/ProductTabs";
 import Hero from "@/components/Hero";
 import Newsletter from "@/components/Newsletter";
 import OurSpecs from "@/components/OurSpec";
@@ -71,39 +72,37 @@ export default function Home() {
             {/* Hero Section - Starts after navbar */}
             <Hero />
             
-            {/* Service/Applications Section */}
-            <div className="bg-gray-50 py-8 sm:py-12">
-                <Service />
-            </div>
-            
             {/* Categories Section */}
-            <div className="bg-white py-8 sm:py-12">
-                <Categories/>
-            </div>
-            
-            {/* Latest Products Section */}
-            <div className="bg-gray-50 py-8 sm:py-12">
-                <LatestProducts />
-            </div>
-            
-            {/* Best Selling Section */}
             {/* <div className="bg-white py-8 sm:py-12">
-                <BestSelling />
+                <Categories/>
             </div> */}
             
-            {/* Recent Products Section */}
-            <div className="bg-gray-50 py-8 sm:py-12">
-                <RecentProducts/>
+            {/* Latest Products Section */}
+            {/* <div className="bg-gray-50 py-8 sm:py-12">
+                <LatestProducts />
+            </div> */}
+
+             {/* About Section */}
+             <div className="bg-gray-50 py-8 sm:py-12">
+                <About />
             </div>
             
+            {/* Product Tabs Section */}
+            <div className="bg-white py-8 sm:py-12">
+                <ProductTabs />
+            </div>
+
             {/* Product Help Banner */}
             <div className="bg-white py-8 sm:py-12">
                 <ProductHelpBanner/>
             </div>
+
+             {/* Service/Applications Section */}
+             <Service />
             
-            {/* About Section */}
+            {/* Recent Products Section */}
             <div className="bg-gray-50 py-8 sm:py-12">
-                <About />
+                <RecentProducts/>
             </div>
             
             {/* Our Specs Section */}

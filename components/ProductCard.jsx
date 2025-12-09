@@ -9,12 +9,18 @@ import { useDispatch } from 'react-redux';
 import { addToCart } from '@/lib/features/cart/cartSlice';
 import toast from 'react-hot-toast';
 import { assets } from '@/assets/assets';
+import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
+  
+  // Calculate discount if applicable
+  const discount = product.discount || 0;
+  const originalPrice = product.mrp || product.price;
+  const finalPrice = discount > 0 ? product.price : originalPrice;
 
   // 🛒 Add to Cart
   const handleAddToCart = (e, product) => {
@@ -55,110 +61,106 @@ Hi, I'm interested in booking an enquiry for the following product:
 
   return (
     <>
-      <Link
-        href={`/product/${product.id}`}
-        className="w-full max-w-[95vw] mx-auto flex flex-col items-center rounded-xl overflow-visible sm:max-w-[348px] md:max-w-[348px] lg:max-w-[284px] bg-white shadow-xl hover:shadow-2xl transition-all duration-300"
+      <motion.div
+        className="w-full h-full flex flex-col bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 group"
+        whileHover={{ y: -4 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
-        {/* Image Container */}
-        <div
-          className="
-            relative w-full 
-            h-[430px] 
-            sm:h-[340px]   /* 👈 Tablet view */
-            md:h-[360px]   /* 👈 Consistent for md range */
-            lg:h-[380px]   /* 👈 Desktop view */
-            rounded-t-xl overflow-hidden 
-            hover:-translate-y-2 
-            transition-transform duration-300
-          "
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <Image
-            src={
-              product.name === "Centrifugal Monobloc" 
-                ? assets.CenMono 
-                : (product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0])
-                  ? product.images[0]
-                  : assets.product_img0 // Use default placeholder image
-            }
-            alt={product.name || 'Product'}
-            fill
-            className={`object-cover w-full h-full transition-transform duration-300 ${
-              isHovered ? 'scale-105' : 'scale-100 translate-y-0'
-            }`}
-            unoptimized
-          />
-        </div>
+        <Link href={`/product/${product.id}`} className="flex flex-col h-full">
+          {/* Image Container */}
+          <div
+            className="relative w-full h-40 sm:h-48 md:h-56 lg:h-64 bg-gray-50 overflow-hidden flex-shrink-0"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            <Image
+              src={
+                product.name === "Centrifugal Monobloc" 
+                  ? assets.CenMono 
+                  : (product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0])
+                    ? product.images[0]
+                    : assets.product_img0
+              }
+              alt={product.name || 'Product'}
+              fill
+              className={`object-contain p-3 sm:p-4 transition-transform duration-300 ${
+                isHovered ? 'scale-110' : 'scale-100'
+              }`}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            />
+            
+            {/* Discount Badge */}
+            {discount > 0 && (
+              <div className="absolute top-2 right-2 bg-gradient-to-r from-[#c31e5a] to-[#f48638] text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold shadow-lg">
+                -{discount}% OFF
+              </div>
+            )}
+          </div>
 
-        {/* Product Info and Options Container - Merged with image */}
-        <div className="w-full bg-white rounded-b-xl p-6 border-t border-gray-100 overflow-visible">
-          {/* Product Info */}
-          <div className="flex justify-center items-center mb-6">
-            <p
-              className="font-bold text-[18px] sm:text-xl text-center transition-all duration-300 hover:text-[#c31e5a] hover:scale-105 cursor-pointer text-gray-800"
-            >
+          {/* Product Info Section */}
+          <div className="flex flex-col flex-1 p-3 sm:p-4 md:p-5 min-w-0">
+            {/* Product Name */}
+            <h3 className="font-bold text-sm sm:text-base md:text-lg text-gray-900 mb-2 sm:mb-3 line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem] group-hover:text-[#7C2A47] transition-colors duration-200 flex-shrink-0">
               {product.name}
-            </p>
-          </div>
+            </h3>
 
-          {/* Options Container */}
-          <div className="flex justify-center items-center gap-6">
-            {/* Add to Cart Button */}
-            <div className="relative group">
-              <button
-                onClick={(e) => handleAddToCart(e, product)}
-                className="flex items-center justify-center 
-                          w-12 h-12 
-                          text-gray-600 bg-gray-100
-                          hover:text-white
-                          hover:bg-[#c31e5a] 
-                          rounded-full 
-                          transition-all duration-300 transform 
-                          shadow-md hover:shadow-lg hover:scale-110"
-                title="Add to Cart"
-              >
-                <ShoppingCart size={20} />
-              </button>
+            {/* Price Section */}
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-shrink-0">
+              <span className="text-lg sm:text-xl md:text-2xl font-bold text-[#7C2A47] whitespace-nowrap">
+                {currency}{finalPrice.toLocaleString()}
+              </span>
+              {discount > 0 && originalPrice > finalPrice && (
+                <span className="text-xs sm:text-sm text-gray-500 line-through whitespace-nowrap">
+                  {currency}{originalPrice.toLocaleString()}
+                </span>
+              )}
             </div>
 
-            {/* Send Enquiry Button */}
-            <div className="relative group">
+            {/* Action Buttons - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2.5 mt-auto flex-shrink-0">
+              {/* Primary Button - Send Enquiry (Full width on mobile) */}
               <button
-                onClick={(e) => handleEnquiry(e, product)}
-                className="flex items-center justify-center 
-                          text-gray-600 bg-gray-100 
-                          hover:text-white
-                          hover:bg-[#f48638]
-                          rounded-lg px-6 py-3 
-                          transition-all duration-300 transform
-                          shadow-md hover:shadow-lg hover:scale-105"
-                title="Send Enquiry"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleEnquiry(e, product);
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#7C2A47] to-[#c31e5a] text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 hover:from-[#6a2340] hover:to-[#a01a47] transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 touch-manipulation whitespace-nowrap min-w-0"
               >
-                <Send size={18} />
-                <span className="text-[15px] ml-2 font-medium">Send Enquiry</span>
+                <Send size={14} className="sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline truncate">Send Enquiry</span>
+                <span className="sm:hidden truncate">Enquiry</span>
               </button>
-            </div>
 
-            {/* View Details Button */}
-            <div className="relative group">
-              <button
-                className="flex items-center justify-center 
-                          w-12 h-12 
-                          text-gray-600 bg-gray-100 
-                          hover:text-white
-                          hover:bg-[rgb(55,50,46)]  
-                          rounded-full 
-                          transition-all duration-300 transform
-                          shadow-md hover:shadow-lg hover:scale-110"
-                title="View Details"
-              >
-                <ArrowRight size={20} />
-              </button>
+              {/* Secondary Buttons - Icon only on mobile, with text on desktop */}
+              <div className="flex gap-2 sm:gap-2.5 flex-shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAddToCart(e, product);
+                  }}
+                  className="flex items-center justify-center w-10 h-10 sm:w-auto sm:px-3 sm:py-2.5 md:py-3 bg-gray-100 hover:bg-[#c31e5a] text-gray-700 hover:text-white rounded-lg sm:rounded-xl transition-all duration-300 shadow-sm hover:shadow-md active:scale-95 touch-manipulation flex-shrink-0"
+                  title="Add to Cart"
+                >
+                  <ShoppingCart size={16} className="sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline ml-1.5 sm:ml-2 text-xs sm:text-sm font-medium whitespace-nowrap">Cart</span>
+                </button>
+
+                <Link
+                  href={`/product/${product.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center justify-center w-10 h-10 sm:w-auto sm:px-3 sm:py-2.5 md:py-3 bg-gray-100 hover:bg-gray-800 text-gray-700 hover:text-white rounded-lg sm:rounded-xl transition-all duration-300 shadow-sm hover:shadow-md active:scale-95 touch-manipulation flex-shrink-0"
+                  title="View Details"
+                >
+                  <ArrowRight size={16} className="sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline ml-1.5 sm:ml-2 text-xs sm:text-sm font-medium whitespace-nowrap">View</span>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+      </motion.div>
 
       <ModalPopup
         isOpen={isModalOpen}

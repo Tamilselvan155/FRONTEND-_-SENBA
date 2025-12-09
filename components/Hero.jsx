@@ -230,7 +230,7 @@ const Hero = () => {
             </div>
 
             {/* Promotional Cards Section - Professional Grid Layout */}
-            <div className='max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8'>
+            <div className='w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8'>
                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6'>
                     {/* Best Products Card */}
                     <Link href="/category/products" className="group">

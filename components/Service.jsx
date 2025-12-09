@@ -3,9 +3,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { assets } from '@/assets/assets'
-import Title from './Title'
 import { motion } from 'framer-motion'
 
 const applications = [
@@ -49,12 +48,26 @@ export default function PumpApplications() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 bg-white">
-      <Title
-        title={`Precision Engineering For a Better World`}
-        description="Discover our range of innovative solutions"
-        href={`/category/products`}
-      />
+    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 bg-white">
+      {/* Custom Header Layout */}
+      <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight mb-2">
+          Precision Engineering For a Better World
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600 mb-4">
+          Discover our range of innovative solutions
+        </p>
+        <Link
+          href="/category/products"
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-[#c31e5aff] hover:text-[#a01a47ff] transition-colors duration-200 group"
+        >
+          <span>View All</span>
+          <ArrowRight
+            size={18}
+            className="transition-transform duration-200 group-hover:translate-x-1"
+          />
+        </Link>
+      </div>
 
       {/* --- Mobile Carousel (below md: 768px) --- */}
       <div className="md:hidden relative flex items-center justify-between w-full px-6 sm:px-8 mt-4 sm:mt-6">

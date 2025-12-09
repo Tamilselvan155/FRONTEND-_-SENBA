@@ -24,7 +24,7 @@ import { useSelector } from "react-redux"
         <div className="min-h-[70vh] mx-6">
             <div className=" max-w-6xl mx-auto">
                 <h1 onClick={() => router.push('/shop')} className="text-2xl text-slate-500 my-6 flex items-center gap-2 cursor-pointer"> {search && <MoveLeftIcon size={20} />}  All <span className="text-slate-700 font-medium">Products</span></h1>
-                <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-32">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 xl:gap-12 mx-auto mb-32 items-stretch">
                     {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
                 </div>
             </div>

@@ -23,7 +23,7 @@ const BestSelling = () => {
           <Title title={group.category} href={`/category/${group.category}`} />
 
           {/* Responsive Product Layout */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 items-stretch">
             {group.items.map((product, i) => {
               const total = group.items.length;
               const isLastRow = i >= total - (total % 4 || 4); // last row detection
