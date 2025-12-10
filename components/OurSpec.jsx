@@ -13,7 +13,7 @@ const OurSpecs = () => {
     };
 
     return (
-        <div className='w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-gray-50'>
+        <div className='w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-white'>
             <div className='max-w-7xl mx-auto'>
                 <Title 
                     visibleButton={false} 
@@ -34,10 +34,10 @@ const OurSpecs = () => {
                                     >
                                         <spec.icon size={20} className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </div>
-                                    <h3 className='text-slate-800 text-lg sm:text-xl lg:text-2xl font-semibold mt-2 sm:mt-3 mb-2 sm:mb-3'>
+                                    <h3 className='text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold mt-2 sm:mt-3 mb-3 sm:mb-4'>
                                         {spec.title}
                                     </h3>
-                                    <p className='text-xs sm:text-sm lg:text-base text-slate-600 leading-relaxed px-2'>
+                                    <p className='text-sm sm:text-base lg:text-lg text-gray-700 leading-relaxed px-2 font-medium'>
                                         {spec.description}
                                     </p>
                                 </div>

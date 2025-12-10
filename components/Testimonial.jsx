@@ -57,14 +57,14 @@ const Testimonial = () => {
   }
 
   return (
-    <section className="w-full py-10 sm:py-12 md:py-16 bg-gray-50">
+    <section className="w-full py-12 sm:py-16 md:py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-10 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
+        <div className="text-center mb-10 sm:mb-12 md:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-5 leading-tight tracking-tight">
             What Our Customers Say
           </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium">
             We value every piece of feedback — here's what our happy customers have to say!
           </p>
         </div>
@@ -90,7 +90,7 @@ const Testimonial = () => {
               {showing.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-xl sm:rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center flex-shrink-0 w-full sm:w-[calc(50%-0.625rem)] md:w-[calc(33.333%-1rem)] lg:w-[320px] max-w-[320px] p-4 sm:p-5 md:p-6"
+                  className="bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col items-center text-center flex-shrink-0 w-full sm:w-[calc(50%-0.625rem)] md:w-[calc(33.333%-1rem)] lg:w-[320px] max-w-[320px] p-5 sm:p-6 md:p-7 border border-gray-100"
                 >
                   {/* User Image */}
                   <div className="mb-3 sm:mb-4">
@@ -108,29 +108,29 @@ const Testimonial = () => {
                   </div>
 
                   {/* User Name */}
-                  <h3 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-2 sm:mb-3">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
                     {item.user.name}
                   </h3>
 
                   {/* Rating */}
-                  <div className="flex items-center justify-center gap-1 mb-3 sm:mb-4">
+                  <div className="flex items-center justify-center gap-1.5 mb-4 sm:mb-5">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${
                           i < Math.round(item.rating)
                             ? "text-yellow-400 fill-yellow-400"
                             : "text-gray-300"
                         }`}
                       />
                     ))}
-                    <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm text-gray-600 font-medium">
+                    <span className="ml-2 sm:ml-2.5 text-sm sm:text-base text-gray-700 font-semibold">
                       ({item.rating})
                     </span>
                   </div>
 
                   {/* Review Text */}
-                  <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed line-clamp-4 sm:line-clamp-5 flex-grow">
+                  <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed line-clamp-4 sm:line-clamp-5 flex-grow font-medium">
                     "{item.review}"
                   </p>
                 </div>

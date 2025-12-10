@@ -70,15 +70,15 @@ const RecentProducts = () => {
   }
 
   return (
-    <div className="px-4 my-20 mx-auto max-w-7xl">
+    <div className="px-4 sm:px-6 md:px-8 my-12 sm:my-16 md:my-20 mx-auto max-w-7xl">
       {/* Title Section */}
-      <div className="flex flex-col items-start mb-10">
-        <h2 className="text-[22px] sm:text-3xl font-bold">
+      <div className="flex flex-col items-start mb-12 sm:mb-14">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight mb-4">
           <span className="text-[#7C2A47]">RECENT</span>{' '}
           <span className="text-gray-900">PRODUCTS</span>
         </h2>
-        <div className="w-full border-t border-gray-300 mt-4 mb-6"></div>
-        <p className="text-[17px] sm:text-lg text-[#E6A02A] font-semibold">
+        <div className="w-full border-t-2 border-gray-300 mt-4 mb-6"></div>
+        <p className="text-lg sm:text-xl md:text-2xl text-[#E6A02A] font-bold leading-relaxed">
           INDUSTRY DESIGNS, INSPIRING GROWTH
         </p>
       </div>
@@ -89,30 +89,30 @@ const RecentProducts = () => {
         <button
           onClick={scrollLeft}
           disabled={isAtStart}
-          className={`absolute top-1/2 left-2 transform -translate-y-1/2 p-2 rounded-full shadow-md z-20 transition
+          className={`absolute top-1/2 left-2 sm:left-4 transform -translate-y-1/2 p-2.5 sm:p-3 rounded-full shadow-lg z-20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center
             ${isAtStart
-              ? 'opacity-30 cursor-not-allowed bg-white'
-              : 'opacity-100 bg-white hover:bg-gray-100 text-black'}`}
+              ? 'opacity-40 cursor-not-allowed bg-white/90'
+              : 'opacity-100 bg-white hover:bg-gray-50 text-gray-900 hover:shadow-xl'}`}
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
         </button>
 
         {/* Right Arrow */}
         <button
           onClick={scrollRight}
           disabled={isAtEnd}
-          className={`absolute top-1/2 right-2 sm:-right-5 transform -translate-y-1/2 p-2 rounded-full shadow-md z-20 transition
+          className={`absolute top-1/2 right-2 sm:right-4 transform -translate-y-1/2 p-2.5 sm:p-3 rounded-full shadow-lg z-20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center
             ${isAtEnd
-              ? 'opacity-30 cursor-not-allowed bg-white'
-              : 'opacity-100 bg-white hover:bg-gray-100 text-black'}`}
+              ? 'opacity-40 cursor-not-allowed bg-white/90'
+              : 'opacity-100 bg-white hover:bg-gray-50 text-gray-900 hover:shadow-xl'}`}
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
         </button>
 
         {/* Scrollable Products */}
         <div
           ref={carouselRef}
-          className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide space-x-6 px-0 sm:px-1 py-2"
+          className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide space-x-4 sm:space-x-6 md:space-x-8 px-0 sm:px-1 py-3"
         >
           {recentProducts.map((product) => (
             // <div
@@ -131,15 +131,15 @@ const RecentProducts = () => {
               key={product.id}
               className="flex-shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/5 snap-start group relative"
             >
-              <div className="bg-white rounded-lg overflow-hidden relative">
+              <div className="bg-white rounded-xl overflow-hidden relative shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200">
                 <Image
                   src={product.img}
                   alt={product.name}
-                  className="w-full h-[250px] object-contain"
+                  className="w-full h-[280px] sm:h-[300px] object-contain p-4"
                 />
                 {/* Overlay Name */}
-                <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.4)] opacity-0 group-hover:opacity-100 transition duration-300">
-                  <span className="text-white text-xl font-semibold text-center px-2">
+                <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 transition duration-300">
+                  <span className="text-white text-xl sm:text-2xl font-bold text-center px-4">
                     {product.name}
                   </span>
                 </div>

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, Suspense, useMemo, useCallback } from 'react'
+import { useState, useEffect, Suspense, useMemo, useCallback, startTransition } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useSearchParams, usePathname } from 'next/navigation'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ProductCard from './ProductCard'
 import { fetchProductsAsync } from '@/lib/features/product/productSlice'
@@ -13,9 +13,21 @@ const ProductTabsContent = () => {
   const dispatch = useDispatch()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { products, loading } = useSelector((state) => state.product)
   
-  const activeTab = searchParams.get('tab') || 'all'
+  const urlTab = searchParams.get('tab') || 'all'
+  
+  // Local state for instant UI updates
+  const [localTab, setLocalTab] = useState(urlTab)
+  
+  // Sync local state with URL params on mount and external changes
+  useEffect(() => {
+    setLocalTab(urlTab)
+  }, [urlTab])
+  
+  // Use localTab for display, fallback to urlTab
+  const activeTab = localTab || urlTab
 
   // Fetch products on mount
   useEffect(() => {
@@ -143,37 +155,50 @@ const ProductTabsContent = () => {
     { id: 'latest', label: 'Latest Product', href: `${pathname}?tab=latest` },
   ], [pathname])
 
+  // Optimized click handler - updates local state immediately, then URL in background
+  const handleTabClick = useCallback((e, tabId) => {
+    e.preventDefault()
+    
+    // Update local state immediately for instant UI feedback
+    setLocalTab(tabId)
+    
+    // Update URL in background using startTransition for non-urgent update
+    startTransition(() => {
+      const newUrl = `${pathname}?tab=${tabId}`
+      router.push(newUrl, { scroll: false })
+    })
+  }, [pathname, router])
+
   return (
-    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 bg-white">
+    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 sm:py-12 md:py-16 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-6 sm:mb-8 md:mb-10">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-1.5 sm:mb-2">
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight tracking-tight">
             Our Products
           </h2>
-          <p className="text-xs sm:text-sm md:text-base text-gray-600 px-2">
+          <p className="text-sm sm:text-base md:text-lg text-gray-700 px-2 leading-relaxed max-w-2xl mx-auto">
             Browse the huge variety of our products
           </p>
         </div>
 
         {/* Tabs Navigation - Mobile Responsive */}
-        <div className="flex items-center justify-center mb-6 sm:mb-8 md:mb-10 overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 md:gap-3 bg-gray-100 rounded-full p-1 sm:p-1.5 md:p-2 shadow-sm min-w-fit">
+        <div className="flex items-center justify-center mb-8 sm:mb-10 md:mb-12 overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
+          <div className="inline-flex items-center gap-2 sm:gap-2.5 md:gap-3 bg-gray-100 rounded-full p-1.5 sm:p-2 md:p-2.5 shadow-sm min-w-fit">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id
               return (
-                <Link
+                <button
                   key={tab.id}
-                  href={tab.href}
-                  scroll={false}
+                  onClick={(e) => handleTabClick(e, tab.id)}
                   className={`
-                    relative px-3 sm:px-4 md:px-6 lg:px-8 py-1.5 sm:py-2 md:py-2.5 rounded-full 
-                    text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap
-                    transition-all duration-300 ease-in-out touch-manipulation
+                    relative px-4 sm:px-5 md:px-7 lg:px-9 py-2 sm:py-2.5 md:py-3 rounded-full 
+                    text-sm sm:text-base md:text-lg font-semibold whitespace-nowrap
+                    transition-all duration-200 ease-in-out touch-manipulation
                     ${
                       isActive
-                        ? 'text-white bg-gradient-to-r from-[#7C2A47] to-[#c31e5a] shadow-md'
-                        : 'text-gray-700 active:text-[#7C2A47] active:bg-gray-50'
+                        ? 'text-white shadow-md'
+                        : 'text-gray-800 active:text-[#7C2A47] active:bg-gray-50'
                     }
                   `}
                 >
@@ -182,17 +207,17 @@ const ProductTabsContent = () => {
                     <motion.div
                       layoutId="activeTab"
                       className="absolute inset-0 bg-gradient-to-r from-[#7C2A47] to-[#c31e5a] rounded-full"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
                     />
                   )}
-                </Link>
+                </button>
               )
             })}
           </div>
         </div>
 
         {/* Products Grid with Smooth Transition */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {loading && displayProducts.length === 0 ? (
             <motion.div
               key="loading"
@@ -223,8 +248,8 @@ const ProductTabsContent = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8 items-stretch"
+              transition={{ duration: 0.1, ease: 'easeOut' }}
+              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8 items-stretch"
             >
               {displayProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -234,16 +259,16 @@ const ProductTabsContent = () => {
         </AnimatePresence>
 
         {/* View All Link */}
-        <div className="text-center mt-6 sm:mt-8 md:mt-10">
+        <div className="text-center mt-8 sm:mt-10 md:mt-12">
           <Link
             href="/category/products"
-            className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base font-semibold text-[#c31e5a] active:text-[#7C2A47] transition-colors duration-200 group touch-manipulation"
+            className="inline-flex items-center gap-2 sm:gap-2.5 text-sm sm:text-base md:text-lg font-semibold text-[#c31e5a] hover:text-[#7C2A47] active:text-[#7C2A47] transition-colors duration-200 group touch-manipulation"
           >
             <span>View All Products</span>
             <motion.svg
-              width="16"
-              height="16"
-              className="sm:w-[18px] sm:h-[18px] transition-transform duration-200 group-hover:translate-x-1"
+              width="18"
+              height="18"
+              className="sm:w-5 sm:h-5 transition-transform duration-200 group-hover:translate-x-1"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

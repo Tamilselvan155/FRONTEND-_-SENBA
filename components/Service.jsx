@@ -48,22 +48,22 @@ export default function PumpApplications() {
   }
 
   return (
-    <section className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12 bg-white">
+    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 sm:py-12 md:py-16 bg-white">
       {/* Custom Header Layout */}
-      <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight mb-2">
+      <div className="flex flex-col items-center text-center mb-8 sm:mb-10 md:mb-12">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight mb-4 sm:mb-5 leading-tight">
           Precision Engineering For a Better World
         </h2>
-        <p className="text-sm sm:text-base text-gray-600 mb-4">
+        <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-6 sm:mb-7 leading-relaxed max-w-2xl mx-auto">
           Discover our range of innovative solutions
         </p>
         <Link
           href="/category/products"
-          className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-[#c31e5aff] hover:text-[#a01a47ff] transition-colors duration-200 group"
+          className="inline-flex items-center gap-2.5 text-base sm:text-lg font-semibold text-[#c31e5aff] hover:text-[#a01a47ff] transition-colors duration-200 group"
         >
           <span>View All</span>
           <ArrowRight
-            size={18}
+            size={20}
             className="transition-transform duration-200 group-hover:translate-x-1"
           />
         </Link>
@@ -111,7 +111,7 @@ export default function PumpApplications() {
                       style={{ width: "auto", height: "auto" }}
                     />
                   </div>
-                  <p className="text-center text-xs sm:text-sm font-semibold text-gray-800 leading-tight px-1">{app.label}</p>
+                  <p className="text-center text-sm sm:text-base font-semibold text-gray-900 leading-tight px-1">{app.label}</p>
                 </motion.div>
               </Link>
             ))}
@@ -172,7 +172,7 @@ export default function PumpApplications() {
                       style={{ width: "auto", height: "auto" }}
                     />
                   </div>
-                  <p className="text-center font-semibold text-sm md:text-base text-gray-800 leading-tight">{app.label}</p>
+                  <p className="text-center font-semibold text-base md:text-lg text-gray-900 leading-tight">{app.label}</p>
                 </motion.div>
               </Link>
             ))}
@@ -215,7 +215,7 @@ export default function PumpApplications() {
                   style={{ width: "auto", height: "auto" }}
                 />
               </div>
-              <p className="font-semibold text-center text-sm lg:text-base text-gray-800 group-hover:text-[#c31e5aff] transition-colors leading-tight">
+              <p className="font-semibold text-center text-base lg:text-lg text-gray-900 group-hover:text-[#c31e5aff] transition-colors leading-tight">
                 {app.label}
               </p>
             </motion.div>

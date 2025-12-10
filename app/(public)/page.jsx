@@ -73,27 +73,27 @@ export default function Home() {
             <Hero />
             
             {/* Categories Section */}
-            {/* <div className="bg-white py-8 sm:py-12">
+            {/* <div className="bg-white py-12 sm:py-16 lg:py-20">
                 <Categories/>
             </div> */}
             
             {/* Latest Products Section */}
-            {/* <div className="bg-gray-50 py-8 sm:py-12">
+            {/* <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
                 <LatestProducts />
             </div> */}
 
              {/* About Section */}
-             <div className="bg-gray-50 py-8 sm:py-12">
+             {/* <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
                 <About />
-            </div>
+            </div> */}
             
             {/* Product Tabs Section */}
-            <div className="bg-white py-8 sm:py-12">
+            <div className="bg-white py-12 sm:py-16 lg:py-20">
                 <ProductTabs />
             </div>
 
             {/* Product Help Banner */}
-            <div className="bg-white py-8 sm:py-12">
+            <div className="bg-white py-8 sm:py-10 lg:py-12">
                 <ProductHelpBanner/>
             </div>
 
@@ -101,17 +101,17 @@ export default function Home() {
              <Service />
             
             {/* Recent Products Section */}
-            <div className="bg-gray-50 py-8 sm:py-12">
+            <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
                 <RecentProducts/>
             </div>
             
             {/* Our Specs Section */}
-            <div className="bg-white py-8 sm:py-12">
+            <div className="bg-white py-12 sm:py-16 lg:py-20">
                 <OurSpecs />
             </div>
             
             {/* Testimonial Section */}
-            <div className="bg-gray-50 py-8 sm:py-12">
+            <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
                 <Testimonial />
             </div>
             

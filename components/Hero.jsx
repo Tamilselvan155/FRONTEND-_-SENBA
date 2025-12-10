@@ -88,7 +88,7 @@ const Hero = () => {
                             />
                             
                             {/* Professional Gradient Overlay - Middle Layer */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/20 pointer-events-none" style={{ zIndex: 1 }}></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30 pointer-events-none" style={{ zIndex: 1 }}></div>
                             
                             {/* Content Container - Top Layer */}
                             <div className="absolute inset-0 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8" style={{ zIndex: 10, position: 'relative' }}>
@@ -119,9 +119,9 @@ const Hero = () => {
                                                 duration: 0.6,
                                                 ease: "easeOut"
                                             }}
-                                            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 mt-16 sm:mt-20 md:mt-24 lg:mt-28 xl:mt-32 leading-tight tracking-tight text-white drop-shadow-2xl relative text-left"
+                                            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 sm:mb-4 md:mb-5 mt-16 sm:mt-20 md:mt-24 lg:mt-28 xl:mt-32 leading-tight tracking-tight text-white drop-shadow-2xl relative text-left"
                                             style={{ 
-                                                textShadow: '2px 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5)',
+                                                textShadow: '3px 3px 10px rgba(0,0,0,0.9), 0 0 25px rgba(0,0,0,0.6)',
                                                 zIndex: 13,
                                                 position: 'relative'
                                             }}
@@ -137,9 +137,9 @@ const Hero = () => {
                                                 duration: 0.6,
                                                 ease: "easeOut"
                                             }}
-                                            className="text-xs sm:text-sm md:text-base lg:text-lg text-white mb-4 sm:mb-5 md:mb-6 max-w-full sm:max-w-lg leading-relaxed drop-shadow-lg relative text-left"
+                                            className="text-sm sm:text-base md:text-lg lg:text-xl text-white mb-5 sm:mb-6 md:mb-7 max-w-full sm:max-w-xl leading-relaxed drop-shadow-lg relative text-left font-medium"
                                             style={{ 
-                                                textShadow: '1px 1px 6px rgba(0,0,0,0.8), 0 0 15px rgba(0,0,0,0.5)',
+                                                textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 18px rgba(0,0,0,0.6)',
                                                 zIndex: 13,
                                                 position: 'relative'
                                             }}
@@ -162,8 +162,8 @@ const Hero = () => {
                                                 <motion.button 
                                                     whileHover={{ scale: 1.05, y: -2 }}
                                                     whileTap={{ scale: 0.95 }}
-                                                    className="group bg-[#7C2A47] hover:bg-[#7C2A47]/90 active:bg-[#7C2A47]/80 text-white px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm md:text-base font-semibold transition-all duration-300 flex items-center gap-2 sm:gap-3 shadow-xl hover:shadow-2xl relative touch-manipulation"
-                                                    style={{ zIndex: 14, position: 'relative', minHeight: '44px' }}
+                                                    className="group bg-[#7C2A47] hover:bg-[#7C2A47]/90 active:bg-[#7C2A47]/80 text-white px-6 py-3 sm:px-7 sm:py-3.5 md:px-9 md:py-4 rounded-lg sm:rounded-xl text-sm sm:text-base md:text-lg font-bold transition-all duration-300 flex items-center gap-2 sm:gap-3 shadow-xl hover:shadow-2xl relative touch-manipulation"
+                                                    style={{ zIndex: 14, position: 'relative', minHeight: '48px' }}
                                                 >
                                                     <span>{mounted ? slides[current].cta : slides[0].cta}</span>
                                                     <motion.div
@@ -230,13 +230,13 @@ const Hero = () => {
             </div>
 
             {/* Promotional Cards Section - Professional Grid Layout */}
-            <div className='w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6'>
+            <div className='w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 sm:py-8 md:py-10'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6 lg:gap-8'>
                     {/* Best Products Card */}
                     <Link href="/category/products" className="group">
                         <motion.div
-                            whileHover={{ y: -4 }}
-                            className='relative flex items-center justify-between bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 rounded-2xl p-4 sm:p-5 lg:p-6 hover:shadow-2xl transition-all duration-300 border border-emerald-200/60 overflow-hidden'
+                            whileHover={{ y: -6, scale: 1.02 }}
+                            className='relative flex items-center justify-between bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 rounded-2xl p-5 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-300 border-2 border-emerald-200/80 overflow-hidden'
                         >
                             {/* Decorative Background Pattern */}
                             <div className="absolute inset-0 opacity-5">
@@ -245,12 +245,12 @@ const Hero = () => {
                 </div>
 
                             <div className="relative z-10 flex-1 w-full sm:w-auto">
-                                <h3 className='text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-emerald-700 via-green-600 to-emerald-500 bg-clip-text text-transparent mb-2 sm:mb-3'>
+                                <h3 className='text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-emerald-700 via-green-600 to-emerald-500 bg-clip-text text-transparent mb-3 sm:mb-4 leading-tight'>
                                     Best Products
                                 </h3>
-                                <p className='text-xs sm:text-sm md:text-base text-emerald-700 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all'>
+                                <p className='text-sm sm:text-base md:text-lg text-emerald-800 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all leading-relaxed'>
                                     Explore Collection
-                                    <ArrowRightIcon size={16} className="sm:w-4 sm:h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRightIcon size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
                                 </p>
                             </div>
                             <div className="relative z-10 flex-shrink-0 sm:ml-4 self-center sm:self-auto">
@@ -270,8 +270,8 @@ const Hero = () => {
                     {/* Discount Card */}
                     <Link href="/category/products" className="group">
                         <motion.div
-                            whileHover={{ y: -4 }}
-                            className='relative flex items-center justify-between bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 rounded-2xl p-4 sm:p-5 lg:p-6 hover:shadow-2xl transition-all duration-300 border border-blue-200/60 overflow-hidden'
+                            whileHover={{ y: -6, scale: 1.02 }}
+                            className='relative flex items-center justify-between bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 rounded-2xl p-5 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-300 border-2 border-blue-200/80 overflow-hidden'
                         >
                             {/* Decorative Background Pattern */}
                             <div className="absolute inset-0 opacity-5">
@@ -286,12 +286,12 @@ const Hero = () => {
                                     </span>
                                     <span className="text-xs sm:text-sm md:text-base font-semibold text-blue-700">OFF</span>
                                 </div> */}
-                                <h3 className='text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 bg-clip-text text-transparent mb-2 sm:mb-3'>
+                                <h3 className='text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 bg-clip-text text-transparent mb-3 sm:mb-4 leading-tight'>
                                     Special Discounts
                                 </h3>
-                                <p className='text-xs sm:text-sm md:text-sm text-blue-700 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all'>
+                                <p className='text-sm sm:text-base md:text-lg text-blue-800 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all leading-relaxed'>
                                     Shop Now
-                                    <ArrowRightIcon size={16} className="sm:w-4 sm:h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRightIcon size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
                                 </p>
                             </div>
                             <div className="relative z-10 flex-shrink-0 sm:ml-4 self-center sm:self-auto">
