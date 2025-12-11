@@ -4,15 +4,17 @@ import Link from 'next/link'
 import React from 'react'
 
 const Title = ({ title, visibleButton = true, href = '', description }) => {
+    const isCentered = !visibleButton;
+    
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 w-full">
-            {/* Left Section - Title */}
-            <div className="flex flex-col gap-1">
+        <div className={`flex flex-col ${isCentered ? 'items-center' : 'sm:flex-row sm:items-center sm:justify-between'} gap-3 sm:gap-4 mb-6 sm:mb-8 w-full`}>
+            {/* Title Section */}
+            <div className={`flex flex-col gap-1 ${isCentered ? 'items-center text-center' : ''}`}>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
                     {title}
                 </h2>
                 {description && (
-                    <p className="text-sm sm:text-base text-gray-600 font-normal">
+                    <p className={`text-sm sm:text-base text-gray-600 font-normal ${isCentered ? 'max-w-2xl' : ''}`}>
                         {description}
                     </p>
                 )}

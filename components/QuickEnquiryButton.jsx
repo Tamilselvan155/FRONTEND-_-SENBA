@@ -4,7 +4,7 @@ import React from 'react'
 export default function QuickEnquiryButton() {
   return (
     <Link href="/contact">
-<div className="fixed top-1/2 right-0 z-50 -translate-y-1/2">
+<div className="fixed top-1/2 right-0 z-50 -translate-y-1/2 ">
   <button
     className="flex flex-col items-center justify-center bg-[#7C2A47] text-white 
                px-3 py-3 rounded-l-lg hover:bg-[#7C2A48] transition-all duration-300"

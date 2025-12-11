@@ -48,25 +48,27 @@ export default function PumpApplications() {
   }
 
   return (
-    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 sm:py-12 md:py-16 bg-white">
+    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 pt-0 pb-8 sm:pb-12 md:pb-16 bg-white">
       {/* Custom Header Layout */}
-      <div className="flex flex-col items-center text-center mb-8 sm:mb-10 md:mb-12">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight mb-4 sm:mb-5 leading-tight">
-          Precision Engineering For a Better World
-        </h2>
-        <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-6 sm:mb-7 leading-relaxed max-w-2xl mx-auto">
+      <div className="mb-8 sm:mb-10 md:mb-12">
+        <div className="flex items-center justify-between mb-4 sm:mb-5">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight leading-tight">
+            Precision Engineering For a Better World
+          </h2>
+          <Link
+            href="/category/products"
+            className="inline-flex items-center gap-2.5 text-base sm:text-lg font-semibold text-[#c31e5aff] hover:text-[#a01a47ff] transition-colors duration-200 group"
+          >
+            <span>View All</span>
+            <ArrowRight
+              size={20}
+              className="transition-transform duration-200 group-hover:translate-x-1"
+            />
+          </Link>
+        </div>
+        <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed max-w-2xl">
           Discover our range of innovative solutions
         </p>
-        <Link
-          href="/category/products"
-          className="inline-flex items-center gap-2.5 text-base sm:text-lg font-semibold text-[#c31e5aff] hover:text-[#a01a47ff] transition-colors duration-200 group"
-        >
-          <span>View All</span>
-          <ArrowRight
-            size={20}
-            className="transition-transform duration-200 group-hover:translate-x-1"
-          />
-        </Link>
       </div>
 
       {/* --- Mobile Carousel (below md: 768px) --- */}
@@ -99,19 +101,19 @@ export default function PumpApplications() {
                 <motion.div
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.98 }}
-                  className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-lg active:shadow-md transition-all duration-300 h-full"
+                  className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-lg active:shadow-md transition-all duration-300 h-full flex flex-col"
                 >
-                  <div className="bg-gray-50 rounded-lg h-24 sm:h-28 md:h-32 w-full flex items-center justify-center overflow-hidden mb-2 sm:mb-3">
+                  <div className="bg-gray-50 rounded-lg aspect-square w-full flex items-center justify-center overflow-hidden mb-3 p-3 sm:p-4">
                     <Image
                       src={app.src}
                       alt={app.label}
-                      width={100}
-                      height={100}
-                      className="object-contain transition-transform duration-300 group-hover:scale-110 w-auto h-auto max-w-full max-h-full"
-                      style={{ width: "auto", height: "auto" }}
+                      width={120}
+                      height={120}
+                      className="object-contain transition-transform duration-300 group-hover:scale-110"
+                      sizes="(max-width: 640px) 50vw, 100vw"
                     />
                   </div>
-                  <p className="text-center text-sm sm:text-base font-semibold text-gray-900 leading-tight px-1">{app.label}</p>
+                  <p className="text-center text-sm sm:text-base font-semibold text-gray-900 leading-tight mt-auto">{app.label}</p>
                 </motion.div>
               </Link>
             ))}
@@ -160,19 +162,19 @@ export default function PumpApplications() {
                 <motion.div
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.98 }}
-                  className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 shadow-sm hover:shadow-lg transition-all duration-300 h-full"
+                  className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col"
                 >
-                  <div className="bg-gray-50 rounded-lg h-36 md:h-40 w-full flex items-center justify-center overflow-hidden mb-3 md:mb-4">
+                  <div className="bg-gray-50 rounded-lg aspect-square w-full flex items-center justify-center overflow-hidden mb-4 p-4 md:p-5">
                     <Image
-                      className="object-contain transition-transform duration-300 group-hover:scale-110 w-auto h-auto max-w-full max-h-full"
                       src={app.src}
                       alt={app.label}
-                      width={130}
-                      height={130}
-                      style={{ width: "auto", height: "auto" }}
+                      width={140}
+                      height={140}
+                      className="object-contain transition-transform duration-300 group-hover:scale-110"
+                      sizes="(max-width: 1024px) 33vw, 100vw"
                     />
                   </div>
-                  <p className="text-center font-semibold text-base md:text-lg text-gray-900 leading-tight">{app.label}</p>
+                  <p className="text-center font-semibold text-base md:text-lg text-gray-900 leading-tight mt-auto">{app.label}</p>
                 </motion.div>
               </Link>
             ))}
@@ -205,17 +207,17 @@ export default function PumpApplications() {
               whileHover={{ y: -6 }}
               className="bg-white rounded-xl border border-gray-200 p-5 lg:p-6 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col"
             >
-              <div className="bg-gray-50 rounded-lg h-44 lg:h-48 w-full flex items-center justify-center overflow-hidden mb-3 lg:mb-4">
+              <div className="bg-gray-50 rounded-lg aspect-square w-full flex items-center justify-center overflow-hidden mb-4 p-5 lg:p-6">
                 <Image
-                  className="object-contain transition-transform duration-300 group-hover:scale-110 w-auto h-auto max-w-full max-h-full"
                   src={app.src}
                   alt={app.label}
-                  width={150}
-                  height={150}
-                  style={{ width: "auto", height: "auto" }}
+                  width={160}
+                  height={160}
+                  className="object-contain transition-transform duration-300 group-hover:scale-110"
+                  sizes="(max-width: 1280px) 20vw, 200px"
                 />
               </div>
-              <p className="font-semibold text-center text-base lg:text-lg text-gray-900 group-hover:text-[#c31e5aff] transition-colors leading-tight">
+              <p className="font-semibold text-center text-base lg:text-lg text-gray-900 group-hover:text-[#c31e5aff] transition-colors leading-tight mt-auto">
                 {app.label}
               </p>
             </motion.div>

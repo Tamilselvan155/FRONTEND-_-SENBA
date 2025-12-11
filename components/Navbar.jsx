@@ -178,9 +178,9 @@ const Navbar = memo(() => {
     >
       <nav className="relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
-            {/* Hamburger + Logo (Mobile & Tablet) */}
-            <div className="flex items-center gap-3 lg:hidden flex-shrink-0">
+          <div className="flex items-center justify-between h-16 lg:h-20 gap-3 sm:gap-4">
+            {/* Mobile: Hamburger + Logo */}
+            <div className="flex items-center gap-2 sm:gap-3 lg:hidden flex-shrink-0">
               <button
                 className="p-2 -ml-2 rounded-lg hover:bg-[#7C2A47]/10 transition-all duration-200 flex items-center justify-center group"
                 onClick={toggleMenu}
@@ -194,7 +194,7 @@ const Navbar = memo(() => {
             </div>
 
             {/* Desktop Layout: Logo | Search | Menu | Icons */}
-            <div className="hidden lg:flex items-center w-full justify-between gap-4 xl:gap-6">
+            <div className="hidden lg:flex items-center w-full justify-between gap-6 xl:gap-8">
               {/* Desktop Logo */}
               <div className="flex items-center flex-shrink-0">
                 <Link href="/" className="flex items-center">
@@ -206,15 +206,15 @@ const Navbar = memo(() => {
                 </Link>
               </div>
 
-              {/* Desktop Search Bar - Takes available space between logo and menu */}
-              <div className="flex items-center flex-1 min-w-0 max-w-md xl:max-w-lg mx-4">
+              {/* Desktop Search Bar - Flexible width */}
+              <div className="flex items-center flex-1 min-w-0 max-w-2xl mx-6 xl:mx-8">
                 <form onSubmit={handleSearch} className="w-full relative">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search products by name or keyword..."
-                    className="w-full px-4 py-2 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
+                    className="w-full px-4 py-2.5 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
                   />
                   <Search 
                     size={18} 
@@ -230,123 +230,123 @@ const Navbar = memo(() => {
                 </form>
               </div>
 
-              {/* Desktop Menu - Properly spaced */}
-              <div className="flex items-center gap-0.5 xl:gap-1 flex-shrink-0">
-              {navItems.filter(item => item.label !== "Categories").map((item) =>
-                item.dropdown ? (
-                  <div
-                    key={item.label}
-                    className="relative"
-                    ref={dropdownRef}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <button
-                      className={`flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200
+              {/* Desktop Menu Items */}
+              <div className="flex items-center gap-1 xl:gap-1.5 flex-shrink-0">
+                {navItems.filter(item => item.label !== "Categories").map((item) =>
+                  item.dropdown ? (
+                    <div
+                      key={item.label}
+                      className="relative"
+                      ref={dropdownRef}
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <button
+                        className={`flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200
+                          ${
+                            showDropdown
+                              ? "text-[#7C2A47] bg-[#7C2A47]/10"
+                              : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
+                          }
+                        `}
+                        type="button"
+                        onClick={() => setShowDropdown((v) => !v)}
+                      >
+                        <LayoutGrid size={16} className={`transition-colors flex-shrink-0 ${showDropdown ? "text-[#7C2A47]" : "text-gray-500"}`} />
+                        <span className="whitespace-nowrap">{item.label}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`transition-transform duration-200 flex-shrink-0 ${showDropdown ? "rotate-180 text-[#7C2A47]" : "text-gray-400"}`}
+                        />
+                      </button>
+
+                      {showDropdown && (
+                        <div className="absolute bg-white shadow-lg rounded-lg top-full mt-2 left-1/2 -translate-x-1/2 w-56 py-1 z-50 border border-gray-200">
+                          {categories.map((cat) => {
+                            const categoryHref = `/category/${cat}`;
+                            return (
+                              <div
+                                key={cat}
+                                className="relative"
+                                onMouseEnter={cat === "Pumps" ? handlePumpMouseEnter : () => handleLinkHover(categoryHref)}
+                                onMouseLeave={cat === "Pumps" ? handlePumpMouseLeave : undefined}
+                              >
+                                <Link
+                                  href={categoryHref}
+                                  prefetch={true}
+                                  className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 rounded-md mx-1 group"
+                                  onClick={() => {
+                                    setShowDropdown(false);
+                                    setShowPumpSubmenu(false);
+                                  }}
+                                >
+                                  <span className="font-medium">{cat}</span>
+                                  {cat === "Pumps" && <ChevronRight size={14} className="text-gray-400 group-hover:text-[#7C2A47] transition-colors" />}
+                                </Link>
+
+                                {cat === "Pumps" && showPumpSubmenu && (
+                                  <div
+                                    ref={pumpSubmenuRef}
+                                    className="absolute left-full top-0 ml-1 w-56 bg-white shadow-lg rounded-lg py-1 z-50 border border-gray-200"
+                                    onMouseEnter={() => {
+                                      if (closeTimeoutRef.current) {
+                                        clearTimeout(closeTimeoutRef.current);
+                                        closeTimeoutRef.current = null;
+                                      }
+                                    }}
+                                    onMouseLeave={handlePumpMouseLeave}
+                                  >
+                                    {pumpSubCategories.map((subCat) => {
+                                      const subCatHref = `/category/Pumps/${subCat}`;
+                                      return (
+                                        <Link
+                                          key={subCat}
+                                          href={subCatHref}
+                                          prefetch={true}
+                                          className="block px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 font-medium"
+                                          onClick={() => {
+                                            setShowDropdown(false);
+                                            setShowPumpSubmenu(false);
+                                          }}
+                                        >
+                                          {subCat}
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      prefetch={true}
+                      onMouseEnter={() => handleLinkHover(item.href)}
+                      className={`flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
                         ${
-                          showDropdown
+                          isActive(item.href, item.label)
                             ? "text-[#7C2A47] bg-[#7C2A47]/10"
                             : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
                         }
                       `}
-                      type="button"
-                      onClick={() => setShowDropdown((v) => !v)}
                     >
-                      <LayoutGrid size={16} className={`transition-colors ${showDropdown ? "text-[#7C2A47]" : "text-gray-500 group-hover:text-[#7C2A47]"}`} />
-                      <span className="whitespace-nowrap">{item.label}</span>
-                      <ChevronDown 
-                        size={14} 
-                        className={`transition-transform duration-200 ${showDropdown ? "rotate-180 text-[#7C2A47]" : "text-gray-400"}`}
+                      <item.icon
+                        size={16}
+                        className={`transition-colors flex-shrink-0 ${isActive(item.href, item.label) ? "text-[#7C2A47]" : "text-gray-500 group-hover:text-[#7C2A47]"}`}
                       />
-                    </button>
-
-                    {showDropdown && (
-                      <div className="absolute bg-white shadow-lg rounded-lg top-full mt-2 left-1/2 -translate-x-1/2 w-56 py-1 z-50 border border-gray-200">
-                        {categories.map((cat) => {
-                          const categoryHref = `/category/${cat}`;
-                          return (
-                            <div
-                              key={cat}
-                              className="relative"
-                              onMouseEnter={cat === "Pumps" ? handlePumpMouseEnter : () => handleLinkHover(categoryHref)}
-                              onMouseLeave={cat === "Pumps" ? handlePumpMouseLeave : undefined}
-                            >
-                              <Link
-                                href={categoryHref}
-                                prefetch={true}
-                                className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 rounded-md mx-1 group"
-                                onClick={() => {
-                                  setShowDropdown(false);
-                                  setShowPumpSubmenu(false);
-                                }}
-                              >
-                                <span className="font-medium">{cat}</span>
-                                {cat === "Pumps" && <ChevronRight size={14} className="text-gray-400 group-hover:text-[#7C2A47] transition-colors" />}
-                              </Link>
-
-                              {cat === "Pumps" && showPumpSubmenu && (
-                                <div
-                                  ref={pumpSubmenuRef}
-                                  className="absolute left-full top-0 ml-1 w-56 bg-white shadow-lg rounded-lg py-1 z-50 border border-gray-200"
-                                  onMouseEnter={() => {
-                                    if (closeTimeoutRef.current) {
-                                      clearTimeout(closeTimeoutRef.current);
-                                      closeTimeoutRef.current = null;
-                                    }
-                                  }}
-                                  onMouseLeave={handlePumpMouseLeave}
-                                >
-                                  {pumpSubCategories.map((subCat) => {
-                                    const subCatHref = `/category/Pumps/${subCat}`;
-                                    return (
-                                      <Link
-                                        key={subCat}
-                                        href={subCatHref}
-                                        prefetch={true}
-                                        className="block px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 font-medium"
-                                        onClick={() => {
-                                          setShowDropdown(false);
-                                          setShowPumpSubmenu(false);
-                                        }}
-                                      >
-                                        {subCat}
-                                      </Link>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    prefetch={true}
-                    onMouseEnter={() => handleLinkHover(item.href)}
-                    className={`flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                      ${
-                        isActive(item.href, item.label)
-                          ? "text-[#7C2A47] bg-[#7C2A47]/10"
-                          : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
-                      }
-                    `}
-                  >
-                    <item.icon
-                      size={16}
-                      className={`transition-colors flex-shrink-0 ${isActive(item.href, item.label) ? "text-[#7C2A47]" : "text-gray-500 group-hover:text-[#7C2A47]"}`}
-                    />
-                    <span className="whitespace-nowrap">{item.label}</span>
-                  </Link>
-                )
-              )}
-            </div>
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </Link>
+                  )
+                )}
+              </div>
 
               {/* Desktop Icons */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 xl:gap-2 flex-shrink-0 ml-2">
                 <Link 
                   href="/cart" 
                   prefetch={true}
@@ -373,7 +373,7 @@ const Navbar = memo(() => {
             </div>
 
             {/* Mobile & Tablet Icons */}
-            <div className="flex items-center gap-2 lg:hidden">
+            <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden flex-shrink-0">
               <button
                 onClick={() => setShowSearchMobile(!showSearchMobile)}
                 className="p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200"
@@ -408,7 +408,7 @@ const Navbar = memo(() => {
         {/* Mobile Search Bar - Appears below navbar */}
         {showSearchMobile && (
           <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-md z-40 px-4 py-3 w-full">
-            <form onSubmit={handleSearch} className="relative flex items-center gap-2">
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
                   ref={searchInputRef}
@@ -417,7 +417,7 @@ const Navbar = memo(() => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products..."
                   className={`w-full py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 ${
-                    searchQuery ? 'pl-10 pr-12' : 'pl-10 pr-10'
+                    searchQuery ? 'pl-10 pr-10' : 'pl-10 pr-10'
                   }`}
                 />
                 <Search 
@@ -428,7 +428,7 @@ const Navbar = memo(() => {
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-100 transition-colors z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100 transition-colors"
                     aria-label="Clear search"
                   >
                     <X size={16} className="text-gray-600" />
@@ -437,7 +437,7 @@ const Navbar = memo(() => {
               </div>
               <button
                 type="submit"
-                className="px-3 py-2.5 bg-[#7C2A47] text-white rounded-lg hover:bg-[#7C2A47]/90 transition-colors flex-shrink-0"
+                className="px-4 py-2.5 bg-[#7C2A47] text-white rounded-lg hover:bg-[#7C2A47]/90 active:bg-[#7C2A47]/80 transition-colors flex-shrink-0 shadow-sm"
                 aria-label="Search"
               >
                 <Search size={18} />
@@ -448,7 +448,7 @@ const Navbar = memo(() => {
                   setShowSearchMobile(false);
                   setSearchQuery("");
                 }}
-                className="p-2.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                className="p-2.5 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
                 aria-label="Close search"
               >
                 <X size={18} className="text-gray-600" />
@@ -460,21 +460,21 @@ const Navbar = memo(() => {
         {/* Mobile & Tablet Menu */}
         {menuOpen && (
           <>
-            <div className="lg:hidden fixed top-0 left-0 h-full w-72 bg-white shadow-xl z-50 border-r border-gray-200">
+            <div className="lg:hidden fixed top-0 left-0 h-full w-72 sm:w-80 bg-white shadow-xl z-50 border-r border-gray-200">
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 flex-shrink-0">
                   <Link href="/" className="flex items-center" onClick={toggleMenu}>
                     <Image src={WVlogo} alt="WV logo" className="h-10 w-auto object-contain" />
                   </Link>
                   <button
                     onClick={toggleMenu}
-                    className="p-2 rounded-lg hover:bg-[#7C2A47]/10 transition-all duration-200 group"
+                    className="p-2 rounded-lg hover:bg-[#7C2A47]/10 active:bg-[#7C2A47]/20 transition-all duration-200 group"
                     aria-label="Close menu"
                   >
                     <X size={20} className="text-gray-700 group-hover:text-[#7C2A47] transition-colors" />
                   </button>
                 </div>
-                <div className="flex flex-col gap-1 px-4 text-gray-700 flex-grow overflow-y-auto mt-2 pb-4">
+                <div className="flex flex-col gap-1 px-3 sm:px-4 text-gray-700 flex-grow overflow-y-auto py-2">
                   {mobileMainItems.map((item) => (
                     <Link
                       key={item.href}
