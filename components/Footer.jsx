@@ -36,7 +36,7 @@ const Footer = () => {
         {
             title: "CONTACT",
             links: [
-                { text: "+1-212-456-7890", path: 'tel:+12124567890', icon: PhoneIcon },
+                { text: "+1-212-456-789", path: 'tel:+12124567890', icon: PhoneIcon },
                 { text: "contact@example.com", path: 'mailto:contact@example.com', icon: MailIcon },
                 { text: "794 Francisco, 94102", path: '/', icon: MapPinIcon }
             ]
@@ -87,9 +87,12 @@ const Footer = () => {
 
                     {/* Links Grid Section */}
                     <div className="w-full lg:w-auto lg:flex-1">
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-4 xl:gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-4 xl:gap-6">
                             {linkSections.map((section, index) => (
-                                <div key={index} className="min-w-0">
+                                <div 
+                                    key={index} 
+                                    className={`min-w-0 ${index === 2 ? 'col-span-2 sm:col-span-1 lg:col-span-1' : ''}`}
+                                >
                                     <h3 className="text-slate-800 text-sm sm:text-base font-semibold mb-3 sm:mb-4 lg:mb-5 text-left">
                                         {section.title}
                                     </h3>

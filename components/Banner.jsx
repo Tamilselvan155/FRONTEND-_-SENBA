@@ -71,7 +71,7 @@ export default function Banner() {
     )
 
     return (
-        <div className="w-full px-3 sm:px-6 py-2 text-sm text-white bg-gradient-to-r from-[#c31e5a] via-[#f48638] to-[#c31e5a] overflow-x-auto">
+        <div className="w-full px-3 sm:px-6 py-2 text-sm text-white bg-gradient-to-r from-[#7C2A47] via-[#8B3A5A] to-[#7C2A47] overflow-x-auto border-b border-white/20">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 whitespace-nowrap">
                 
                 {/* Contact Info */}

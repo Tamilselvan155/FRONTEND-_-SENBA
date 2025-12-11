@@ -29,6 +29,9 @@ const RecentProducts = () => {
   const carouselRef = useRef(null)
   const [isAtStart, setIsAtStart] = useState(true)
   const [isAtEnd, setIsAtEnd] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const autoScrollIntervalRef = useRef(null)
+  const isPausedRef = useRef(false)
 
   // ✅ Check scroll position and update arrow state
   const checkScrollPosition = () => {
@@ -39,12 +42,51 @@ const RecentProducts = () => {
     setIsAtEnd(scrollLeft + clientWidth >= scrollWidth - tolerance)
   }
 
+  // Update ref when isPaused changes
+  useEffect(() => {
+    isPausedRef.current = isPaused
+  }, [isPaused])
+
   useEffect(() => {
     const carousel = carouselRef.current
     if (!carousel) return
+    
     carousel.addEventListener('scroll', checkScrollPosition)
     checkScrollPosition() // initial check
-    return () => carousel.removeEventListener('scroll', checkScrollPosition)
+    
+    // ✅ Auto-scroll function
+    const autoScroll = () => {
+      if (!carouselRef.current || isPausedRef.current) return
+      
+      const carousel = carouselRef.current
+      const { scrollLeft, scrollWidth, clientWidth } = carousel
+      const scrollAmount = 180 // Scroll by approximately one card width
+      
+      // If at the end, scroll back to start (infinite loop)
+      if (scrollLeft + clientWidth >= scrollWidth - 10) {
+        carousel.scrollTo({
+          left: 0,
+          behavior: 'smooth'
+        })
+      } else {
+        carousel.scrollBy({
+          left: scrollAmount,
+          behavior: 'smooth'
+        })
+      }
+      
+      setTimeout(checkScrollPosition, 300)
+    }
+    
+    // Set up auto-scroll interval (every 3 seconds)
+    autoScrollIntervalRef.current = setInterval(autoScroll, 3000)
+    
+    return () => {
+      carousel.removeEventListener('scroll', checkScrollPosition)
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current)
+      }
+    }
   }, [])
 
   // ✅ Scroll left
@@ -70,82 +112,83 @@ const RecentProducts = () => {
   }
 
   return (
-    <div className="px-4 sm:px-6 md:px-8 my-12 sm:my-16 md:my-20 mx-auto max-w-7xl">
+    <div className="px-4 sm:px-6 md:px-8 pt-2 sm:pt-4 md:pt-6 pb-8 sm:pb-10 md:pb-12 mx-auto max-w-7xl">
       {/* Title Section */}
-      <div className="flex flex-col items-start mb-12 sm:mb-14">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight mb-4">
+      <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight mb-3">
           <span className="text-[#7C2A47]">RECENT</span>{' '}
           <span className="text-gray-900">PRODUCTS</span>
         </h2>
-        <div className="w-full border-t-2 border-gray-300 mt-4 mb-6"></div>
-        <p className="text-lg sm:text-xl md:text-2xl text-[#E6A02A] font-bold leading-relaxed">
+        <div className="w-24 h-0.5 bg-gray-300 mb-3"></div>
+        <p className="text-sm sm:text-base md:text-lg text-[#E6A02A] font-semibold leading-relaxed">
           INDUSTRY DESIGNS, INSPIRING GROWTH
         </p>
       </div>
 
       {/* --- Carousel --- */}
-      <div className="relative mt-6">
+      <div 
+        className="relative"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
         {/* Left Arrow */}
         <button
           onClick={scrollLeft}
           disabled={isAtStart}
-          className={`absolute top-1/2 left-2 sm:left-4 transform -translate-y-1/2 p-2.5 sm:p-3 rounded-full shadow-lg z-20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center
+          className={`absolute top-1/2 left-2 sm:left-3 transform -translate-y-1/2 p-2 rounded-full shadow-md z-20 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center
             ${isAtStart
               ? 'opacity-40 cursor-not-allowed bg-white/90'
-              : 'opacity-100 bg-white hover:bg-gray-50 text-gray-900 hover:shadow-xl'}`}
+              : 'opacity-100 bg-white hover:bg-gray-50 text-gray-700 hover:shadow-lg'}`}
         >
-          <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
         {/* Right Arrow */}
         <button
           onClick={scrollRight}
           disabled={isAtEnd}
-          className={`absolute top-1/2 right-2 sm:right-4 transform -translate-y-1/2 p-2.5 sm:p-3 rounded-full shadow-lg z-20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center
+          className={`absolute top-1/2 right-2 sm:right-3 transform -translate-y-1/2 p-2 rounded-full shadow-md z-20 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center
             ${isAtEnd
               ? 'opacity-40 cursor-not-allowed bg-white/90'
-              : 'opacity-100 bg-white hover:bg-gray-50 text-gray-900 hover:shadow-xl'}`}
+              : 'opacity-100 bg-white hover:bg-gray-50 text-gray-700 hover:shadow-lg'}`}
         >
-          <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
         {/* Scrollable Products */}
         <div
           ref={carouselRef}
-          className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide space-x-4 sm:space-x-6 md:space-x-8 px-0 sm:px-1 py-3"
+          className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide gap-3 sm:gap-4 md:gap-5 px-0 py-2"
         >
           {recentProducts.map((product) => (
-            // <div
-            //   key={product.id}
-            //   className="flex-shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 snap-start"
-            // >
-            //   <div className="bg-white rounded-lg overflow-hidden">
-            //     <Image
-            //       src={product.img}
-            //       alt={`Product ${product.id}`}
-            //       className="w-full h-[250px] object-contain"
-            //     />
-            //   </div>
-            // </div>
             <div
               key={product.id}
-              className="flex-shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/5 snap-start group relative"
+              className="flex-shrink-0 w-[160px] sm:w-[180px] md:w-[200px] lg:w-[220px] snap-start group relative"
             >
-              <div className="bg-white rounded-xl overflow-hidden relative shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200">
-                <Image
-                  src={product.img}
-                  alt={product.name}
-                  className="w-full h-[280px] sm:h-[300px] object-contain p-4"
-                />
-                {/* Overlay Name */}
-                <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 transition duration-300">
-                  <span className="text-white text-xl sm:text-2xl font-bold text-center px-4">
+              <div className="bg-white rounded-lg overflow-hidden relative shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 h-full flex flex-col">
+                <div className="relative w-full aspect-square bg-gray-50 flex items-center justify-center p-3 sm:p-4">
+                  <Image
+                    src={product.img}
+                    alt={product.name}
+                    width={120}
+                    height={120}
+                    className="w-auto h-auto max-w-[80%] max-h-[80%] object-contain transition-transform duration-300 group-hover:scale-110"
+                  />
+                </div>
+                {/* Product Name - Always Visible */}
+                <div className="p-3 sm:p-4 bg-white border-t border-gray-100">
+                  <span className="text-gray-900 text-sm sm:text-base font-semibold text-center block">
+                    {product.name}
+                  </span>
+                </div>
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-[#7C2A47]/90 via-[#7C2A47]/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
+                  <span className="text-white text-sm sm:text-base font-bold text-center px-3">
                     {product.name}
                   </span>
                 </div>
               </div>
             </div>
-
           ))}
         </div>
       </div>

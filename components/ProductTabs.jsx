@@ -109,8 +109,8 @@ const ProductTabsContent = () => {
       .map(transformProduct)
       .filter(product => product.id)
 
-    // All products
-    const all = transformed.slice(0, 12)
+    // All products - 2 rows (8 products for 4 columns, 6 for 3 columns, 4 for 2 columns)
+    const all = transformed.slice(0, 8)
 
     // Bestseller products - optimized: sort first, then transform
     const featuredProducts = activeProducts
@@ -121,13 +121,13 @@ const ProductTabsContent = () => {
         if (bFeatured !== aFeatured) return bFeatured - aFeatured
         return (b.salesCount || b.price || 0) - (a.salesCount || a.price || 0)
       })
-      .slice(0, 12)
+      .slice(0, 8)
       .map(transformProduct)
       .filter(product => product.id)
 
     const bestseller = featuredProducts.length > 0 
       ? featuredProducts 
-      : transformed.slice(0, 12)
+      : transformed.slice(0, 8)
 
     // Latest products - sort by date, then transform
     const latest = [...activeProducts]
@@ -136,7 +136,7 @@ const ProductTabsContent = () => {
         const dateB = new Date(b.createdAt || b.created_at || b.updatedAt || b.updated_at || 0)
         return dateB - dateA
       })
-      .slice(0, 12)
+      .slice(0, 8)
       .map(transformProduct)
       .filter(product => product.id)
 
@@ -170,21 +170,21 @@ const ProductTabsContent = () => {
   }, [pathname, router])
 
   return (
-    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 sm:py-12 md:py-16 bg-white">
+    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 pt-6 sm:pt-3 md:pt-4 pb-8 sm:pb-12 md:pb-16 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-8 sm:mb-10 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight tracking-tight">
+        <div className="text-center mb-6 sm:mb-10 md:mb-12">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight tracking-tight">
             Our Products
           </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-700 px-2 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xs sm:text-sm md:text-base text-gray-700 px-2 leading-relaxed max-w-2xl mx-auto">
             Browse the huge variety of our products
           </p>
         </div>
 
         {/* Tabs Navigation - Mobile Responsive */}
-        <div className="flex items-center justify-center mb-8 sm:mb-10 md:mb-12 overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-          <div className="inline-flex items-center gap-2 sm:gap-2.5 md:gap-3 bg-gray-100 rounded-full p-1.5 sm:p-2 md:p-2.5 shadow-sm min-w-fit">
+        <div className="flex items-center justify-center mb-6 sm:mb-10 md:mb-12 overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 md:gap-2.5 bg-gray-100 rounded-full p-1 sm:p-1.5 md:p-2 shadow-sm min-w-fit">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id
               return (
@@ -192,8 +192,8 @@ const ProductTabsContent = () => {
                   key={tab.id}
                   onClick={(e) => handleTabClick(e, tab.id)}
                   className={`
-                    relative px-4 sm:px-5 md:px-7 lg:px-9 py-2 sm:py-2.5 md:py-3 rounded-full 
-                    text-sm sm:text-base md:text-lg font-semibold whitespace-nowrap
+                    relative px-3 sm:px-4 md:px-5 lg:px-6 py-1.5 sm:py-2 md:py-2.5 rounded-full 
+                    text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap
                     transition-all duration-200 ease-in-out touch-manipulation
                     ${
                       isActive
@@ -206,7 +206,7 @@ const ProductTabsContent = () => {
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-gradient-to-r from-[#7C2A47] to-[#c31e5a] rounded-full"
+                      className="absolute inset-0 bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] rounded-full"
                       transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
                     />
                   )}
@@ -262,7 +262,7 @@ const ProductTabsContent = () => {
         <div className="text-center mt-8 sm:mt-10 md:mt-12">
           <Link
             href="/category/products"
-            className="inline-flex items-center gap-2 sm:gap-2.5 text-sm sm:text-base md:text-lg font-semibold text-[#c31e5a] hover:text-[#7C2A47] active:text-[#7C2A47] transition-colors duration-200 group touch-manipulation"
+            className="inline-flex items-center gap-2 sm:gap-2.5 text-sm sm:text-base md:text-lg font-semibold text-[#7C2A47] hover:text-[#8B3A5A] active:text-[#8B3A5A] transition-colors duration-200 group touch-manipulation"
           >
             <span>View All Products</span>
             <motion.svg

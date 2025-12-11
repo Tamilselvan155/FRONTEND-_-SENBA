@@ -15,6 +15,8 @@ import ProductHelpBanner from "@/components/ProductHelpBanner";
 import QuickEnquiryButton from "@/components/QuickEnquiryButton";
 import BottomBanner from "@/components/BottomBanner";
 import RecentProducts from "@/components/RecentProducts";
+import TrustBadges from "@/components/TrustBadges";
+import PromotionalBanners from "@/components/PromotionalBanners";
 
 export default function Home() {
     const [isChecking, setIsChecking] = useState(true);
@@ -72,51 +74,49 @@ export default function Home() {
             {/* Hero Section - Starts after navbar */}
             <Hero />
             
-            {/* Categories Section */}
-            {/* <div className="bg-white py-12 sm:py-16 lg:py-20">
-                <Categories/>
-            </div> */}
-            
-            {/* Latest Products Section */}
-            {/* <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
-                <LatestProducts />
-            </div> */}
-
-             {/* About Section */}
-             {/* <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
-                <About />
-            </div> */}
-            
             {/* Product Tabs Section */}
-            <div className="bg-white py-12 sm:py-16 lg:py-20">
+            <div className="bg-white py-0 sm:py-8 lg:py-10">
                 <ProductTabs />
             </div>
 
-            {/* Product Help Banner */}
+              {/* Service/Applications Section */}
+              {/* <Service /> */}
+
+              {/* Promotional Banners Section
+              <PromotionalBanners /> */}
+
+               {/* Our Specs Section */}
+            <div className="bg-white py-5 sm:py-16 lg:py-0">
+                <OurSpecs />
+            </div>
+            
+
+             
+
+               {/* Product Help Banner */}
             <div className="bg-white py-8 sm:py-10 lg:py-12">
                 <ProductHelpBanner/>
             </div>
 
-             {/* Service/Applications Section */}
-             <Service />
-            
-            {/* Recent Products Section */}
-            <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
+               {/* Recent Products Section */}
+            <div className="bg-white py-12 sm:py-16 lg:py-0">
                 <RecentProducts/>
             </div>
             
-            {/* Our Specs Section */}
+            {/* Testimonial Section */}
             <div className="bg-white py-12 sm:py-16 lg:py-20">
-                <OurSpecs />
+                <Testimonial />
             </div>
             
-            {/* Testimonial Section */}
-            <div className="bg-gray-50 py-12 sm:py-16 lg:py-20">
-                <Testimonial />
+            {/* Newsletter Section */}
+            <div className="bg-white">
+                <Newsletter />
             </div>
             
             {/* Quick Enquiry Button - Fixed Position */}
             <QuickEnquiryButton/>
+
+             
         </div>
     );
 }

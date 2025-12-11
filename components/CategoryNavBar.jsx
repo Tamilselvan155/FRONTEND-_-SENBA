@@ -67,7 +67,7 @@ const CategoryNavBar = () => {
   }, [])
 
   return (
-    <div className="sticky top-16 lg:top-20 w-full bg-gradient-to-r from-[#7C2A47] via-[#8B3A5A] to-[#7C2A47] border-b border-gray-700/30 z-40 shadow-md">
+    <div className="sticky top-16 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Mobile: Horizontal Scrollable */}
         <nav className="lg:hidden flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide py-2.5 touch-pan-x">
@@ -84,8 +84,8 @@ const CategoryNavBar = () => {
                     onClick={() => handleCategoryClick(category)}
                     className={`flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation ${
                       isActive
-                        ? 'text-white bg-white/20'
-                        : 'text-white/90 active:text-white active:bg-white/10'
+                        ? 'text-[#7C2A47] bg-[#7C2A47]/10'
+                        : 'text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5'
                     }`}
                   >
                     <span>{categoryName}</span>
@@ -93,13 +93,13 @@ const CategoryNavBar = () => {
                       size={10} 
                       className={`transition-transform duration-200 ${
                         isActive ? 'rotate-180' : ''
-                      }`}
+                      } ${isActive ? 'text-[#7C2A47]' : 'text-gray-500'}`}
                     />
                   </button>
                 ) : (
                   <Link
                     href={categoryHref}
-                    className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-white/90 active:text-white active:bg-white/10"
+                    className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
                   >
                     <span>{categoryName}</span>
                   </Link>
@@ -147,8 +147,8 @@ const CategoryNavBar = () => {
                   href={categoryHref}
                   className={`flex items-center gap-1.5 py-2.5 px-3 text-sm font-semibold uppercase tracking-wide transition-all duration-200 relative group ${
                     isHovered || (isPumps && showPumpSubmenu)
-                      ? 'text-white'
-                      : 'text-white/90 hover:text-white'
+                      ? 'text-[#7C2A47]'
+                      : 'text-gray-700 hover:text-[#7C2A47]'
                   }`}
                 >
                   <span>{categoryName}</span>
@@ -156,8 +156,8 @@ const CategoryNavBar = () => {
                     size={12} 
                     className={`transition-all duration-200 ${
                       isHovered || (isPumps && showPumpSubmenu) 
-                        ? 'rotate-180 text-white' 
-                        : 'text-white/70 group-hover:text-white'
+                        ? 'rotate-180 text-[#7C2A47]' 
+                        : 'text-gray-500 group-hover:text-[#7C2A47]'
                     }`}
                   />
                 </Link>
@@ -195,4 +195,9 @@ const CategoryNavBar = () => {
 }
 
 export default CategoryNavBar
+
+
+
+
+
 
