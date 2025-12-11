@@ -60,7 +60,7 @@ const Hero = () => {
                     duration: 0.6, 
                     ease: [0.25, 0.46, 0.45, 0.94]
                   }}
-                  className="max-w-full sm:max-w-xl md:max-w-2xl text-black relative mt-16 sm:mt-12 md:mt-16 lg:mt-20"
+                  className="max-w-full sm:max-w-xl md:max-w-2xl text-black relative mt-16 sm:mt-12 md:mt-4 lg:mt-6"
                   style={{ 
                     zIndex: 12, 
                     position: 'relative',

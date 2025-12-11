@@ -99,12 +99,12 @@ export default function Home() {
             </div>
 
                {/* Recent Products Section */}
-            <div className="bg-white py-12 sm:py-16 lg:py-0">
+            <div className="bg-white pb-4 sm:pb-16 lg:pb-0 pt-12 sm:pt-16 lg:pt-0">
                 <RecentProducts/>
             </div>
             
             {/* Testimonial Section */}
-            <div className="bg-white py-12 sm:py-16 lg:py-20">
+            <div className="bg-white pt-4 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-20">
                 <Testimonial />
             </div>
             
