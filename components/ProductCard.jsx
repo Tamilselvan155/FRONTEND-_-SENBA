@@ -9,11 +9,9 @@ import { useDispatch } from 'react-redux';
 import { addToCart } from '@/lib/features/cart/cartSlice';
 import toast from 'react-hot-toast';
 import { assets } from '@/assets/assets';
-import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
-  const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   
@@ -21,6 +19,42 @@ const ProductCard = ({ product }) => {
   const discount = product.discount || 0;
   const originalPrice = product.mrp || product.price;
   const finalPrice = discount > 0 ? product.price : originalPrice;
+
+  const toText = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'object') {
+      return (
+        val.englishName ||
+        val.name ||
+        val.title ||
+        val.slug ||
+        ''
+      );
+    }
+    return '';
+  };
+
+  const brand =
+    toText(product.brand) ||
+    toText(product.store?.name) ||
+    toText(product.vendor) ||
+    toText(product.category) ||
+    toText(product.categoryId) ||
+    '';
+
+  const ratingValue = (() => {
+    const r = product.rating;
+    if (typeof r === 'number') return r;
+    if (Array.isArray(r) && r.length > 0) {
+      const sum = r.reduce((acc, item) => acc + (Number(item?.rating) || 0), 0);
+      return sum / r.length;
+    }
+    return null;
+  })();
+
+  const reviewCount = Array.isArray(product.rating) ? product.rating.length : 0;
 
   // 🛒 Add to Cart
   const handleAddToCart = (e, product) => {
@@ -61,118 +95,123 @@ Hi, I'm interested in booking an enquiry for the following product:
 
   return (
     <>
-      <motion.div
-        className="w-full bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 group flex flex-col h-full"
-        whileHover={{ y: -6 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {/* Image Container */}
+      <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full">
         <Link href={`/product/${product.id}`} className="block">
-          <div
-            className="relative w-full aspect-[3/2] bg-gray-50 overflow-hidden"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
+          <div className="relative w-full aspect-[4/3] bg-white">
             <Image
               src={
-                product.name === "Centrifugal Monobloc" 
-                  ? assets.CenMono 
+                product.name === "Centrifugal Monobloc"
+                  ? assets.CenMono
                   : (product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0])
                     ? product.images[0]
                     : assets.product_img0
               }
               alt={product.name || 'Product'}
               fill
-              className={`object-cover transition-transform duration-500 ${
-                isHovered ? 'scale-110' : 'scale-100'
-              }`}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-contain p-4"
+              sizes="(max-width: 640px) 70vw, (max-width: 1024px) 35vw, 260px"
               priority={false}
             />
-            
-            {/* Discount Badge */}
+
             {discount > 0 && (
-              <div className="absolute top-2 right-2 bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white px-2.5 py-1 rounded-md text-xs font-bold shadow-lg z-10">
-                {discount}% OFF
-              </div>
-            )}
-            
-            {/* Best Seller Badge */}
-            {product.bestseller && !discount && (
-              <div className="absolute top-2 left-2 bg-[#7C2A47] text-white px-2.5 py-1 rounded-md text-xs font-semibold shadow-lg z-10">
-                Best Seller
+              <div className="absolute top-2 left-2 bg-[#7C2A47] text-white text-[11px] font-semibold px-2 py-1">
+                Save {discount}%
               </div>
             )}
           </div>
         </Link>
 
-        {/* Content Section */}
-        <div className="p-2 sm:p-3 flex flex-col flex-1">
-          {/* Product Name */}
-          <Link href={`/product/${product.id}`} className="block mb-1">
-            <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1 line-clamp-2 min-h-[2.5rem] group-hover:text-[#7C2A47] transition-colors duration-200 leading-tight">
+        <div className="px-4 pt-3 pb-4 flex flex-col flex-1">
+          {brand ? (
+            <div className="text-[11px] tracking-wide text-gray-500 uppercase mb-1">
+              {brand}
+            </div>
+          ) : null}
+
+          <Link href={`/product/${product.id}`} className="block">
+            <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-3 min-h-[3.75rem]">
               {product.name}
             </h3>
           </Link>
-          
-          {/* Subtitle/Description */}
-          <p className="text-xs text-gray-500 mb-2 line-clamp-1 flex-shrink-0">
-            {product.description || 'High-flow, stainless steel build'}
-          </p>
 
-          {/* Price Section */}
-          <div className="flex items-baseline gap-2 mb-2 flex-shrink-0">
-            <span className="text-lg sm:text-xl font-bold text-[#7C2A47]">
-              {currency}{finalPrice.toLocaleString()}
-            </span>
-            {discount > 0 && originalPrice > finalPrice && (
-              <span className="text-xs text-gray-400 line-through">
-                {currency}{originalPrice.toLocaleString()}
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-[#7C2A47]">
+                {currency}{Number(finalPrice || 0).toLocaleString()}
               </span>
+              {discount > 0 && originalPrice > finalPrice ? (
+                <span className="text-sm text-gray-400 line-through">
+                  {currency}{Number(originalPrice || 0).toLocaleString()}
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+            {ratingValue ? (
+              <>
+                <span className="text-[#F4B400]">★★★★★</span>
+                <span className="text-gray-500">
+                  {reviewCount > 0 ? `${reviewCount} reviews` : 'No reviews'}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-gray-300">★★★★★</span>
+                <span className="text-gray-500">No reviews</span>
+              </>
             )}
           </div>
 
-          {/* Actions Section */}
-          <div className="mt-auto space-y-1.5">
-            {/* Secondary Icon Buttons Row */}
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleAddToCart(e, product);
-                }}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-[#7C2A47] hover:bg-[#6a2340] text-white rounded-lg px-2.5 py-1.5 transition-all duration-200 shadow-sm hover:shadow-md font-semibold text-xs sm:text-sm"
-                title="Add to Cart"
-              >
-                <ShoppingCart size={15} />
-                <span>Add to Cart</span>
-              </button>
-              
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleEnquiry(e, product);
-                }}
-                className="flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-2 py-1.5 transition-all duration-200 shadow-sm hover:shadow-md"
-                title="Send Enquiry"
-              >
-                <Send size={15} />
-              </button>
-            </div>
-
-            {/* Primary CTA Button */}
-            <Link
-              href={`/product/${product.id}`}
-              className="w-full flex items-center justify-center gap-1.5 bg-white hover:bg-[#7C2A47]/5 text-[#7C2A47] border-2 border-[#7C2A47] rounded-lg px-2.5 py-1.5 transition-all duration-200 font-semibold text-xs sm:text-sm group/btn"
-            >
-              <span>View Details</span>
-              <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <span className={`inline-block w-2 h-2 rounded-full ${product.inStock === false ? 'bg-gray-400' : 'bg-green-600'}`} />
+            <span className={`${product.inStock === false ? 'text-gray-500' : 'text-green-700'} font-medium`}>
+              {product.inStock === false ? 'Out of stock' : 'In stock'}
+            </span>
           </div>
+
+          <div className="mt-auto pt-4 flex gap-3">
+  {/* Add to Cart – Primary */}
+  <button
+    onClick={(e) => handleAddToCart(e, product)}
+    className="
+      flex-1 flex items-center justify-center gap-2
+      bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A]
+      text-white font-semibold text-sm
+      py-3 rounded-lg
+      shadow-md
+      transition-all duration-300
+      hover:shadow-lg hover:-translate-y-[1px]
+      active:scale-[0.98]
+      focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/40
+    "
+  >
+    <ShoppingCart size={16} />
+    Add to Cart
+  </button>
+
+  {/* Enquiry – Secondary */}
+  <button
+    onClick={(e) => handleEnquiry(e)}
+    className="
+      flex-1 flex items-center justify-center gap-2
+      border border-gray-300
+      bg-white text-gray-700 font-medium text-sm
+      py-3 rounded-lg
+      transition-all duration-300
+      hover:bg-gray-100 hover:border-gray-400
+      active:scale-[0.98]
+      focus:outline-none focus:ring-2 focus:ring-gray-300
+    "
+  >
+    <Send size={16} />
+    Enquiry
+  </button>
+</div>
+
+
         </div>
-      </motion.div>
+      </div>
 
       <ModalPopup
         isOpen={isModalOpen}

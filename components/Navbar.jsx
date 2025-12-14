@@ -169,16 +169,15 @@ const Navbar = memo(() => {
 
   return (
     <header 
-      className={`sticky top-0 w-full z-50 transition-all duration-200 ${
-        scrolled 
-          ? 'bg-white shadow-sm border-b border-gray-200' 
-          : 'bg-white border-b border-gray-100'
-      }`}
+      className={`sticky top-0 w-full z-50 transition-all duration-200 bg-white border-b border-gray-200`}
       style={{ backgroundColor: 'white', zIndex: 50 }}
     >
+      {/* Top Theme Color Line */}
+      <div className="w-full h-1 bg-[#7C2A47]"></div>
+      
       <nav className="relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20 gap-3 sm:gap-4">
+          <div className="flex items-center justify-between h-16 lg:h-20 gap-4 sm:gap-6">
             {/* Mobile: Hamburger + Logo */}
             <div className="flex items-center gap-2 sm:gap-3 lg:hidden flex-shrink-0">
               <button
@@ -193,8 +192,8 @@ const Navbar = memo(() => {
               </Link>
             </div>
 
-            {/* Desktop Layout: Logo | Search | Menu | Icons */}
-            <div className="hidden lg:flex items-center w-full justify-between gap-6 xl:gap-8">
+            {/* Desktop Layout: Logo | Search | Account | Basket */}
+            <div className="hidden lg:flex items-center w-full justify-between gap-6">
               {/* Desktop Logo */}
               <div className="flex items-center flex-shrink-0">
                 <Link href="/" className="flex items-center">
@@ -206,168 +205,64 @@ const Navbar = memo(() => {
                 </Link>
               </div>
 
-              {/* Desktop Search Bar - Flexible width */}
-              <div className="flex items-center flex-1 min-w-0 max-w-2xl mx-6 xl:mx-8">
-                <form onSubmit={handleSearch} className="w-full relative">
+              {/* Desktop Search Bar - Large and Centered */}
+              <div className="flex items-center flex-1 min-w-0 max-w-3xl mx-auto">
+                <form
+                  onSubmit={handleSearch}
+                  className="w-full flex items-stretch h-12 rounded-lg border border-gray-300 focus-within:border-[#7C2A47] focus-within:ring-2 focus-within:ring-[#7C2A47]/20 transition-all duration-200 bg-white overflow-hidden"
+                >
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products by name or keyword..."
-                    className="w-full px-4 py-2.5 pl-10 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
-                  />
-                  <Search 
-                    size={18} 
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" 
+                    placeholder="search..."
+                    className="flex-1 px-4 text-sm focus:outline-none bg-white text-gray-900 h-full border-0"
                   />
                   <button
                     type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-[#7C2A47]/10 transition-colors"
+                    className="w-14 bg-[#7C2A47] hover:bg-[#6a2340] text-white transition-colors duration-200 flex items-center justify-center flex-shrink-0 h-full"
                     aria-label="Search"
                   >
-                    <Search size={16} className="text-gray-600 hover:text-[#7C2A47]" />
+                    <Search size={18} className="text-white" />
                   </button>
                 </form>
               </div>
 
-              {/* Desktop Menu Items */}
-              <div className="flex items-center gap-1 xl:gap-1.5 flex-shrink-0">
-                {navItems.filter(item => item.label !== "Categories").map((item) =>
-                  item.dropdown ? (
-                    <div
-                      key={item.label}
-                      className="relative"
-                      ref={dropdownRef}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                    >
-                      <button
-                        className={`flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200
-                          ${
-                            showDropdown
-                              ? "text-[#7C2A47] bg-[#7C2A47]/10"
-                              : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
-                          }
-                        `}
-                        type="button"
-                        onClick={() => setShowDropdown((v) => !v)}
-                      >
-                        <LayoutGrid size={16} className={`transition-colors flex-shrink-0 ${showDropdown ? "text-[#7C2A47]" : "text-gray-500"}`} />
-                        <span className="whitespace-nowrap">{item.label}</span>
-                        <ChevronDown 
-                          size={14} 
-                          className={`transition-transform duration-200 flex-shrink-0 ${showDropdown ? "rotate-180 text-[#7C2A47]" : "text-gray-400"}`}
-                        />
-                      </button>
-
-                      {showDropdown && (
-                        <div className="absolute bg-white shadow-lg rounded-lg top-full mt-2 left-1/2 -translate-x-1/2 w-56 py-1 z-50 border border-gray-200">
-                          {categories.map((cat) => {
-                            const categoryHref = `/category/${cat}`;
-                            return (
-                              <div
-                                key={cat}
-                                className="relative"
-                                onMouseEnter={cat === "Pumps" ? handlePumpMouseEnter : () => handleLinkHover(categoryHref)}
-                                onMouseLeave={cat === "Pumps" ? handlePumpMouseLeave : undefined}
-                              >
-                                <Link
-                                  href={categoryHref}
-                                  prefetch={true}
-                                  className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 rounded-md mx-1 group"
-                                  onClick={() => {
-                                    setShowDropdown(false);
-                                    setShowPumpSubmenu(false);
-                                  }}
-                                >
-                                  <span className="font-medium">{cat}</span>
-                                  {cat === "Pumps" && <ChevronRight size={14} className="text-gray-400 group-hover:text-[#7C2A47] transition-colors" />}
-                                </Link>
-
-                                {cat === "Pumps" && showPumpSubmenu && (
-                                  <div
-                                    ref={pumpSubmenuRef}
-                                    className="absolute left-full top-0 ml-1 w-56 bg-white shadow-lg rounded-lg py-1 z-50 border border-gray-200"
-                                    onMouseEnter={() => {
-                                      if (closeTimeoutRef.current) {
-                                        clearTimeout(closeTimeoutRef.current);
-                                        closeTimeoutRef.current = null;
-                                      }
-                                    }}
-                                    onMouseLeave={handlePumpMouseLeave}
-                                  >
-                                    {pumpSubCategories.map((subCat) => {
-                                      const subCatHref = `/category/Pumps/${subCat}`;
-                                      return (
-                                        <Link
-                                          key={subCat}
-                                          href={subCatHref}
-                                          prefetch={true}
-                                          className="block px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 font-medium"
-                                          onClick={() => {
-                                            setShowDropdown(false);
-                                            setShowPumpSubmenu(false);
-                                          }}
-                                        >
-                                          {subCat}
-                                        </Link>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      prefetch={true}
-                      onMouseEnter={() => handleLinkHover(item.href)}
-                      className={`flex items-center gap-1.5 px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                        ${
-                          isActive(item.href, item.label)
-                            ? "text-[#7C2A47] bg-[#7C2A47]/10"
-                            : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
-                        }
-                      `}
-                    >
-                      <item.icon
-                        size={16}
-                        className={`transition-colors flex-shrink-0 ${isActive(item.href, item.label) ? "text-[#7C2A47]" : "text-gray-500 group-hover:text-[#7C2A47]"}`}
-                      />
-                      <span className="whitespace-nowrap">{item.label}</span>
-                    </Link>
-                  )
-                )}
+              {/* Account Section */}
+              <div className="flex flex-col items-end flex-shrink-0 border-r border-gray-300 pr-4 mr-4">
+                <Link
+                  href={email ? "/signout" : "/login"}
+                  prefetch={true}
+                  onMouseEnter={() => handleLinkHover(email ? "/signout" : "/login")}
+                  className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  {email ? "Sign Out" : "Login / Signup"}
+                </Link>
+                <Link
+                  href={email ? "/account" : "/login"}
+                  prefetch={true}
+                  onMouseEnter={() => handleLinkHover(email ? "/account" : "/login")}
+                  className="text-sm font-semibold text-gray-900 hover:text-[#7C2A47] transition-colors"
+                >
+                  My account
+                </Link>
               </div>
 
-              {/* Desktop Icons */}
-              <div className="flex items-center gap-1.5 xl:gap-2 flex-shrink-0 ml-2">
+              {/* Basket with Text */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Link 
                   href="/cart" 
                   prefetch={true}
                   onMouseEnter={() => handleLinkHover("/cart")}
-                  className="relative flex items-center justify-center p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 group"
+                  className="relative flex items-center gap-2 hover:opacity-80 transition-opacity"
                 >
-                  <ShoppingCart size={20} className="text-gray-700 group-hover:text-[#7C2A47] transition-colors" />
+                  <ShoppingCart size={24} className="text-gray-900" />
                   {mounted && cartCount > 0 && (
                     <span className="absolute -top-1 -right-1 text-[10px] font-semibold text-white bg-[#7C2A47] min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
                       {cartCount > 99 ? '99+' : cartCount}
                     </span>
                   )}
-                </Link>
-                <Link
-                  href={email ? "/signout" : "/login"}
-                  prefetch={true}
-                  onMouseEnter={() => handleLinkHover(email ? "/signout" : "/login")}
-                  className="p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 group"
-                  aria-label={email ? "Sign out" : "Sign in"}
-                >
-                  <UserCircle size={20} className="text-gray-700 group-hover:text-[#7C2A47] transition-colors" />
+                  <span className="text-sm font-medium text-gray-900">Basket</span>
                 </Link>
               </div>
             </div>

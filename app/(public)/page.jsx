@@ -17,6 +17,7 @@ import BottomBanner from "@/components/BottomBanner";
 import RecentProducts from "@/components/RecentProducts";
 import TrustBadges from "@/components/TrustBadges";
 import PromotionalBanners from "@/components/PromotionalBanners";
+import ShopByCategory from "@/components/ShopByCategory";
 
 export default function Home() {
     const [isChecking, setIsChecking] = useState(true);
@@ -79,6 +80,12 @@ export default function Home() {
                 <ProductTabs />
             </div>
 
+             {/* Shop by Category Section */}
+             <div className="bg-white">
+                <ShopByCategory />
+            </div>
+            
+
               {/* Service/Applications Section */}
               {/* <Service /> */}
 
@@ -108,10 +115,10 @@ export default function Home() {
                 <Testimonial />
             </div>
             
-            {/* Newsletter Section */}
+            {/* Newsletter Section
             <div className="bg-white">
                 <Newsletter />
-            </div>
+            </div> */}
             
             {/* Quick Enquiry Button - Fixed Position */}
             <QuickEnquiryButton/>
