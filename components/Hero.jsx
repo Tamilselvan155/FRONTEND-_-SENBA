@@ -1,147 +1,159 @@
-'use client'
-import { assets } from '@/assets/assets'
-import { ArrowRightIcon } from 'lucide-react'
+// 'use client'
+
+import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import React from 'react'
-import Link from "next/link";
-import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { ArrowRightIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+
+// ✅ IMPORT IMAGES DIRECTLY FROM assets
+import banner1 from '@/assets/banner1.jpg'
+import banner2 from '@/assets/banner2.jpg'
+import banner3 from '@/assets/banner3.jpg'
 
 const Hero = () => {
-  // Single hero content data
-  const heroContent = {
-    image: assets.banner2,
-    title: "Your Solution for Consistent and Efficient Pumping",
-    subtitle: "Built for performance and durability",
-    cta: "Explore Products"
-  };
+  const heroSlides = [
+    {
+      image: banner1,
+      title: 'WINTER SALE!',
+      subtitle: 'Christmas gift ideas at unbeatable prices',
+      cta: 'SHOP NOW',
+    },
+    {
+      image: banner2,
+      title: 'Premium Quality Pumps for Every Need',
+      subtitle: 'Reliable solutions for industrial and residential use',
+      cta: 'SHOP NOW',
+    },
+    {
+      image: banner3,
+      title: 'Advanced Technology Meets Durability',
+      subtitle: 'Engineered for excellence in every application',
+      cta: 'SHOP NOW',
+    },
+    // {
+    //   image: banner,
+    //   title: 'Trusted by Professionals Worldwide',
+    //   subtitle: 'Leading the industry with innovative solutions',
+    //   cta: 'SHOP NOW',
+    // },
+  ]
+
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+
+  useEffect(() => {
+    if (!isAutoPlaying) return
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [isAutoPlaying, heroSlides.length])
+
+  const pauseAutoPlay = () => {
+    setIsAutoPlaying(false)
+    setTimeout(() => setIsAutoPlaying(true), 10000)
+  }
+
+  const goToSlide = useCallback((index) => {
+    setCurrentSlide(index)
+    pauseAutoPlay()
+  }, [])
+
+  const goToNext = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
+    pauseAutoPlay()
+  }, [heroSlides.length])
+
+  const goToPrev = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
+    pauseAutoPlay()
+  }, [heroSlides.length])
+
+  const current = heroSlides[currentSlide]
 
   return (
-    <section className='bg-white relative overflow-hidden'>
-      {/* Hero Banner Section - Full Width with Viewport-Based Height */}
-      <div className='w-full relative'>
-        <div className="relative w-full overflow-hidden">
-          {/* Hero Image Container with Viewport Height */}
+    <section className="relative w-full overflow-hidden bg-gray-100">
+      <div
+        className="relative w-full h-[500px] sm:h-[600px] lg:h-[80vh]"
+        onMouseEnter={() => setIsAutoPlaying(false)}
+        onMouseLeave={() => setIsAutoPlaying(true)}
+      >
+        {/* 🔹 Background Images */}
+        {heroSlides.map((slide, index) => (
           <div
-            className="relative w-full h-[400px] sm:h-[65vh] md:h-[70vh] lg:h-[75vh] xl:h-[80vh]"
-            style={{ 
-              position: 'relative', 
-              zIndex: 1,
-              transform: 'translateZ(0)',
-              backfaceVisibility: 'hidden',
-              minHeight: '400px'
-            }}
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              index === currentSlide ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
+            }`}
           >
-            {/* Background Image Layer - Full Image Display */}
             <Image
-              src={heroContent.image}
-              alt={heroContent.title}
+              src={slide.image}
+              alt={slide.title}
               fill
-              priority
+              priority={index === 0}
+              sizes="100vw"
               className="object-cover"
-              style={{ 
-                willChange: 'auto',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden',
-                objectPosition: 'center center'
-              }}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
             />
-            
-            {/* Professional Gradient Overlay - Middle Layer */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30 pointer-events-none" style={{ zIndex: 1 }}></div>
-            
-            {/* Content Container - Top Layer */}
-            <div className="absolute inset-0 w-full" style={{ zIndex: 10, position: 'relative' }}>
-              <div className="h-full flex flex-col justify-start items-start relative w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20 pt-8 sm:pt-16 md:pt-20 lg:pt-24 xl:pt-28" style={{ zIndex: 11 }}>
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.6, 
-                    ease: [0.25, 0.46, 0.45, 0.94]
-                  }}
-                  className="max-w-full sm:max-w-xl md:max-w-2xl text-black relative mt-16 sm:mt-12 md:mt-4 lg:mt-6"
-                  style={{ 
-                    zIndex: 12, 
-                    position: 'relative',
-                    willChange: 'auto',
-                    backfaceVisibility: 'hidden'
-                  }}
-                >
-                  <motion.h1 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ 
-                      delay: 0.1, 
-                      duration: 0.6,
-                      ease: "easeOut"
-                    }}
-                    className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 leading-tight tracking-tight text-black relative text-left font-sans"
-                    style={{ 
-                      zIndex: 13,
-                      position: 'relative',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    }}
-                  >
-                    {heroContent.title}
-                  </motion.h1>
-                  
-                  <motion.p 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ 
-                      delay: 0.25, 
-                      duration: 0.6,
-                      ease: "easeOut"
-                    }}
-                    className="text-xs sm:text-sm md:text-base lg:text-lg text-black mb-4 sm:mb-5 md:mb-6 max-w-full sm:max-w-xl leading-relaxed relative text-left font-medium"
-                    style={{ 
-                      zIndex: 13,
-                      position: 'relative'
-                    }}
-                  >
-                    {heroContent.subtitle}
-                  </motion.p>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      delay: 0.4, 
-                      duration: 0.5,
-                      ease: "easeOut"
-                    }}
-                    className="relative flex justify-start mt-3 sm:mt-4"
-                    style={{ zIndex: 13, position: 'relative' }}
-                  >
-                    <Link href="/category/products">
-                      <motion.button 
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="group bg-[#7C2A47] hover:bg-[#7C2A47]/90 active:bg-[#7C2A47]/80 text-white px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3.5 rounded-lg sm:rounded-xl text-xs sm:text-sm md:text-base font-bold transition-all duration-300 flex items-center gap-2 sm:gap-3 shadow-xl hover:shadow-2xl relative touch-manipulation"
-                        style={{ zIndex: 14, position: 'relative', minHeight: '48px' }}
-                      >
-                        <span>{heroContent.cta}</span>
-                        <motion.div
-                          animate={{ x: [0, 5, 0] }}
-                          transition={{ 
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        >
-                          <ArrowRightIcon size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
-                        </motion.div>
-                      </motion.button>
-                    </Link>
-                  </motion.div>
-                </motion.div>
-              </div>
+          </div>
+        ))}
+
+        {/* 🔹 Content */}
+        <div className="absolute inset-0 flex flex-col lg:flex-row z-10">
+          {/* Left Section */}
+          <div className="relative w-full lg:w-[45%] h-[300px] sm:h-[400px] lg:h-full">
+            <div className="absolute inset-0 bg-red-600/75" />
+            <div className="relative h-full flex flex-col justify-center px-6 sm:px-10 xl:px-16 text-white">
+              <h1 className="text-4xl sm:text-5xl xl:text-7xl font-bold uppercase mb-6">
+                {current.title}
+              </h1>
+              <p className="text-lg sm:text-xl xl:text-2xl mb-8">
+                {current.subtitle}
+              </p>
+              <Link href="/category/products">
+                <button className="group bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-lg font-bold flex items-center gap-3 transition">
+                  {current.cta}
+                  <ArrowRightIcon className="group-hover:translate-x-1 transition" />
+                </button>
+              </Link>
             </div>
           </div>
-        </div>
-      </div>
 
+          {/* Right Section (image visible behind) */}
+          <div className="w-full lg:w-[55%]" />
+        </div>
+
+        {/* 🔹 Navigation Dots */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {heroSlides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToSlide(i)}
+              className={`rounded-full transition ${
+                i === currentSlide
+                  ? 'w-3 h-3 bg-white'
+                  : 'w-2 h-2 bg-white/50 hover:bg-white'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* 🔹 Navigation Arrows */}
+        <button
+          onClick={goToPrev}
+          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-3 rounded-full z-20"
+        >
+          <ChevronLeft className="text-white" />
+        </button>
+
+        <button
+          onClick={goToNext}
+          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-3 rounded-full z-20"
+        >
+          <ChevronRight className="text-white" />
+        </button>
+      </div>
     </section>
   )
 }
