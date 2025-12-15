@@ -101,7 +101,7 @@ const ProductTabsContent = () => {
           </h2>
           <Link
             href="/category/products"
-            className="text-sm sm:text-base font-semibold text-[#0B64B5] hover:text-[#09599e] transition-colors"
+            className="text-sm sm:text-base font-semibold text-[#7C2A47] hover:text-[#8B3A5A] transition-colors"
           >
             View all
           </Link>
