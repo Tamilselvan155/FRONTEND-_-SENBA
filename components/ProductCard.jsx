@@ -95,62 +95,66 @@ Hi, I'm interested in booking an enquiry for the following product:
 
   return (
     <>
-      <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full">
+      <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full rounded-lg transition-shadow hover:shadow-lg">
+        {/* Image */}
         <Link href={`/product/${product.id}`} className="block">
           <div className="relative w-full aspect-[4/3] bg-white">
             <Image
               src={
                 product.name === "Centrifugal Monobloc"
                   ? assets.CenMono
-                  : (product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0])
+                  : (product.images && product.images[0])
                     ? product.images[0]
                     : assets.product_img0
               }
               alt={product.name || 'Product'}
               fill
-              className="object-contain p-4"
-              sizes="(max-width: 640px) 70vw, (max-width: 1024px) 35vw, 260px"
-              priority={false}
+              className="object-contain p-3 sm:p-4"
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 40vw, 260px"
             />
-
+  
             {discount > 0 && (
-              <div className="absolute top-2 left-2 bg-[#7C2A47] text-white text-[11px] font-semibold px-2 py-1">
+              <div className="absolute top-2 left-2 bg-[#7C2A47] text-white text-[10px] sm:text-[11px] font-semibold px-2 py-1 rounded">
                 Save {discount}%
               </div>
             )}
           </div>
         </Link>
-
-        <div className="px-4 pt-3 pb-4 flex flex-col flex-1">
-          {brand ? (
-            <div className="text-[11px] tracking-wide text-gray-500 uppercase mb-1">
+  
+        {/* Content */}
+        <div className="px-3 sm:px-4 pt-3 pb-4 flex flex-col flex-1">
+          {brand && (
+            <div className="text-[10px] sm:text-[11px] tracking-wide text-gray-500 uppercase mb-1">
               {brand}
             </div>
-          ) : null}
-
-          <Link href={`/product/${product.id}`} className="block">
-            <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-3 min-h-[3.75rem]">
+          )}
+  
+          <Link href={`/product/${product.id}`}>
+            <h3 className="text-sm sm:text-[15px] font-semibold text-gray-900 leading-snug line-clamp-2 sm:line-clamp-3 min-h-[2.75rem] sm:min-h-[3.75rem]">
               {product.name}
             </h3>
           </Link>
-
+  
+          {/* Price */}
           <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-[#7C2A47]">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
                 {currency}{Number(finalPrice || 0).toLocaleString()}
               </span>
-              {discount > 0 && originalPrice > finalPrice ? (
-                <span className="text-sm text-gray-400 line-through">
+  
+              {discount > 0 && originalPrice > finalPrice && (
+                <span className="text-xs sm:text-sm text-gray-400 line-through">
                   {currency}{Number(originalPrice || 0).toLocaleString()}
                 </span>
-              ) : null}
+              )}
             </div>
           </div>
-
-          <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+  
+          {/* Rating */}
+          <div className="mt-2 flex items-center gap-2 text-xs">
             {ratingValue ? (
               <>
-                <span className="text-[#F4B400]">★★★★★</span>
+                <span className="text-[#7C2A47]">★★★★★</span>
                 <span className="text-gray-500">
                   {reviewCount > 0 ? `${reviewCount} reviews` : 'No reviews'}
                 </span>
@@ -162,57 +166,61 @@ Hi, I'm interested in booking an enquiry for the following product:
               </>
             )}
           </div>
-
+  
+          {/* Stock */}
           <div className="mt-2 flex items-center gap-2 text-xs">
-            <span className={`inline-block w-2 h-2 rounded-full ${product.inStock === false ? 'bg-gray-400' : 'bg-green-600'}`} />
-            <span className={`${product.inStock === false ? 'text-gray-500' : 'text-green-700'} font-medium`}>
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                product.inStock === false ? 'bg-gray-400' : 'bg-[#7C2A47]'
+              }`}
+            />
+            <span
+              className={`font-medium ${
+                product.inStock === false ? 'text-gray-500' : 'text-[#7C2A47]'
+              }`}
+            >
               {product.inStock === false ? 'Out of stock' : 'In stock'}
             </span>
           </div>
-
-          <div className="mt-auto pt-4 flex gap-3">
-  {/* Add to Cart – Primary */}
-  <button
-    onClick={(e) => handleAddToCart(e, product)}
-    className="
-      flex-1 flex items-center justify-center gap-2
-      bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A]
-      text-white font-semibold text-sm
-      py-3 rounded-lg
-      shadow-md
-      transition-all duration-300
-      hover:shadow-lg hover:-translate-y-[1px]
-      active:scale-[0.98]
-      focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/40
-    "
-  >
-    <ShoppingCart size={16} />
-    Add to Cart
-  </button>
-
-  {/* Enquiry – Secondary */}
-  <button
-    onClick={(e) => handleEnquiry(e)}
-    className="
-      flex-1 flex items-center justify-center gap-2
-      border border-gray-300
-      bg-white text-gray-700 font-medium text-sm
-      py-3 rounded-lg
-      transition-all duration-300
-      hover:bg-gray-100 hover:border-gray-400
-      active:scale-[0.98]
-      focus:outline-none focus:ring-2 focus:ring-gray-300
-    "
-  >
-    <Send size={16} />
-    Enquiry
-  </button>
-</div>
-
-
+  
+          {/* Actions */}
+          <div className="mt-auto pt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              onClick={(e) => handleAddToCart(e, product)}
+              className="
+                flex-1 flex items-center justify-center gap-2
+                bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A]
+                text-white font-semibold text-sm
+                py-2.5 sm:py-3 rounded-lg
+                shadow-md
+                transition-all duration-300
+                hover:shadow-lg hover:-translate-y-[1px]
+                active:scale-[0.98]
+              "
+            >
+              <ShoppingCart size={16} />
+              Add to Cart
+            </button>
+  
+            <button
+              onClick={(e) => handleEnquiry(e)}
+              className="
+                flex-1 flex items-center justify-center gap-2
+                border border-[#7C2A47]/30
+                text-[#7C2A47] font-medium text-sm
+                py-2.5 sm:py-3 rounded-lg
+                transition-all duration-300
+                hover:bg-[#7C2A47]/5
+                active:scale-[0.98]
+              "
+            >
+              <Send size={16} />
+              Enquiry
+            </button>
+          </div>
         </div>
       </div>
-
+  
       <ModalPopup
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -230,6 +238,7 @@ Hi, I'm interested in booking an enquiry for the following product:
       />
     </>
   );
+  
 };
 
 export default ProductCard;
