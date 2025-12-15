@@ -1,161 +1,247 @@
-// 'use client'
+'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import Image from 'next/image'
+import { useEffect, useState, useRef, useMemo } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import Link from 'next/link'
-import { ArrowRightIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { fetchBannersAsync } from '@/lib/features/banner/bannerSlice'
 
-// ✅ IMPORT IMAGES DIRECTLY FROM assets
+// Import local fallback images
 import banner1 from '@/assets/banner1.jpg'
 import banner2 from '@/assets/banner2.jpg'
 import banner3 from '@/assets/banner3.jpg'
 
-const Hero = () => {
-  const heroSlides = [
-    {
-      image: banner1,
-      title: 'WINTER SALE!',
-      subtitle: 'Christmas gift ideas at unbeatable prices',
-      cta: 'SHOP NOW',
-    },
-    {
-      image: banner2,
-      title: 'Premium Quality Pumps for Every Need',
-      subtitle: 'Reliable solutions for industrial and residential use',
-      cta: 'SHOP NOW',
-    },
-    {
-      image: banner3,
-      title: 'Advanced Technology Meets Durability',
-      subtitle: 'Engineered for excellence in every application',
-      cta: 'SHOP NOW',
-    },
-    // {
-    //   image: banner,
-    //   title: 'Trusted by Professionals Worldwide',
-    //   subtitle: 'Leading the industry with innovative solutions',
-    //   cta: 'SHOP NOW',
-    // },
-  ]
-
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+export default function Hero() {
+  const dispatch = useDispatch()
+  const { banners, loading } = useSelector((state) => state.banner)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [slides, setSlides] = useState([])
 
   useEffect(() => {
-    if (!isAutoPlaying) return
+    dispatch(fetchBannersAsync())
+  }, [dispatch])
 
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
+  useEffect(() => {
+    // Process backend banners
+    const activeBanners = (banners || [])
+      .filter((b) => b.status === 'active')
+      .map((b) => {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        
+        // Clean the photo path - handle all possible formats
+        let cleanPhoto = b.photo || ''
+        
+        // Remove any http:// or https:// URLs (if full URL is stored)
+        cleanPhoto = cleanPhoto.replace(/^https?:\/\/[^\/]+/, '')
+        
+        // Remove any /api/, /uploads/banners/ prefixes
+        cleanPhoto = cleanPhoto
+          .replace('/api/', '')
+          .replace(/^\/uploads\/banners\//, '')
+          .replace(/^uploads\/banners\//, '')
+        
+        // Get just the filename (in case there are still slashes)
+        const filename = cleanPhoto.split('/').pop()
+        
+        // Remove any remaining domain names from the filename itself
+        const cleanFilename = filename.replace(/^(localhost|127\.0\.0\.1)(:\d+)?/, '')
+        
+        const imageUrl = `${baseUrl}/uploads/banners/${cleanFilename}`
+        
+        console.log('🖼️ Banner:', b.title, '| Clean filename:', cleanFilename, '| Full URL:', imageUrl)
+        
+        return {
+          id: String(b.id || b._id),
+          image: imageUrl,
+          title: b.title || 'Welcome',
+          description: b.description || 'Explore our products',
+          isBackend: true,
+        }
+      })
+
+    if (activeBanners.length > 0) {
+      console.log('✅ Loading', activeBanners.length, 'backend banners')
+      setSlides(activeBanners)
+    } else {
+      // Fallback to local images if no backend banners
+      console.log('⚠️ No active backend banners, using fallback images')
+      setSlides([
+        {
+          id: '1',
+          image: banner1,
+          title: 'Premium Quality Pumps',
+          description: 'Reliable solutions for industrial use',
+          isBackend: false,
+        },
+        {
+          id: '2',
+          image: banner2,
+          title: 'Advanced Technology',
+          description: 'Engineered for excellence',
+          isBackend: false,
+        },
+        {
+          id: '3',
+          image: banner3,
+          title: 'Best Service',
+          description: 'We are here to help you',
+          isBackend: false,
+        },
+      ])
+    }
+  }, [banners])
+
+  // Auto-advance carousel
+  useEffect(() => {
+    if (slides.length <= 1) return
+    
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slides.length)
     }, 5000)
+    
+    return () => clearInterval(timer)
+  }, [slides.length])
 
-    return () => clearInterval(interval)
-  }, [isAutoPlaying, heroSlides.length])
+  // Reset currentIndex if it's out of bounds
+  useEffect(() => {
+    if (currentIndex >= slides.length && slides.length > 0) {
+      setCurrentIndex(0)
+    }
+  }, [slides.length, currentIndex])
 
-  const pauseAutoPlay = () => {
-    setIsAutoPlaying(false)
-    setTimeout(() => setIsAutoPlaying(true), 10000)
+  if (slides.length === 0) {
+    return (
+      <section className="relative w-full h-[450px] sm:h-[550px] lg:h-[650px] bg-gray-800 flex items-center justify-center">
+        <div className="text-white text-xl">Loading banners...</div>
+      </section>
+    )
   }
 
-  const goToSlide = useCallback((index) => {
-    setCurrentSlide(index)
-    pauseAutoPlay()
-  }, [])
-
-  const goToNext = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    pauseAutoPlay()
-  }, [heroSlides.length])
-
-  const goToPrev = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
-    pauseAutoPlay()
-  }, [heroSlides.length])
-
-  const current = heroSlides[currentSlide]
+  const currentSlide = slides[currentIndex]
 
   return (
-    <section className="relative w-full overflow-hidden bg-gray-100">
-      <div
-        className="relative w-full h-[500px] sm:h-[600px] lg:h-[80vh]"
-        onMouseEnter={() => setIsAutoPlaying(false)}
-        onMouseLeave={() => setIsAutoPlaying(true)}
-      >
-        {/* 🔹 Background Images */}
-        {heroSlides.map((slide, index) => (
+    <section className="relative w-full h-[450px] sm:h-[550px] lg:h-[650px] overflow-hidden bg-gray-900">
+      {/* Carousel Images Container */}
+      <div className="absolute inset-0">
+        {slides.map((slide, index) => {
+          const isActive = index === currentIndex
+          
+          return (
           <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-700 ${
-              index === currentSlide ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
-            }`}
+            key={`banner-${index}`}
+            className="absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out"
+            style={{
+              opacity: isActive ? 1 : 0,
+              zIndex: isActive ? 10 : 1,
+              pointerEvents: isActive ? 'auto' : 'none',
+            }}
           >
-            <Image
+          {slide.isBackend ? (
+            // Backend images - use regular img tag
+            <img
               src={slide.image}
               alt={slide.title}
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              className="object-cover"
+              className="w-full h-full object-cover"
+              style={{ 
+                display: 'block',
+                visibility: 'visible',
+                opacity: 1,
+                position: 'absolute',
+                inset: 0,
+              }}
+              onLoad={() => console.log('✅ Backend image loaded:', slide.title, slide.image)}
+              onError={(e) => {
+                console.error('❌ Backend image failed:', slide.title, slide.image)
+                console.error('Error details:', e)
+              }}
             />
-          </div>
-        ))}
-
-        {/* 🔹 Content */}
-        <div className="absolute inset-0 flex flex-col lg:flex-row z-10">
-          {/* Left Section */}
-          <div className="relative w-full lg:w-[45%] h-[300px] sm:h-[400px] lg:h-full">
-            <div className="absolute inset-0 bg-red-600/75" />
-            <div className="relative h-full flex flex-col justify-center px-6 sm:px-10 xl:px-16 text-white">
-              <h1 className="text-4xl sm:text-5xl xl:text-7xl font-bold uppercase mb-6">
-                {current.title}
-              </h1>
-              <p className="text-lg sm:text-xl xl:text-2xl mb-8">
-                {current.subtitle}
-              </p>
-              <Link href="/category/products">
-                <button className="group bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-lg font-bold flex items-center gap-3 transition">
-                  {current.cta}
-                  <ArrowRightIcon className="group-hover:translate-x-1 transition" />
-                </button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Right Section (image visible behind) */}
-          <div className="w-full lg:w-[55%]" />
-        </div>
-
-        {/* 🔹 Navigation Dots */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-          {heroSlides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goToSlide(i)}
-              className={`rounded-full transition ${
-                i === currentSlide
-                  ? 'w-3 h-3 bg-white'
-                  : 'w-2 h-2 bg-white/50 hover:bg-white'
-              }`}
+          ) : (
+            // Local images - use regular img tag with .src
+            <img
+              src={typeof slide.image === 'string' ? slide.image : slide.image.src}
+              alt={slide.title}
+              className="w-full h-full object-cover"
+              style={{ 
+                display: 'block',
+                visibility: 'visible',
+                opacity: 1,
+                position: 'absolute',
+                inset: 0,
+              }}
+              onLoad={() => console.log('✅ Local image loaded:', slide.title)}
+              onError={(e) => console.error('❌ Local image failed:', slide.title, e.target.src)}
             />
-          ))}
-        </div>
+          )}
 
-        {/* 🔹 Navigation Arrows */}
-        <button
-          onClick={goToPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-3 rounded-full z-20"
-        >
-          <ChevronLeft className="text-white" />
-        </button>
-
-        <button
-          onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-3 rounded-full z-20"
-        >
-          <ChevronRight className="text-white" />
-        </button>
+          {/* Dark overlay for text contrast */}
+          {isActive && (
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" style={{ zIndex: 15 }} />
+          )}
+          </div>
+        )
+        })}
       </div>
+
+      {/* Content Overlay */}
+      <div className="absolute inset-0 flex items-center" style={{ zIndex: 20 }}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-2xl leading-tight">
+              {currentSlide.title}
+            </h1>
+            <p className="text-lg sm:text-xl text-white/95 mb-8 drop-shadow-lg">
+              {currentSlide.description}
+            </p>
+            <Link href="/category/products">
+              <button className="inline-flex items-center gap-2 px-8 py-4 bg-[#7C2A47] hover:bg-[#6a243d] text-white font-semibold rounded-lg shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95">
+                SHOP NOW
+                <ArrowRight size={20} />
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Controls */}
+      {slides.length > 1 && (
+        <>
+          {/* Previous Button */}
+          <button
+            onClick={() => setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md transition-all duration-300"
+            style={{ zIndex: 30 }}
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={28} className="text-white" strokeWidth={2.5} />
+          </button>
+
+          {/* Next Button */}
+          <button
+            onClick={() => setCurrentIndex((prev) => (prev + 1) % slides.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md transition-all duration-300"
+            style={{ zIndex: 30 }}
+            aria-label="Next slide"
+          >
+            <ChevronRight size={28} className="text-white" strokeWidth={2.5} />
+          </button>
+
+          {/* Dots Indicator */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2" style={{ zIndex: 30 }}>
+            {slides.map((slide, index) => (
+              <button
+                key={`dot-${index}`}
+                onClick={() => setCurrentIndex(index)}
+                className={`rounded-full transition-all duration-300 ${
+                  index === currentIndex
+                    ? 'w-10 h-3 bg-white'
+                    : 'w-3 h-3 bg-white/50 hover:bg-white/75'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   )
 }
-
-export default Hero
