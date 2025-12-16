@@ -91,7 +91,7 @@ export default function Categories() {
               {categories.map((cat, index) => (
                 <Link
                   key={index}
-                  href={`/category/${cat}`}
+                  href={`/category/products?category=${encodeURIComponent(cat)}`}
                   className={`group flex-shrink-0 flex flex-col ${
                     itemsPerPage === 2 ? 'w-1/2' : 'w-1/3'
                   }`}
@@ -153,7 +153,7 @@ export default function Categories() {
             {categories.map((cat, index) => (
               <Link
                 key={index}
-                href={`/category/${cat}`}
+                href={`/category/products?category=${encodeURIComponent(cat)}`}
                 className="group flex-shrink-0 w-1/5 flex flex-col snap-center"
               >
                 <motion.div

@@ -251,27 +251,30 @@ export default function Product() {
     }
 
     return (
-        <div className="mx-6">
-            <div className="max-w-7xl mx-auto">
-
-                {/* ✅ Breadcrumbs */}
-                    <div className="text-gray-600 text-md sm:text-lg mt-8 mb-5 sm:ml-10 space-x-1">
-                    <Link 
-                        href="/" 
-                        className="hover:text-black transition-colors duration-200"
-                    >
-                        Home
-                    </Link>
-                    <span>/</span>
-                    <Link 
-                        href={`/category/products`}
-                        className="hover:text-black transition-colors duration-200"
-                    >
-                        Products
-                    </Link>
-                    <span>/</span>
-                    <span className="text-[rgb(55,50,46)] font-medium">{product?.category || 'Product'}</span>
-                    </div>
+        <div className="min-h-screen bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* ✅ Breadcrumbs - Properly Aligned */}
+                <div className="pt-4 sm:pt-6 lg:pt-8 pb-4 sm:pb-6">
+                    <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm md:text-base">
+                        <Link 
+                            href="/" 
+                            className="text-gray-600 hover:text-[#7C2A47] transition-colors duration-200"
+                        >
+                            Home
+                        </Link>
+                        <span className="text-gray-400">/</span>
+                        <Link 
+                            href={`/category/products`}
+                            className="text-gray-600 hover:text-[#7C2A47] transition-colors duration-200"
+                        >
+                            Products
+                        </Link>
+                        <span className="text-gray-400">/</span>
+                        <span className="text-gray-900 font-medium truncate max-w-[150px] sm:max-w-[300px] md:max-w-none">
+                            {product?.category || 'Product'}
+                        </span>
+                    </nav>
+                </div>
 
                 {/* Product Details */}
                 <ProductDetails product={product} />

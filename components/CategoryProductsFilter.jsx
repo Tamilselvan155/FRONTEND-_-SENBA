@@ -6,15 +6,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/lib/features/cart/cartSlice";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ShoppingCart, ArrowRight, Send } from "lucide-react";
 import ModalPopup from "./PopupModel";
 import ProductFilters from "./ProductFilters";
 import Loading from "./Loading";
+import ProductCard from "./ProductCard";
 import { assets } from "@/assets/assets";
 
 export default function CategoryProductsFilter({ categoryName }) {
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.cartItems);
+  
+  // Get category from URL query parameter or use prop
+  const categoryFromUrl = searchParams?.get('category');
+  const activeCategoryName = categoryFromUrl || categoryName || 'products';
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +37,7 @@ export default function CategoryProductsFilter({ categoryName }) {
     selectedHPs: [],
     selectedCategories: [],
     inStockOnly: false,
+    outOfStockOnly: false,
     sortBy: "default",
   });
 
@@ -253,15 +261,35 @@ export default function CategoryProductsFilter({ categoryName }) {
       });
     }
 
+    // Get brand
+    let brandValue = '';
+    if (apiProduct.brand) {
+      if (typeof apiProduct.brand === 'string') {
+        brandValue = apiProduct.brand;
+      } else if (typeof apiProduct.brand === 'object' && apiProduct.brand !== null) {
+        brandValue = apiProduct.brand.name || apiProduct.brand.title || apiProduct.brand.englishName || '';
+      }
+    }
+    if (!brandValue && apiProduct.store?.name) {
+      brandValue = apiProduct.store.name;
+    }
+    if (!brandValue && apiProduct.vendor) {
+      brandValue = typeof apiProduct.vendor === 'string' ? apiProduct.vendor : apiProduct.vendor.name || '';
+    }
+
     return {
       id: apiProduct.id || apiProduct._id,
       name: apiProduct.title || apiProduct.name || 'Untitled Product',
       description: apiProduct.description || '',
       price: price,
       mrp: apiProduct.mrp || price,
+      discount: apiProduct.mrp && price < apiProduct.mrp 
+        ? Math.round(((apiProduct.mrp - price) / apiProduct.mrp) * 100) 
+        : 0,
       images: productImages.length > 0 ? productImages : [],
       category: categoryNameValue,
       subCategory: subCategoryNameValue,
+      brand: brandValue,
       inStock: (apiProduct.stock !== undefined && apiProduct.stock !== null) ? apiProduct.stock > 0 : true,
       stock: Number(apiProduct.stock) || 0,
       options: options,
@@ -295,25 +323,36 @@ export default function CategoryProductsFilter({ categoryName }) {
           .filter(product => product !== null);
 
         // Filter by category if needed
-        const normalizedCategoryName = categoryName?.trim().toLowerCase() || "";
+        const normalizedCategoryName = activeCategoryName?.trim().toLowerCase() || "";
         let filtered = transformedProducts;
         
         if (normalizedCategoryName !== "products") {
           const normalizeCategory = (cat) => {
             if (!cat) return '';
-            return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+            // Normalize: remove spaces, hyphens, convert to lowercase
+            return cat.trim().toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
           };
 
           const categoryMatches = (productCategory, searchCategory) => {
             if (!productCategory || !searchCategory) return false;
+            
             const normalizedProductCat = normalizeCategory(productCategory);
-            if (normalizedProductCat === searchCategory) return true;
-            const productSingular = normalizedProductCat.replace(/s$/, '');
-            const searchSingular = searchCategory.replace(/s$/, '');
-            if (productSingular === searchSingular && productSingular.length > 0) return true;
-            if (normalizedProductCat.includes(searchCategory) || searchCategory.includes(normalizedProductCat)) {
+            const normalizedSearchCat = normalizeCategory(searchCategory);
+            
+            // Exact match
+            if (normalizedProductCat === normalizedSearchCat) return true;
+            
+            // Handle singular/plural (pump vs pumps)
+            const productBase = normalizedProductCat.endsWith('s') ? normalizedProductCat.slice(0, -1) : normalizedProductCat;
+            const searchBase = normalizedSearchCat.endsWith('s') ? normalizedSearchCat.slice(0, -1) : normalizedSearchCat;
+            
+            if (productBase === searchBase && productBase.length > 0) return true;
+            
+            // Partial match
+            if (normalizedProductCat.includes(normalizedSearchCat) || normalizedSearchCat.includes(normalizedProductCat)) {
               return true;
             }
+            
             return false;
           };
 
@@ -342,7 +381,7 @@ export default function CategoryProductsFilter({ categoryName }) {
     };
 
     loadProducts();
-  }, [categoryName]);
+  }, [activeCategoryName]);
 
   // Apply filters and sorting
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -491,9 +530,11 @@ export default function CategoryProductsFilter({ categoryName }) {
       );
     }
 
-    // Apply inStock filter
+    // Apply stock filter
     if (filters.inStockOnly) {
       updatedProducts = updatedProducts.filter((p) => p.inStock);
+    } else if (filters.outOfStockOnly) {
+      updatedProducts = updatedProducts.filter((p) => !p.inStock);
     }
 
     // Apply sorting
@@ -564,37 +605,136 @@ Hi, I'm interested in booking an enquiry for the following product:
     setIsModalOpen(false);
   };
 
+  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [itemsPerPage, setItemsPerPage] = useState(24);
+
   return (
-    <div className="max-w-8xl mx-auto py-4 px-3 sm:px-6">
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
       {/* ✅ Breadcrumbs */}
-      <div className="text-gray-600 text-sm sm:text-base mt-4 mb-4 sm:mb-5 sm:ml-4 space-x-1">
+        <div className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6 space-x-1">
         <Link
           href="/"
-          className="hover:text-black transition-colors duration-200"
+            className="hover:text-[#7C2A47] transition-colors duration-200"
         >
           Home
         </Link>
         <span>&gt;</span>
         <Link
           href={`/category/products`}
-          className="hover:text-black transition-colors duration-200"
+            className="hover:text-[#7C2A47] transition-colors duration-200"
         >
           Products
         </Link>
         <span>&gt;</span>
-        <span className="text-[rgb(55,50,46)] font-medium">
-          {categoryName === "products" ? "All Products" : categoryName}
+          <span className="text-gray-900 font-medium">
+          {activeCategoryName === "products" ? "All Products" : activeCategoryName}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
-        {/* Filters Sidebar */}
-        <div className="md:col-span-1">
-          <ProductFilters products={products} onFilterChange={setFilters} />
-        </div>
+        <div className="relative flex flex-col lg:flex-row gap-2 sm:gap-6 items-start">
+          {/* Filters Sidebar - Fixed on desktop */}
+<aside className="w-full lg:w-64 lg:flex-shrink-0">
+  <div className="lg:sticky lg:top-20">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <ProductFilters products={products} onFilterChange={setFilters} />
+    </div>
+  </div>
+</aside>
 
-        {/* Products List */}
-        <div className="md:col-span-3">
+
+          {/* Products List - Scrollable area */}
+          <main className="flex-1 min-w-0">
+            {/* Header Section - Aligned above product list */}
+            <div className="mb-4 sm:mb-6 bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
+              {/* Title */}
+              <h1 className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+                {activeCategoryName === "products" ? "All Products" : activeCategoryName}
+              </h1>
+              
+              {/* Product Count and Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                {/* Product Count */}
+                <p className="text-xs sm:text-sm text-gray-600">
+                  {loading ? (
+                    "Loading products..."
+                  ) : filteredProducts.length > 0 ? (
+                    `Showing 1 - ${Math.min(itemsPerPage, filteredProducts.length)} of ${filteredProducts.length} products`
+                  ) : (
+                    "No products found"
+                  )}
+                </p>
+
+                {/* Display Options */}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  {/* Items Per Page */}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Display:</label>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                      className="px-2 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer"
+                    >
+                      <option value={12}>12 per page</option>
+                      <option value={24}>24 per page</option>
+                      <option value={48}>48 per page</option>
+                      <option value={96}>96 per page</option>
+                    </select>
+                  </div>
+
+                  {/* Sort By */}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Sort by:</label>
+                    <select
+                      value={filters.sortBy}
+                      onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                      className="px-2 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer"
+                    >
+                      <option value="default">Best selling</option>
+                      <option value="priceLowToHigh">Price: Low to High</option>
+                      <option value="priceHighToLow">Price: High to Low</option>
+                      <option value="newest">Newest First</option>
+                      <option value="rating">Highest Rated</option>
+                    </select>
+                  </div>
+
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">View:</span>
+                    <div className="flex items-center gap-0.5 border border-gray-300 rounded-lg p-0.5 bg-white">
+                      <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-1.5 sm:p-2 rounded transition-colors ${
+                          viewMode === 'grid'
+                            ? 'bg-[#7C2A47] text-white'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                        aria-label="Grid view"
+                      >
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-1.5 sm:p-2 rounded transition-colors ${
+                          viewMode === 'list'
+                            ? 'bg-[#7C2A47] text-white'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                        aria-label="List view"
+                      >
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Products Content */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loading />
@@ -610,38 +750,36 @@ Hi, I'm interested in booking an enquiry for the following product:
               </button>
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="space-y-4">
-              {filteredProducts.map((product, index) => {
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6' : 'space-y-4 sm:space-y-5'}>
+              {filteredProducts.slice(0, itemsPerPage).map((product, index) => {
                 const displayPrice = getDisplayPrice(product);
                 
-                // Extract brand/category
-                const brand = product.brand || 
-                              (typeof product.category === 'string' ? product.category : 
-                               product.category?.englishName || product.category?.name || 
-                               product.category?.title || 'PUMPS');
+                // Update product price with selected HP option price
+                const productWithPrice = {
+                  ...product,
+                  price: displayPrice
+                };
                 
-                // Calculate rating
-                const ratingValue = (() => {
-                  const r = product.rating;
-                  if (typeof r === 'number') return r;
-                  if (Array.isArray(r) && r.length > 0) {
-                    const sum = r.reduce((acc, item) => acc + (Number(item?.rating) || 0), 0);
-                    return sum / r.length;
-                  }
-                  return 0;
-                })();
+                // Grid View Layout - Use ProductCard
+                if (viewMode === 'grid') {
+                  return (
+                    <ProductCard 
+                      key={product.id || index}
+                      product={productWithPrice}
+                    />
+                  );
+                }
                 
-                const reviewCount = Array.isArray(product.rating) ? product.rating.length : 0;
-                
+                // List View Layout
                 return (
                   <Link 
                     href={`/product/${product.id}`}
                     key={index}
-                    className="block bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="block bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       {/* Image - Left Side */}
-                      <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40">
+                      <div className="flex-shrink-0 w-full sm:w-32 h-48 sm:h-32 md:h-40">
                         <div className="w-full h-full bg-white border border-gray-100 rounded-lg p-2 flex items-center justify-center">
                           {product.images && product.images.length > 0 && product.images[0] ? (
                             <img
@@ -728,9 +866,9 @@ Hi, I'm interested in booking an enquiry for the following product:
                             
                             {/* Stock Status */}
                             <div className="flex items-center gap-2 mb-3">
-                              <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-                              <span className="text-xs sm:text-sm font-medium text-green-600">
-                                In stock
+                              <span className={`inline-block w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-gray-400'}`} />
+                              <span className={`text-xs sm:text-sm font-medium ${product.inStock ? 'text-green-600' : 'text-gray-500'}`}>
+                                {product.inStock ? 'In stock' : 'Sold out'}
                               </span>
                             </div>
                             
@@ -777,10 +915,11 @@ Hi, I'm interested in booking an enquiry for the following product:
               No products match the filters.
             </p>
           )}
+            </main>
+          </div>
         </div>
-      </div>
 
-      {/* WhatsApp Modal */}
+        {/* WhatsApp Modal */}
       {selectedProduct && (
         <ModalPopup
           isOpen={isModalOpen}

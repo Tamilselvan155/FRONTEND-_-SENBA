@@ -3,18 +3,14 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { searchProducts } from "@/lib/actions/productActions";
-import { useDispatch } from "react-redux";
-import { addToCart } from "@/lib/features/cart/cartSlice";
-import { toast } from "react-hot-toast";
 import Link from "next/link";
-import { ShoppingCart, Search, ArrowRight, Package } from "lucide-react";
-import Image from "next/image";
+import { Search, ArrowRight, Package } from "lucide-react";
 import Loading from "@/components/Loading";
+import ProductCard from "@/components/ProductCard";
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const dispatch = useDispatch();
   
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,50 +120,50 @@ function SearchContent() {
     }
 
     const discount = apiProduct.discount ? Number(apiProduct.discount) : 0;
+    const mrp = apiProduct.mrp || price;
     const finalPrice = discount > 0 ? price - (price * discount / 100) : price;
 
+    // Get brand
+    const brand = apiProduct.brand || 
+                  (typeof apiProduct.category === 'string' ? apiProduct.category : 
+                   apiProduct.category?.englishName || apiProduct.category?.name || 
+                   apiProduct.category?.title || '');
+
+    // Handle rating
+    let rating = [];
+    if (apiProduct.rating) {
+      if (Array.isArray(apiProduct.rating)) {
+        rating = apiProduct.rating;
+      } else if (typeof apiProduct.rating === 'number') {
+        rating = [{ rating: apiProduct.rating }];
+      }
+    }
+
     return {
-      id: apiProduct._id,
-      title: apiProduct.title,
+      id: apiProduct._id || apiProduct.id,
+      name: apiProduct.title || apiProduct.name || 'Untitled Product',
       category: categoryNameValue,
       images: productImages,
       price: finalPrice,
-      originalPrice: price,
+      mrp: mrp,
       discount: discount,
       stock: apiProduct.stock || 0,
+      inStock: (apiProduct.stock === undefined || apiProduct.stock === null) ? true : apiProduct.stock > 0,
       hasVariants: apiProduct.hasVariants || false,
       brandVariants: apiProduct.brandVariants || [],
+      brand: brand,
+      rating: rating,
     };
-  };
-
-  const handleAddToCart = (product) => {
-    const transformedProduct = transformProduct(product);
-    if (!transformedProduct) return;
-
-    if (transformedProduct.hasVariants && transformedProduct.brandVariants.length > 0) {
-      toast.error('Please select a variant first');
-      return;
-    }
-
-    dispatch(addToCart({
-      id: transformedProduct.id,
-      name: transformedProduct.title,
-      price: transformedProduct.price,
-      image: transformedProduct.images[0] || '/placeholder-product.png',
-      quantity: 1,
-    }));
-
-    toast.success(`${transformedProduct.title} added to cart!`);
   };
 
   const transformedProducts = products.map(transformProduct).filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Search Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Products</h1>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Search Products</h1>
           
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="max-w-2xl">
@@ -177,15 +173,15 @@ function SearchContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products by name or category..."
-                className="w-full px-4 py-3 pl-12 pr-12 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-white"
+                className="w-full px-4 py-3 pl-12 pr-24 sm:pr-28 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-white"
               />
               <Search 
-                size={20} 
+                size={18} 
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" 
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-[#7C2A47] text-white rounded-lg hover:bg-[#7C2A47]/90 transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 sm:px-6 py-2 bg-[#7C2A47] text-white rounded-lg hover:bg-[#6a243d] transition-colors text-sm sm:text-base font-medium"
                 aria-label="Search"
               >
                 Search
@@ -216,21 +212,21 @@ function SearchContent() {
 
         {/* No Results */}
         {!loading && !error && hasSearched && transformedProducts.length === 0 && (
-          <div className="text-center py-20">
-            <Package size={64} className="mx-auto text-gray-400 mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Products Found</h2>
-            <p className="text-gray-600 mb-6">
-              We couldn't find any products matching &quot;{searchParams.get('q')}&quot;
+          <div className="text-center py-12 sm:py-16 lg:py-20">
+            <Package size={48} className="mx-auto text-gray-400 mb-4 sm:mb-6" />
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2 sm:mb-3">No Products Found</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-4">
+              We couldn't find any products matching &quot;<span className="font-medium">{searchParams.get('q')}</span>&quot;
             </p>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 px-4">
               Try searching with different keywords or browse our categories
             </p>
             <Link
               href="/category/products"
-              className="inline-flex items-center gap-2 px-6 py-2 bg-[#7C2A47] text-white rounded-lg hover:bg-[#7C2A47]/90 transition-colors"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#7C2A47] text-white rounded-lg hover:bg-[#6a243d] transition-colors text-sm sm:text-base font-medium"
             >
               Browse All Products
-              <ArrowRight size={18} />
+              <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px]" />
             </Link>
           </div>
         )}
@@ -238,82 +234,15 @@ function SearchContent() {
         {/* Results */}
         {!loading && !error && transformedProducts.length > 0 && (
           <>
-            <div className="mb-6">
-              <p className="text-gray-600">
-                Found <span className="font-semibold text-[#7C2A47]">{transformedProducts.length}</span> product{transformedProducts.length !== 1 ? 's' : ''} for &quot;{searchParams.get('q')}&quot;
+            <div className="mb-4 sm:mb-6">
+              <p className="text-sm sm:text-base text-gray-600">
+                Found <span className="font-semibold text-[#7C2A47]">{transformedProducts.length}</span> product{transformedProducts.length !== 1 ? 's' : ''} for &quot;<span className="font-medium text-gray-900">{searchParams.get('q')}</span>&quot;
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {transformedProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden group"
-                >
-                  <Link href={`/product/${product.id}`}>
-                    <div className="relative aspect-square bg-gray-100 overflow-hidden">
-                      {product.images && product.images.length > 0 ? (
-                        <Image
-                          src={product.images[0]}
-                          alt={product.title}
-                          fill
-                          className="object-contain group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package size={48} className="text-gray-400" />
-                        </div>
-                      )}
-                      {product.discount > 0 && (
-                        <div className="absolute top-2 right-2 bg-[#7C2A47] text-white px-2 py-1 rounded text-xs font-semibold">
-                          -{product.discount}%
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  <div className="p-4">
-                    <Link href={`/product/${product.id}`}>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-[#7C2A47] transition-colors">
-                        {product.title}
-                      </h3>
-                    </Link>
-                    
-                    {product.category && (
-                      <p className="text-sm text-gray-500 mb-2">Category: {product.category}</p>
-                    )}
-
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <span className="text-xl font-bold text-[#7C2A47]">
-                          {currency}{product.price.toFixed(2)}
-                        </span>
-                        {product.discount > 0 && (
-                          <span className="ml-2 text-sm text-gray-500 line-through">
-                            {currency}{product.originalPrice.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        const originalProduct = products.find(p => p._id === product.id);
-                        if (originalProduct) handleAddToCart(originalProduct);
-                      }}
-                      disabled={product.stock === 0}
-                      className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                        product.stock === 0
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-[#7C2A47] text-white hover:bg-[#7C2A47]/90'
-                      }`}
-                    >
-                      <ShoppingCart size={18} />
-                      {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </button>
-                  </div>
-                </div>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </>

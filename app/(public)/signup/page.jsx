@@ -4,12 +4,13 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Mail, Lock, CheckCircle2, UserPlus, ArrowRight } from 'lucide-react';
 import {
   signupRequest,
   signupSuccess,
   signupFailure,
 } from '../../../lib/features/login/authSlice';
-import { User, Mail, Lock, CheckCircle, X } from 'lucide-react';
 
 const SignUp = () => {
   const dispatch = useDispatch();
@@ -23,6 +24,8 @@ const SignUp = () => {
     confirmPassword: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleChange = (e) => {
@@ -62,114 +65,147 @@ const SignUp = () => {
   };
 
   return (
-    <div className="mt-9 px-4 sm:px-6 relative">
-      {/* Breadcrumbs */}
-      <nav className="w-full max-w-7xl mx-auto mb-8 text-sm font-medium text-gray-600">
-        <ol className="flex items-center space-x-2">
-          <li>
-            <Link href="/" className="text-[#f48638] hover:text-[#c31e5a] transition-colors duration-200">
-              Home
-            </Link>
-          </li>
-          <li><span className="text-gray-400">&gt;</span></li>
-          <li><span className="text-gray-700">Sign Up</span></li>
-        </ol>
-      </nav>
-
-      <div className="flex items-center justify-center">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 px-4 py-12 flex items-center justify-center relative overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-md bg-white rounded-xl shadow-xl border border-gray-200 p-6 sm:p-8 relative overflow-hidden"
+      >
+        {/* Card Decorative Elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#7C2A47]/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#8B3A5A]/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+        
+        <div className="relative z-10">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-[#c31e5a]">Create an Account</h2>
-            <p className="text-gray-500 mt-2 text-sm">Enter your details below</p>
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#7C2A47] to-[#8B3A5A] mb-4 mx-auto shadow-lg">
+              <UserPlus className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+              Create Your Account
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500">
+              Enter your details to get started
+            </p>
           </div>
 
-          {/* Error message */}
+          {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-3 mb-6 rounded-md text-sm">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border-l-4 border-red-500 text-red-700 text-xs sm:text-sm p-3 rounded mb-5"
+            >
               {error}
-            </div>
+            </motion.div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
+              <label
+                htmlFor="fullName"
+                className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5"
+              >
+                Full Name
               </label>
-              <div className="flex items-center border border-gray-300 rounded-lg p-3 focus-within:ring-2 focus-within:ring-indigo-400">
-                <User className="text-gray-400 w-5 h-5 mr-2" />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   id="fullName"
                   name="fullName"
-                  placeholder="John Doe"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full text-sm focus:outline-none"
+                  placeholder="John Doe"
                   required
+                  className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
                 />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address <span className="text-red-500">*</span>
+              <label
+                htmlFor="email"
+                className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5"
+              >
+                Email Address
               </label>
-              <div className="flex items-center border border-gray-300 rounded-lg p-3 focus-within:ring-2 focus-within:ring-indigo-400">
-                <Mail className="text-gray-400 w-5 h-5 mr-2" />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
                   id="email"
                   name="email"
-                  placeholder="john@gmail.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full text-sm focus:outline-none"
+                  placeholder="example@gmail.com"
                   required
+                  className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password <span className="text-red-500">*</span>
+              <label
+                htmlFor="password"
+                className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5"
+              >
+                Password
               </label>
-              <div className="flex items-center border border-gray-300 rounded-lg p-3 focus-within:ring-2 focus-within:ring-indigo-400">
-                <Lock className="text-gray-400 w-5 h-5 mr-2" />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
-                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full text-sm focus:outline-none"
+                  placeholder="Enter your password"
                   required
+                  className="w-full pl-10 pr-16 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 hover:text-[#7C2A47] transition-colors duration-200 font-medium"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
               </div>
             </div>
 
-            {/* Re-type Password */}
+            {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Re-type Password <span className="text-red-500">*</span>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5"
+              >
+                Confirm Password
               </label>
-              <div className="flex items-center border border-gray-300 rounded-lg p-3 focus-within:ring-2 focus-within:ring-indigo-400">
-                <Lock className="text-gray-400 w-5 h-5 mr-2" />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
                   name="confirmPassword"
-                  placeholder="Re-type your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full text-sm focus:outline-none"
+                  placeholder="Re-type your password"
                   required
+                  className="w-full pl-10 pr-16 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 hover:text-[#7C2A47] transition-colors duration-200 font-medium"
+                >
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </button>
               </div>
             </div>
 
@@ -177,51 +213,108 @@ const SignUp = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#0F172A] text-white py-3 rounded-lg font-medium text-sm transition hover:bg-[#1e293b] focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white py-2.5 rounded-lg text-sm font-semibold hover:from-[#6a2340] hover:to-[#7a2a4a] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
-          {/* Footer */}
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <div className="flex items-center my-5">
+            <hr className="flex-grow border-gray-200" />
+            <span className="mx-3 text-xs text-gray-400">Or</span>
+            <hr className="flex-grow border-gray-200" />
+          </div>
+
+          <p className="text-center text-xs sm:text-sm text-gray-600">
             Already have an account?{' '}
-            <Link href="/login" className="text-[#f48638] font-semibold hover:underline">
-              Sign in Now!
+            <Link
+              href="/login"
+              className="font-semibold text-[#7C2A47] hover:text-[#8B3A5A] transition-colors inline-flex items-center gap-1"
+            >
+              Sign In Now
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </p>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ✅ Success Popup Modal */}
-      {showSuccess && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white p-6 rounded-xl shadow-xl text-center max-w-sm mx-auto animate-fade-in">
-            <CheckCircle className="text-green-500 w-12 h-12 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              Account Created Successfully!
-            </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              You can now sign in with your account credentials.
-            </p>
-            <button
-              onClick={() => {
-                setShowSuccess(false);
-                router.push('/login');
-              }}
-              className="w-full bg-[#f48638] text-white py-2.5 rounded-lg font-medium hover:bg-[#c31e5a] transition"
+      {/* Animated Success Popup */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            key="popup"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="relative bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl p-8 text-center border border-gray-200"
             >
-              Go to Login
-            </button>
-            <button
-              onClick={() => setShowSuccess(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-      )}
+              <motion.div
+                initial={{ rotate: -20, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+                className="flex justify-center mb-4"
+              >
+                <CheckCircle2 className="w-14 h-14 text-green-500" />
+              </motion.div>
+
+              <motion.h2
+                initial={{ y: -10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2"
+              >
+                Account Created Successfully!
+              </motion.h2>
+
+              <motion.p
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-gray-500 text-sm sm:text-base mb-6"
+              >
+                You can now sign in with your credentials
+              </motion.p>
+
+              <motion.button
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                onClick={() => {
+                  setShowSuccess(false);
+                  router.push('/login');
+                }}
+                className="w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white py-2.5 rounded-lg text-sm font-semibold hover:from-[#6a2340] hover:to-[#7a2a4a] transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                Go to Login
+              </motion.button>
+
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.4, duration: 2, ease: 'easeInOut' }}
+                className="mt-5 h-1 bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] rounded-full origin-left"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

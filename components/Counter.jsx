@@ -16,11 +16,30 @@ const Counter = ({ productId }) => {
         dispatch(removeFromCart({ productId }))
     }
 
+    const quantity = cartItems[productId] || 0;
+
     return (
-        <div className="inline-flex justify-between items-center gap-1 sm:gap-3 px-3 py-1 rounded border border-slate-200 max-sm:text-sm text-slate-600">
-            <button onClick={removeFromCartHandler} className="p-1 select-none">-</button>
-            <p className="p-1">{cartItems[productId]}</p>
-            <button onClick={addToCartHandler} className="p-1 select-none">+</button>
+        <div className="flex items-center border border-gray-300 rounded-lg w-fit overflow-hidden">
+            <button 
+                onClick={removeFromCartHandler}
+                disabled={quantity <= 1}
+                className="px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors text-sm sm:text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                -
+            </button>
+            <input 
+                type="number" 
+                value={quantity} 
+                readOnly
+                className="w-12 sm:w-16 text-center border-x border-gray-300 py-2 focus:outline-none text-sm sm:text-base font-medium bg-white"
+                min="1"
+            />
+            <button 
+                onClick={addToCartHandler}
+                className="px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors text-sm sm:text-base font-medium"
+            >
+                +
+            </button>
         </div>
     )
 }

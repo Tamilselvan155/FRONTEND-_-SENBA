@@ -31,6 +31,7 @@ const ProductDetails = ({ product }) => {
   
   const [mainImage, setMainImage] = useState(productImages[0] || assets.product_img0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   // Update mainImage when product images change
   useEffect(() => {
@@ -166,11 +167,21 @@ const ProductDetails = ({ product }) => {
   const addToCartHandler = () => {
     // Include selected HP option in cart data
     const { price: priceForSelectedHP } = getPriceAndMrpForHP(selectedHP);
-    dispatch(addToCart({ 
-      productId,
-      selectedOption: selectedHP,
-      price: priceForSelectedHP
-    }));
+    // Add quantity to cart
+    for (let i = 0; i < quantity; i++) {
+      dispatch(addToCart({ 
+        productId,
+        selectedOption: selectedHP,
+        price: priceForSelectedHP
+      }));
+    }
+  };
+
+  const handleQuantityChange = (change) => {
+    setQuantity(prev => {
+      const newQty = prev + change;
+      return newQty < 1 ? 1 : newQty;
+    });
   };
 
   const handleSendWhatsApp = ({ userName, userMobile }) => {
@@ -198,27 +209,40 @@ const ProductDetails = ({ product }) => {
     setIsModalOpen(false);
   };
 
+  // Get brand name
+  const brandName = product.brand || product.category || 'BRAND';
+  const itemCode = product.itemCode || product.sku || productId;
+
+  // Stock status
+  const inStock = product.inStock !== false && (product.stock === undefined || product.stock > 0);
+
   return (
     <>
-      <div className="flex max-lg:flex-col gap-12 max-w-7xl mx-auto my-10 px-4">
-        {/* Images Section */}
-        <div className="flex max-sm:flex-col-reverse gap-3 mx-auto">
-          {/* Thumbnails */}
-          {/* Thumbnails */}
-{productImages.length > 0 && (
-  <div className="flex sm:flex-col mt-2 sm:mt-0 sm:mr-2 gap-3">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 pb-6 sm:pb-8 overflow-x-hidden">
+        {/* Images Section - Left Side (60%) */}
+        <div className="w-full lg:w-[60%] flex flex-col gap-3 sm:gap-4 min-w-0">
+
+{/* Thumbnails */}
+{productImages.length > 1 && (
+  <div className="flex flex-row gap-2 sm:gap-3 overflow-x-auto pb-2">
     {productImages.map((image, index) => (
-      <div 
-        key={index} 
-        onClick={() => setMainImage(productImages[index])} 
-        className="flex items-center justify-center rounded-lg cursor-pointer overflow-hidden border border-gray-200 transition hover:scale-105 active:scale-95 w-14 h-14" // increased size
+      <div
+        key={index}
+        onClick={() => setMainImage(image)}
+        className={`flex items-center justify-center rounded-lg cursor-pointer overflow-hidden border-2 transition-all flex-shrink-0
+          w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20
+          ${
+            mainImage === image
+              ? 'border-[#7C2A47] shadow-md'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
       >
-        <Image 
-          src={image} 
-          alt={product.name || 'Product'} 
-          width={56} 
-          height={56} 
-          className="object-cover w-full h-full"
+        <Image
+          src={image}
+          alt={`${product.name || 'Product'} thumbnail ${index + 1}`}
+          width={80}
+          height={80}
+          className="object-contain w-full h-full p-1"
           unoptimized
         />
       </div>
@@ -226,131 +250,216 @@ const ProductDetails = ({ product }) => {
   </div>
 )}
 
-
-          {/* Main Image */}
-          {mainImage ? (
-            <div className="flex justify-center items-center w-[320px] h-[430px] sm:h-[540px] sm:w-[405px] md:h-[540px] md:w-[405px] rounded-lg overflow-hidden">
-              <Image 
-                src={mainImage} 
-                alt={product.name || 'Product'} 
-                width={500} 
-                height={500} 
-                className="object-cover w-full h-full"
-                unoptimized
-              />
-            </div>
-          ) : (
-            <div className="flex justify-center items-center w-[320px] h-[430px] sm:h-[540px] sm:w-[405px] md:h-[540px] md:w-[405px] rounded-lg overflow-hidden bg-gray-100">
-              <p className="text-gray-400">No image available</p>
-            </div>
-          )}
-        </div>
-
-        {/* Product Details */}
-        <div className="flex-1 mx-auto  flex flex-col">
-          <h1 className="text-xl sm:text-2xl font-semibold text-slate-800">{product.name || product.title || 'Product'}</h1>
-          <div className='flex items-center mt-2'>
-            {Array(5).fill('').map((_, index) => (
-              <StarIcon key={index} size={14} className='text-transparent mt-0.5' fill={averageRating >= index + 1 ? "#c31e5aff" : "#D1D5DB"} />
-            ))}
-            <p className="text-sm ml-3 text-slate-500">{ratings.length} Reviews</p>
-          </div>
-          <div className="flex items-start my-6 gap-3 text-xl sm:text-2xl font-semibold text-slate-800">
-            <p> {currency}{currentPrice} </p>
-            {currentMrp > currentPrice && (
-              <p className="text-lg sm:text-xl text-slate-500 line-through">{currency}{currentMrp}</p>
-            )}
-          </div>
-                    {/* ✅ HP Options Section */}
-          <div className="mt-1 mb-6">
-            <p className="text-lg font-semibold text-slate-800 mb-2">
-              Available Options:
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {hpOptions.map((hp) => {
-                const { price: hpPrice } = getPriceAndMrpForHP(hp);
-                return (
-                  <button
-                    key={hp}
-                    onClick={() => handleHPChange(hp)}
-                    className={`px-4 py-2 border rounded-md text-sm font-medium transition-all
-                      ${
-                        selectedHP === hp
-                          ? "bg-[#c31e5aff] text-white border-[#c31e5aff]"
-                          : "border-gray-300 text-slate-700 hover:bg-gray-100"
-                      }`}
-                  >
-                    {hp}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {currentMrp > currentPrice && (
-            <div className="flex items-center gap-2 text-md sm:text-lg text-slate-500">
-              <TagIcon size={14} />
-              <p>Save {((currentMrp - currentPrice) / currentMrp * 100).toFixed(0)}% right now</p>
-            </div>
-          )}
-
-         {/* <div className="flex flex-wrap items-end gap-5 mt-10">
-            {cart[productId] && (
-              <div className="flex flex-col gap-3">
-                <p className="text-lg text-slate-800 font-semibold">Quantity</p>
-                <Counter productId={productId} />
-              </div>
-            )}
-            <button 
-              onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')} 
-              className="bg-slate-900 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-700 active:scale-95 transition"
-            >
-              {!cart[productId] ? 'Add to Cart' : 'View Cart'}
-            </button>
-
-            <button
-              onClick={() => setIsModalOpen(true)}
-            className="bg-[#c31e5aff] text-white px-10 py-3 text-sm font-medium rounded hover:bg-[#d44a70] active:scale-95 transition"
-            >
-              Book Enquiry
-            </button>
-          </div> */}
-          <div className="flex flex-wrap items-end gap-5 mt-10">
-  {cart[productId] && (
-    <div className="flex flex-col gap-3 min-w-[150px] sm:min-w-[180px]">
-      <p className="text-lg text-slate-800 font-semibold">Quantity</p>
-      <Counter productId={productId} />
+{/* Main Image */}
+<div className="flex justify-center items-center bg-white rounded-lg border border-gray-200 p-3 sm:p-4 md:p-6">
+  {mainImage ? (
+    <Image
+      src={mainImage}
+      alt={product.name || 'Product'}
+      width={500}
+      height={500}
+      className="
+        object-contain w-full
+        max-h-[420px]
+        sm:max-h-[460px]
+        md:max-h-[500px]
+        lg:max-h-[540px]
+      "
+      unoptimized
+    />
+  ) : (
+    <div className="flex justify-center items-center w-full h-[260px]">
+      <p className="text-gray-400 text-sm">No image available</p>
     </div>
   )}
+</div>
 
-  <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-    <button
-      onClick={() =>
-        !cart[productId] ? addToCartHandler() : router.push('/cart')
-      }
-      className="flex-1 sm:flex-none bg-slate-900 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-700 active:scale-95 transition w-full sm:w-44"
-    >
-      {!cart[productId] ? 'Add to Cart' : 'View Cart'}
-    </button>
-
-    <button
-      onClick={() => setIsModalOpen(true)}
-      className="flex-1 sm:flex-none bg-[#c31e5a] text-white px-10 py-3 text-sm font-medium rounded hover:bg-[#d44a70] active:scale-95 transition w-full sm:w-44"
-    >
-      Book Enquiry
-    </button>
-  </div>
 </div>
 
 
-          <hr className="border-gray-300 my-5" />
 
-          <div className="flex flex-col gap-4 text-slate-500 text-md sm:text-lg">
-            <p className="flex gap-3"> <EarthIcon className="text-slate-400 " /> Free shipping worldwide </p>
-            <p className="flex gap-3"> <CreditCardIcon className="text-slate-400" /> 100% Secured Payment </p>
-            <p className="flex gap-3"> <UserIcon className="text-slate-400" /> Trusted by top brands </p>
-          </div>
-        </div>
+        {/* Product Details - Right Side (40%) */}
+        <div className="w-full lg:w-[40%] flex flex-col min-w-0">
+
+{/* Product Title */}
+<h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 leading-tight">
+  {product.name || product.title || 'Product'}
+</h1>
+
+{/* Brand and Item Code */}
+<div className="flex flex-col gap-1 mb-2 sm:mb-3">
+  <span className="text-[#7C2A47] font-semibold text-xs sm:text-sm md:text-base uppercase">
+    {brandName}
+  </span>
+  <span className="text-gray-600 text-[11px] sm:text-xs md:text-sm break-words">
+    Item Code: <span className="text-gray-800 font-medium">{itemCode}</span>
+  </span>
+</div>
+
+{/* Reviews and Social Share */}
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
+  <div className="flex items-center gap-1.5">
+    <div className="flex items-center">
+      {Array(5).fill('').map((_, index) => (
+        <StarIcon
+          key={index}
+          size={14}
+          className={`${averageRating > index ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+        />
+      ))}
+    </div>
+    <p className="text-[11px] sm:text-xs text-gray-600 ml-1">
+      {ratings.length} {ratings.length === 1 ? 'review' : 'reviews'}
+    </p>
+  </div>
+
+  {/* Social Share Icons */}
+  <div className="flex items-center gap-1.5">
+    {['f', 'p', 'X', '✉'].map((icon, i) => (
+      <button
+        key={i}
+        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+      >
+        <span className="text-[10px] font-semibold text-gray-600">{icon}</span>
+      </button>
+    ))}
+  </div>
+</div>
+
+{/* Price */}
+<div className="mb-4">
+  <p className="text-[11px] sm:text-xs text-gray-600 mb-1">Price:</p>
+  <div className="flex items-baseline gap-2 flex-wrap">
+    <span className="text-xl sm:text-2xl md:text-3xl font-bold text-[#7C2A47]">
+      {currency}{currentPrice.toLocaleString()}
+    </span>
+    {currentMrp > currentPrice && (
+      <span className="text-sm sm:text-base md:text-lg text-gray-400 line-through">
+        {currency}{currentMrp.toLocaleString()}
+      </span>
+    )}
+  </div>
+</div>
+
+{/* Stock Status */}
+<div className="mb-4">
+  <p className="text-[11px] sm:text-xs text-gray-600 mb-1">Stock:</p>
+  <div className="flex items-center gap-2">
+    <span className={`w-2 h-2 rounded-full ${inStock ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+    <span className={`text-xs sm:text-sm font-medium ${inStock ? 'text-green-600' : 'text-gray-500'}`}>
+      {inStock ? 'In stock' : 'Sold out'}
+    </span>
+  </div>
+</div>
+
+{/* Quantity Selector */}
+<div className="mb-4">
+  <p className="text-[11px] sm:text-xs text-gray-600 mb-1.5 sm:mb-2">Quantity:</p>
+  {cart[productId] ? (
+    <Counter productId={productId} />
+  ) : (
+    <div className="flex items-center border border-gray-300 rounded-lg w-fit overflow-hidden">
+      <button 
+        className="px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors text-sm sm:text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={() => handleQuantityChange(-1)}
+        disabled={quantity <= 1}
+      >
+        -
+      </button>
+      <input 
+        type="number" 
+        value={quantity} 
+        onChange={(e) => {
+          const val = parseInt(e.target.value) || 1;
+          setQuantity(val < 1 ? 1 : val);
+        }}
+        className="w-12 sm:w-16 text-center border-x border-gray-300 py-2 focus:outline-none text-sm sm:text-base font-medium bg-white"
+        min="1"
+      />
+      <button 
+        className="px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors text-sm sm:text-base font-medium"
+        onClick={() => handleQuantityChange(1)}
+      >
+        +
+      </button>
+    </div>
+  )}
+</div>
+
+{/* HP Options */}
+{hpOptions.length > 0 && (
+  <div className="mb-4">
+    <p className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">
+      Available Options:
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {hpOptions.map((hp) => (
+        <button
+          key={hp}
+          onClick={() => handleHPChange(hp)}
+          className={`px-3 py-1.5 border-2 rounded-md text-[11px] sm:text-xs font-semibold transition-all
+            ${
+              selectedHP === hp
+                ? "bg-[#7C2A47] text-white border-[#7C2A47]"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+        >
+          {hp}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
+{/* Discount Info */}
+{currentMrp > currentPrice && (
+  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 mb-4">
+    <TagIcon size={12} className="text-[#7C2A47]" />
+    <p className="text-[#7C2A47] font-medium">Save {((currentMrp - currentPrice) / currentMrp * 100).toFixed(0)}% right now</p>
+  </div>
+)}
+
+{/* Action Buttons */}
+<div className="flex flex-col sm:flex-row gap-3 mb-6">
+  <button
+    onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')}
+    disabled={!inStock}
+    className={`flex-1 px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg transition-all active:scale-95
+      ${
+        inStock
+          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+      }`}
+  >
+    {!inStock ? 'Sold out' : (!cart[productId] ? 'Add to Cart' : 'View Cart')}
+  </button>
+
+  <button
+    onClick={() => setIsModalOpen(true)}
+    className="flex-1 px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
+  >
+    Book Enquiry
+  </button>
+</div>
+
+{/* Benefits */}
+<div className="flex flex-col gap-3 pt-4 sm:pt-5 border-t border-gray-200">
+  <div className="flex items-center gap-2 text-gray-700 text-xs sm:text-sm">
+    <EarthIcon size={16} className="text-gray-500 flex-shrink-0" />
+    <span>Free shipping worldwide</span>
+  </div>
+  <div className="flex items-center gap-2 text-gray-700 text-xs sm:text-sm">
+    <CreditCardIcon size={16} className="text-gray-500 flex-shrink-0" />
+    <span>100% Secured Payment</span>
+  </div>
+  <div className="flex items-center gap-2 text-gray-700 text-xs sm:text-sm">
+    <UserIcon size={16} className="text-gray-500 flex-shrink-0" />
+    <span>Trusted by top brands</span>
+  </div>
+</div>
+
+</div>
+
       </div>
 
       <ModalPopup
@@ -359,10 +468,10 @@ const ProductDetails = ({ product }) => {
         items={[{
           name: `${product.name || product.title || 'Product'} (${selectedHP})`,
           price: currentPrice,
-          quantity: cart[productId] || 1
+          quantity: cart[productId] || quantity
         }]}
-        totalPrice={currentPrice * (cart[productId] || 1)}
-        totalQuantity={cart[productId] || 1}
+        totalPrice={currentPrice * (cart[productId] || quantity)}
+        totalQuantity={cart[productId] || quantity}
         currency={currency}
         onSendWhatsApp={handleSendWhatsApp}
       />
