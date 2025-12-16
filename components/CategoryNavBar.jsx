@@ -134,7 +134,7 @@ const CategoryNavBar = () => {
         <nav className="hidden lg:flex items-center justify-between w-full">
           {categories.map((category, index) => {
             const categoryName = formatCategoryName(category).toUpperCase()
-            const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
+            const categoryHref = `/category/${category}`
             const isHovered = hoveredCategory === category
             const isPumps = category === 'Pumps'
 
@@ -178,7 +178,7 @@ const CategoryNavBar = () => {
                     {pumpSubCategories.map((subCat, subIndex) => (
                       <Link
                         key={subIndex}
-                        href={`/category/${category}/${subCat.replace(/\s+/g, '')}`}
+                        href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
                         className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 rounded-md mx-1"
                         onClick={() => {
                           setShowPumpSubmenu(false)
