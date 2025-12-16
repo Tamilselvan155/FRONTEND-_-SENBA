@@ -16,6 +16,7 @@ export default function Hero() {
   const { banners, loading } = useSelector((state) => state.banner)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [slides, setSlides] = useState([])
+  const [failedImages, setFailedImages] = useState(new Set())
 
   useEffect(() => {
     dispatch(fetchBannersAsync())
@@ -28,27 +29,27 @@ export default function Hero() {
       .map((b) => {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
         
-        // Clean the photo path - handle all possible formats
-        let cleanPhoto = b.photo || ''
+        // Handle image URL construction - similar to product images
+        let imageUrl = ''
+        const photo = b.photo || ''
         
-        // Remove any http:// or https:// URLs (if full URL is stored)
-        cleanPhoto = cleanPhoto.replace(/^https?:\/\/[^\/]+/, '')
+        if (photo.startsWith('http://') || photo.startsWith('https://')) {
+          // Already a full URL, use as is
+          imageUrl = photo
+        } else if (photo.startsWith('/uploads/')) {
+          // Path starts with /uploads/, just add baseUrl
+          imageUrl = `${baseUrl}${photo}`
+        } else if (photo.startsWith('uploads/')) {
+          // Path starts with uploads/ (no leading slash), add baseUrl and leading slash
+          imageUrl = `${baseUrl}/${photo}`
+        } else {
+          // Just filename or relative path, construct full path
+          // Remove any leading slashes or paths
+          const filename = photo.split('/').pop()
+          imageUrl = `${baseUrl}/uploads/banners/${filename}`
+        }
         
-        // Remove any /api/, /uploads/banners/ prefixes
-        cleanPhoto = cleanPhoto
-          .replace('/api/', '')
-          .replace(/^\/uploads\/banners\//, '')
-          .replace(/^uploads\/banners\//, '')
-        
-        // Get just the filename (in case there are still slashes)
-        const filename = cleanPhoto.split('/').pop()
-        
-        // Remove any remaining domain names from the filename itself
-        const cleanFilename = filename.replace(/^(localhost|127\.0\.0\.1)(:\d+)?/, '')
-        
-        const imageUrl = `${baseUrl}/uploads/banners/${cleanFilename}`
-        
-        console.log('🖼️ Banner:', b.title, '| Clean filename:', cleanFilename, '| Full URL:', imageUrl)
+        console.log('🖼️ Banner:', b.title, '| Original photo:', photo, '| Final URL:', imageUrl)
         
         return {
           id: String(b.id || b._id),
@@ -138,23 +139,41 @@ export default function Hero() {
           >
           {slide.isBackend ? (
             // Backend images - use regular img tag
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-              style={{ 
-                display: 'block',
-                visibility: 'visible',
-                opacity: 1,
-                position: 'absolute',
-                inset: 0,
-              }}
-              onLoad={() => console.log('✅ Backend image loaded:', slide.title, slide.image)}
-              onError={(e) => {
-                console.error('❌ Backend image failed:', slide.title, slide.image)
-                console.error('Error details:', e)
-              }}
-            />
+            failedImages.has(slide.id) ? (
+              // Fallback to local image if backend image failed
+              <img
+                src={typeof banner1 === 'string' ? banner1 : banner1.src}
+                alt={slide.title}
+                className="w-full h-full object-cover"
+                style={{ 
+                  display: 'block',
+                  visibility: 'visible',
+                  opacity: 1,
+                  position: 'absolute',
+                  inset: 0,
+                }}
+              />
+            ) : (
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover"
+                style={{ 
+                  display: 'block',
+                  visibility: 'visible',
+                  opacity: 1,
+                  position: 'absolute',
+                  inset: 0,
+                }}
+                loading={isActive ? 'eager' : 'lazy'}
+                onLoad={() => console.log('✅ Backend image loaded:', slide.title, slide.image)}
+                onError={(e) => {
+                  console.error('❌ Backend image failed:', slide.title, slide.image)
+                  console.error('Attempting to load:', e.target.src)
+                  setFailedImages(prev => new Set(prev).add(slide.id))
+                }}
+              />
+            )
           ) : (
             // Local images - use regular img tag with .src
             <img

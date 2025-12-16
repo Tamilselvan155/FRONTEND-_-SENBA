@@ -73,7 +73,7 @@ const CategoryNavBar = () => {
         <nav className="lg:hidden flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide py-2.5 touch-pan-x">
           {categories.map((category, index) => {
             const categoryName = formatCategoryName(category).toUpperCase()
-            const categoryHref = `/category/${category}`
+            const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
             const isPumps = category === 'Pumps'
             const isActive = activeCategory === category
 
@@ -134,7 +134,7 @@ const CategoryNavBar = () => {
         <nav className="hidden lg:flex items-center justify-between w-full">
           {categories.map((category, index) => {
             const categoryName = formatCategoryName(category).toUpperCase()
-            const categoryHref = `/category/${category}`
+            const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
             const isHovered = hoveredCategory === category
             const isPumps = category === 'Pumps'
 

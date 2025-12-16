@@ -126,7 +126,7 @@ const Login = () => {
                   <p className="text-xs sm:text-sm text-gray-500">
                     Enter your credentials to continue
                   </p>
-                </div>
+                </div>  
 
                 {/* Error Message */}
                 {error && (

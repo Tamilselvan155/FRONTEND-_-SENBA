@@ -97,7 +97,8 @@ const ProductTabsContent = () => {
         {/* Header Section */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
-            Just added
+            {/* Just added */}
+               Our Products
           </h2>
           <Link
             href="/category/products"

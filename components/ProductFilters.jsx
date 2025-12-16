@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { Filter, X, CheckSquare, Droplet, Gauge, Waves, Cpu, Package } from "lucide-react";
+import { Filter, X, CheckSquare, Droplet, Gauge, Waves, Cpu, Package, ChevronDown } from "lucide-react";
 
 export default function ProductFilters({ products, onFilterChange }) {
   const [selectedPipeSizes, setSelectedPipeSizes] = useState([]);
@@ -11,6 +11,7 @@ export default function ProductFilters({ products, onFilterChange }) {
   const [selectedHPs, setSelectedHPs] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [outOfStockOnly, setOutOfStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("default");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(true);
@@ -50,6 +51,7 @@ export default function ProductFilters({ products, onFilterChange }) {
     selectedFlowRanges.length,
     selectedHPs.length,
     inStockOnly ? 1 : 0,
+    outOfStockOnly ? 1 : 0,
     sortBy !== "default" ? 1 : 0,
   ].reduce((sum, count) => sum + count, 0);
 
@@ -63,9 +65,10 @@ export default function ProductFilters({ products, onFilterChange }) {
       selectedHPs,
       selectedCategories,
       inStockOnly,
+      outOfStockOnly,
       sortBy,
     });
-  }, [selectedPipeSizes, selectedSpeeds, selectedHeadRanges, selectedFlowRanges, selectedHPs, selectedCategories, inStockOnly, sortBy, onFilterChange]);
+  }, [selectedPipeSizes, selectedSpeeds, selectedHeadRanges, selectedFlowRanges, selectedHPs, selectedCategories, inStockOnly, outOfStockOnly, sortBy, onFilterChange]);
 
   // Prevent scroll behind overlay (mobile)
   useEffect(() => {
@@ -86,18 +89,25 @@ export default function ProductFilters({ products, onFilterChange }) {
     setSelectedHPs([]);
     setSelectedCategories([]);
     setInStockOnly(false);
+    setOutOfStockOnly(false);
     setSortBy("default");
   };
 
   return (
     <>
       {/* Mobile Filter Button */}
-      <div className="md:hidden">
+      <div className="md:hidden mb-4 w-full">
         <button
           onClick={() => setIsFilterOpen(true)}
-          className="p-2 bg-[#c31e5aff] text-white hover:bg-[#a81a4d] transition rounded-md"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#7C2A47] text-white hover:bg-[#6a243d] transition-all duration-200 rounded-lg shadow-sm font-medium text-sm"
         >
-          <Filter size={20} />
+          <Filter size={18} />
+          <span>Filters</span>
+          {activeFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-white bg-white/20 rounded-full">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -105,59 +115,63 @@ export default function ProductFilters({ products, onFilterChange }) {
       <div
         className={`
           ${isFilterOpen ? "block" : "hidden"} 
-          md:block fixed md:static inset-y-0 left-0 md:inset-auto bg-white 
-          z-50 md:z-10 w-4/5 md:w-[300px] shadow-2xl md:shadow-md 
-          transition-transform duration-300 ease-in-out md:translate-x-0 
+          lg:block fixed lg:static inset-y-0 left-0 lg:inset-auto bg-transparent
+          z-50 lg:z-10 w-4/5 lg:w-full max-w-full shadow-2xl lg:shadow-none 
+          transition-transform duration-300 ease-in-out lg:translate-x-0 
           ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} 
-          md:rounded-2xl md:sticky md:top-[80px] overflow-hidden
+          lg:rounded-none overflow-visible border-0 lg:border-0
+          h-full lg:h-auto
         `}
       >
-        {/* Inner Scrollable Section */}
-        <div className="flex flex-col h-full max-h-screen md:max-h-[calc(100vh-80px)]">
+        {/* Inner Section - No scrolling */}
+        <div className="flex flex-col">
           {/* Header + Filters Together */}
-          <div className="flex flex-col bg-white/95 backdrop-blur-sm border-b border-gray-200 p-4 sm:p-5 sticky top-0 z-20">
+          <div className="flex flex-col bg-white border-b border-gray-200 p-4 sm:p-5">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Filter size={20} className="text-[#c31e5aff]" />
-                <h2 className="text-lg font-bold text-[#c31e5aff]">Filters</h2>
+              <div className="flex items-center gap-2.5">
+                <Filter size={18} className="text-[#7C2A47]" />
+                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
                 {activeFilterCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-[#c31e5aff] rounded-full">
+                  <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 text-xs font-semibold text-white bg-[#7C2A47] rounded-full">
                     {activeFilterCount}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={clearAll}
-                  className="text-sm font-semibold hover:underline"
-                >
-                  Clear All
-                </button>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearAll}
+                    className="text-xs sm:text-sm font-medium text-[#7C2A47] hover:text-[#6a243d] transition-colors duration-200"
+                  >
+                    Clear All
+                  </button>
+                )}
                 <button
                   onClick={() => setIsFilterOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 transition md:hidden"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-200 md:hidden"
+                  aria-label="Close filters"
                 >
-                  <X size={18} />
+                  <X size={18} className="text-gray-600" />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Scrollable Filter Content */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-5 pb-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+          {/* Filter Content - No scrolling */}
+          <div className="px-4 sm:px-5 pb-4 sm:pb-6 space-y-4 sm:space-y-5">
             {/* Category */}
             {categories.length > 0 && (
-              <div className="border-b border-gray-200 pb-2 mt-4 sm:mt-4">
+              <div className="border-b border-gray-200 pb-4 pt-2">
                 <button
                   onClick={() => setCategoryOpen(prev => !prev)}
-                  className="flex justify-between items-center w-full font-semibold text-gray-800 text-sm mb-2"
+                  className="flex justify-between items-center w-full font-semibold text-gray-900 text-sm mb-3 py-1 hover:text-[#7C2A47] transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <Package size={18} className="text-[#f48638]" />
-                    Category
+                    <Package size={18} className="text-[#7C2A47]" />
+                    <span>Category</span>
                   </div>
                   <svg
-                    className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
                       categoryOpen ? "rotate-180" : ""
                     }`}
                     fill="none"
@@ -169,21 +183,21 @@ export default function ProductFilters({ products, onFilterChange }) {
                 </button>
 
                 {categoryOpen && (
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-1.5 text-sm">
                     {categories.map(category => {
                       const count = products.filter(p => p.category === category).length;
                       return (
-                        <label key={category} className="flex items-center justify-between hover:bg-blue-50 p-2 rounded-lg cursor-pointer transition">
-                          <div className="flex items-center gap-2">
+                        <label key={category} className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors duration-150">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
                             <input
                               type="checkbox"
                               checked={selectedCategories.includes(category)}
                               onChange={() => toggleSelection(category, setSelectedCategories)}
-                              className="h-4 w-4 text-[#f48638] border-gray-300 rounded focus:ring-[#f48638]"
+                              className="h-4 w-4 text-[#7C2A47] border-gray-300 rounded focus:ring-2 focus:ring-[#7C2A47] focus:ring-offset-0 cursor-pointer"
                             />
-                            <span className="text-gray-700">{category}</span>
+                            <span className="text-gray-700 truncate">{category}</span>
                           </div>
-                          <span className="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                          <span className="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full ml-2 flex-shrink-0">
                             {count}
                           </span>
                         </label>
@@ -250,39 +264,63 @@ export default function ProductFilters({ products, onFilterChange }) {
             )}
 
             {/* Availability */}
-            <div>
-              <h3 className="flex items-center gap-2 font-semibold text-gray-800 text-sm mb-2">
-                <CheckSquare size={18} className="text-[#f48638]" />
-                Availability
+            <div className="border-b border-gray-200 pb-4">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-sm mb-3">
+                <CheckSquare size={18} className="text-[#7C2A47]" />
+                <span>Availability</span>
               </h3>
-              <label className="flex items-center gap-2 hover:bg-blue-50 p-2 rounded-lg cursor-pointer transition text-sm">
-                <input
-                  type="checkbox"
-                  checked={inStockOnly}
-                  onChange={(e) => setInStockOnly(e.target.checked)}
-                  className="h-4 w-4 text-[#f48638] border-gray-300 rounded focus:ring-[#f48638]"
-                />
-                <span className="text-gray-700">In Stock Only</span>
-              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2.5 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors duration-150 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={inStockOnly}
+                    onChange={(e) => {
+                      setInStockOnly(e.target.checked);
+                      if (e.target.checked) setOutOfStockOnly(false);
+                    }}
+                    className="h-4 w-4 text-[#7C2A47] border-gray-300 rounded focus:ring-2 focus:ring-[#7C2A47] focus:ring-offset-0 cursor-pointer"
+                  />
+                  <span className="text-gray-700">In stock</span>
+                </label>
+                <label className="flex items-center gap-2.5 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors duration-150 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={outOfStockOnly}
+                    onChange={(e) => {
+                      setOutOfStockOnly(e.target.checked);
+                      if (e.target.checked) setInStockOnly(false);
+                    }}
+                    className="h-4 w-4 text-[#7C2A47] border-gray-300 rounded focus:ring-2 focus:ring-[#7C2A47] focus:ring-offset-0 cursor-pointer"
+                  />
+                  <span className="text-gray-700">Out of stock</span>
+                </label>
+              </div>
             </div>
 
             {/* Sort By */}
-            <div>
-              <h3 className="flex items-center gap-2 font-semibold text-gray-800 text-sm mb-2">
-                <Filter size={18} className="text-[#f48638]" />
-                Sort By
+            <div className="pb-2">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900 text-sm mb-3">
+                <Filter size={18} className="text-[#7C2A47]" />
+                <span>Sort By</span>
               </h3>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f48638] bg-white text-sm"
-              >
-                <option value="default">Default</option>
-                <option value="priceLowToHigh">Price: Low to High</option>
-                <option value="priceHighToLow">Price: High to Low</option>
-                <option value="newest">Newest First</option>
-                <option value="rating">Highest Rated</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full p-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] bg-white text-sm text-gray-700 transition-all duration-200 appearance-none cursor-pointer hover:border-gray-400"
+                >
+                  <option value="default">Best selling</option>
+                  <option value="priceLowToHigh">Price: Low to High</option>
+                  <option value="priceHighToLow">Price: High to Low</option>
+                  <option value="newest">Newest First</option>
+                  <option value="rating">Highest Rated</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -293,28 +331,47 @@ export default function ProductFilters({ products, onFilterChange }) {
 
 // Helper reusable filter section
 function FilterGroup({ title, icon, options, selected, toggle }) {
+  const [isOpen, setIsOpen] = React.useState(true);
+  
   return (
-    <div>
-      <h3 className="flex items-center gap-2 font-semibold text-gray-800 text-sm mb-2">
-        {icon}
-        {title}
-      </h3>
-      <div className="space-y-2 text-sm">
-        {options.map(opt => (
-          <label
-            key={opt}
-            className="flex items-center gap-2 hover:bg-blue-50 p-2 rounded-lg cursor-pointer transition"
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(opt)}
-              onChange={() => toggle(opt)}
-              className="h-4 w-4 text-[#f48638] border-gray-300 rounded focus:ring-[#f48638]"
-            />
-            <span className="text-gray-700">{opt}</span>
-          </label>
-        ))}
-      </div>
+    <div className="border-b border-gray-200 pb-4">
+      <button
+        onClick={() => setIsOpen(prev => !prev)}
+        className="flex justify-between items-center w-full font-semibold text-gray-900 text-sm mb-3 py-1 hover:text-[#7C2A47] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <span>{title}</span>
+        </div>
+        <svg
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="space-y-1.5 text-sm">
+          {options.map(opt => (
+            <label
+              key={opt}
+              className="flex items-center gap-2.5 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors duration-150"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt)}
+                onChange={() => toggle(opt)}
+                className="h-4 w-4 text-[#7C2A47] border-gray-300 rounded focus:ring-2 focus:ring-[#7C2A47] focus:ring-offset-0 cursor-pointer"
+              />
+              <span className="text-gray-700">{opt}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
