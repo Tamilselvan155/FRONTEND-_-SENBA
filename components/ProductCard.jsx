@@ -36,12 +36,42 @@ const ProductCard = ({ product }) => {
     return '';
   };
 
+  // Extract category with extensive checking
+  const category = (() => {
+    // Try multiple possible category fields
+    if (product.category) {
+      if (typeof product.category === 'string') return product.category;
+      if (typeof product.category === 'object' && product.category !== null) {
+        return product.category.englishName || 
+               product.category.name || 
+               product.category.title || 
+               product.category.slug || 
+               '';
+      }
+    }
+    
+    if (product.categoryId) {
+      if (typeof product.categoryId === 'string') return product.categoryId;
+      if (typeof product.categoryId === 'object' && product.categoryId !== null) {
+        return product.categoryId.englishName || 
+               product.categoryId.name || 
+               product.categoryId.title || 
+               product.categoryId.slug || 
+               '';
+      }
+    }
+    
+    // Try other possible fields
+    return product.categoryName || 
+           product.category_name || 
+           product.productCategory || 
+           'PUMPS'; // Default fallback
+  })();
+
   const brand =
     toText(product.brand) ||
     toText(product.store?.name) ||
     toText(product.vendor) ||
-    toText(product.category) ||
-    toText(product.categoryId) ||
     '';
 
   const ratingValue = (() => {
@@ -123,7 +153,15 @@ Hi, I'm interested in booking an enquiry for the following product:
   
         {/* Content */}
         <div className="px-3 sm:px-4 pt-3 pb-4 flex flex-col flex-1">
-          {brand && (
+          {/* Category Badge - Always show with fallback */}
+          <div className="inline-flex items-center gap-1.5 mb-2">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-white bg-[#7C2A47] px-2 py-1 rounded uppercase tracking-wide">
+              {category || 'PUMPS'}
+            </span>
+          </div>
+
+          {/* Brand (if different from category) */}
+          {brand && brand.toLowerCase() !== category?.toLowerCase() && (
             <div className="text-[10px] sm:text-[11px] tracking-wide text-gray-500 uppercase mb-1">
               {brand}
             </div>

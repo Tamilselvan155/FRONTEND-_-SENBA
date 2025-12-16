@@ -89,6 +89,7 @@ const CategoryNavBar = () => {
                     }`}
                   >
                     <span>{categoryName}</span>
+                    {/* Show down arrow only for items with submenus */}
                     <ChevronDown 
                       size={10} 
                       className={`transition-transform duration-200 ${
@@ -102,6 +103,7 @@ const CategoryNavBar = () => {
                     className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
                   >
                     <span>{categoryName}</span>
+                    {/* No down arrow for items without submenus */}
                   </Link>
                 )}
 
@@ -152,14 +154,17 @@ const CategoryNavBar = () => {
                   }`}
                 >
                   <span>{categoryName}</span>
-                  <ChevronDown 
-                    size={12} 
-                    className={`transition-all duration-200 ${
-                      isHovered || (isPumps && showPumpSubmenu) 
-                        ? 'rotate-180 text-[#7C2A47]' 
-                        : 'text-gray-500 group-hover:text-[#7C2A47]'
-                    }`}
-                  />
+                  {/* Show down arrow only for items with submenus (Pumps) */}
+                  {isPumps && (
+                    <ChevronDown 
+                      size={12} 
+                      className={`transition-all duration-200 ${
+                        isHovered || showPumpSubmenu 
+                          ? 'rotate-180 text-[#7C2A47]' 
+                          : 'text-gray-500 group-hover:text-[#7C2A47]'
+                      }`}
+                    />
+                  )}
                 </Link>
 
                 {/* Desktop Dropdown Menu for Pumps */}

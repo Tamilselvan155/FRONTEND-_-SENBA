@@ -20,6 +20,20 @@ export default function AdminProducts() {
         dispatch(fetchProductsAsync())
     }, [dispatch])
 
+    // Helper function to extract text from category/subcategory objects
+    const extractCategoryText = (value) => {
+        if (!value) return '-';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'object') {
+            return value.englishName || 
+                   value.name || 
+                   value.title || 
+                   value.slug || 
+                   '-';
+        }
+        return '-';
+    };
+
     const columns = [
         {
             key: 'sn',
@@ -37,12 +51,22 @@ export default function AdminProducts() {
             label: 'Category',
             sortable: true,
             filterable: true,
+            render: (value) => (
+                <span className="text-sm text-gray-700">
+                    {extractCategoryText(value)}
+                </span>
+            ),
         },
         {
             key: 'subcategory',
             label: 'Subcategory',
             sortable: true,
             filterable: true,
+            render: (value) => (
+                <span className="text-sm text-gray-600">
+                    {extractCategoryText(value)}
+                </span>
+            ),
         },
         {
             key: 'isFeatured',
