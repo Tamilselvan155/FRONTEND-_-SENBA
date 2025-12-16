@@ -6,22 +6,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/lib/features/cart/cartSlice";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { ShoppingCart, ArrowRight, Send } from "lucide-react";
 import ModalPopup from "./PopupModel";
 import ProductFilters from "./ProductFilters";
 import Loading from "./Loading";
-import ProductCard from "./ProductCard";
 import { assets } from "@/assets/assets";
 
-export default function CategoryProductsFilter({ categoryName }) {
-  const searchParams = useSearchParams();
+export default function CategoryProductsFilter({ categoryName, subCategoryName }) {
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.cartItems);
-  
-  // Get category from URL query parameter or use prop
-  const categoryFromUrl = searchParams?.get('category');
-  const activeCategoryName = categoryFromUrl || categoryName || 'products';
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -261,35 +254,15 @@ export default function CategoryProductsFilter({ categoryName }) {
       });
     }
 
-    // Get brand
-    let brandValue = '';
-    if (apiProduct.brand) {
-      if (typeof apiProduct.brand === 'string') {
-        brandValue = apiProduct.brand;
-      } else if (typeof apiProduct.brand === 'object' && apiProduct.brand !== null) {
-        brandValue = apiProduct.brand.name || apiProduct.brand.title || apiProduct.brand.englishName || '';
-      }
-    }
-    if (!brandValue && apiProduct.store?.name) {
-      brandValue = apiProduct.store.name;
-    }
-    if (!brandValue && apiProduct.vendor) {
-      brandValue = typeof apiProduct.vendor === 'string' ? apiProduct.vendor : apiProduct.vendor.name || '';
-    }
-
     return {
       id: apiProduct.id || apiProduct._id,
       name: apiProduct.title || apiProduct.name || 'Untitled Product',
       description: apiProduct.description || '',
       price: price,
       mrp: apiProduct.mrp || price,
-      discount: apiProduct.mrp && price < apiProduct.mrp 
-        ? Math.round(((apiProduct.mrp - price) / apiProduct.mrp) * 100) 
-        : 0,
       images: productImages.length > 0 ? productImages : [],
       category: categoryNameValue,
       subCategory: subCategoryNameValue,
-      brand: brandValue,
       inStock: (apiProduct.stock !== undefined && apiProduct.stock !== null) ? apiProduct.stock > 0 : true,
       stock: Number(apiProduct.stock) || 0,
       options: options,
@@ -300,6 +273,35 @@ export default function CategoryProductsFilter({ categoryName }) {
       originalProduct: apiProduct, // Store original for reference
     };
   };
+
+  // Auto-select category from URL query params after products are loaded
+  useEffect(() => {
+    if (categoryName && categoryName !== "products" && products.length > 0 && filters.selectedCategories.length === 0) {
+      // Normalize category name for matching
+      const normalizeCategory = (cat) => {
+        if (!cat) return '';
+        return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+      };
+      
+      const normalizedCategoryName = normalizeCategory(categoryName);
+      
+      // Find matching category from available categories
+      const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+      const matchingCategory = allCategories.find(cat => {
+        const normalizedCat = normalizeCategory(cat);
+        return normalizedCat === normalizedCategoryName ||
+               normalizedCat.includes(normalizedCategoryName) ||
+               normalizedCategoryName.includes(normalizedCat);
+      });
+      
+      if (matchingCategory) {
+        setFilters(prev => ({
+          ...prev,
+          selectedCategories: [matchingCategory]
+        }));
+      }
+    }
+  }, [categoryName, products]);
 
   // Fetch products from API
   useEffect(() => {
@@ -322,50 +324,11 @@ export default function CategoryProductsFilter({ categoryName }) {
           .map(transformProduct)
           .filter(product => product !== null);
 
-        // Filter by category if needed
-        const normalizedCategoryName = activeCategoryName?.trim().toLowerCase() || "";
-        let filtered = transformedProducts;
-        
-        if (normalizedCategoryName !== "products") {
-          const normalizeCategory = (cat) => {
-            if (!cat) return '';
-            // Normalize: remove spaces, hyphens, convert to lowercase
-            return cat.trim().toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
-          };
-
-          const categoryMatches = (productCategory, searchCategory) => {
-            if (!productCategory || !searchCategory) return false;
-            
-            const normalizedProductCat = normalizeCategory(productCategory);
-            const normalizedSearchCat = normalizeCategory(searchCategory);
-            
-            // Exact match
-            if (normalizedProductCat === normalizedSearchCat) return true;
-            
-            // Handle singular/plural (pump vs pumps)
-            const productBase = normalizedProductCat.endsWith('s') ? normalizedProductCat.slice(0, -1) : normalizedProductCat;
-            const searchBase = normalizedSearchCat.endsWith('s') ? normalizedSearchCat.slice(0, -1) : normalizedSearchCat;
-            
-            if (productBase === searchBase && productBase.length > 0) return true;
-            
-            // Partial match
-            if (normalizedProductCat.includes(normalizedSearchCat) || normalizedSearchCat.includes(normalizedProductCat)) {
-              return true;
-            }
-            
-            return false;
-          };
-
-          filtered = transformedProducts.filter(
-            (product) => categoryMatches(product.category, normalizedCategoryName)
-          );
-        }
-
-        setProducts(filtered);
+        setProducts(transformedProducts);
         
         // Initialize selected HP options - select first option for each product
         const initialHpSelections = {};
-        filtered.forEach(product => {
+        transformedProducts.forEach(product => {
           if (product.options && product.options.length > 0) {
             initialHpSelections[product.id] = product.options[0];
           }
@@ -381,7 +344,36 @@ export default function CategoryProductsFilter({ categoryName }) {
     };
 
     loadProducts();
-  }, [activeCategoryName]);
+  }, [categoryName]);
+
+  // Auto-select category from URL query params after products are loaded
+  useEffect(() => {
+    if (categoryName && categoryName !== "products" && products.length > 0 && filters.selectedCategories.length === 0) {
+      // Normalize category name for matching
+      const normalizeCategory = (cat) => {
+        if (!cat) return '';
+        return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+      };
+      
+      const normalizedCategoryName = normalizeCategory(categoryName);
+      
+      // Find matching category from available categories
+      const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+      const matchingCategory = allCategories.find(cat => {
+        const normalizedCat = normalizeCategory(cat);
+        return normalizedCat === normalizedCategoryName ||
+               normalizedCat.includes(normalizedCategoryName) ||
+               normalizedCategoryName.includes(normalizedCat);
+      });
+      
+      if (matchingCategory) {
+        setFilters(prev => ({
+          ...prev,
+          selectedCategories: [matchingCategory]
+        }));
+      }
+    }
+  }, [categoryName, products]);
 
   // Apply filters and sorting
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -432,7 +424,8 @@ export default function CategoryProductsFilter({ categoryName }) {
     let updatedProducts = [...products];
 
     // Apply category filter (OR logic - match ANY selected category)
-    if (categoryName === "products" && filters.selectedCategories.length > 0) {
+    // Apply filter if categories are selected OR if categoryName is provided from query params
+    if (filters.selectedCategories.length > 0) {
       updatedProducts = updatedProducts.filter((p) =>
         // Match if product category matches ANY selected category
         filters.selectedCategories.some(selectedCat => {
@@ -443,6 +436,21 @@ export default function CategoryProductsFilter({ categoryName }) {
                  selectedCatLower.includes(productCat);
         })
       );
+    } else if (categoryName && categoryName !== "products") {
+      // If no categories selected but categoryName provided, filter by it
+      const normalizeCategory = (cat) => {
+        if (!cat) return '';
+        return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+      };
+      
+      const normalizedCategoryName = normalizeCategory(categoryName);
+      
+      updatedProducts = updatedProducts.filter((p) => {
+        const productCat = normalizeCategory(p.category);
+        return productCat === normalizedCategoryName ||
+               productCat.includes(normalizedCategoryName) ||
+               normalizedCategoryName.includes(productCat);
+      });
     }
 
     // Apply pipe size filter (OR logic - match ANY selected option)
@@ -628,20 +636,19 @@ Hi, I'm interested in booking an enquiry for the following product:
         </Link>
         <span>&gt;</span>
           <span className="text-gray-900 font-medium">
-          {activeCategoryName === "products" ? "All Products" : activeCategoryName}
+          {categoryName === "products" ? "All Products" : categoryName}
         </span>
       </div>
 
-        <div className="relative flex flex-col lg:flex-row gap-2 sm:gap-6 items-start">
+        <div className="relative flex flex-col lg:flex-row gap-4 sm:gap-6 items-start">
           {/* Filters Sidebar - Fixed on desktop */}
-<aside className="w-full lg:w-64 lg:flex-shrink-0">
-  <div className="lg:sticky lg:top-20">
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      <ProductFilters products={products} onFilterChange={setFilters} />
-    </div>
-  </div>
-</aside>
-
+          <aside className="w-full lg:w-80 lg:flex-shrink-0">
+            <div className="lg:sticky lg:top-20">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <ProductFilters products={products} onFilterChange={setFilters} />
+        </div>
+            </div>
+          </aside>
 
           {/* Products List - Scrollable area */}
           <main className="flex-1 min-w-0">
@@ -649,7 +656,7 @@ Hi, I'm interested in booking an enquiry for the following product:
             <div className="mb-4 sm:mb-6 bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
               {/* Title */}
               <h1 className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                {activeCategoryName === "products" ? "All Products" : activeCategoryName}
+                {categoryName === "products" ? "All Products" : categoryName}
               </h1>
               
               {/* Product Count and Controls */}
@@ -750,23 +757,127 @@ Hi, I'm interested in booking an enquiry for the following product:
               </button>
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6' : 'space-y-4 sm:space-y-5'}>
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5' : 'space-y-4 sm:space-y-5'}>
               {filteredProducts.slice(0, itemsPerPage).map((product, index) => {
                 const displayPrice = getDisplayPrice(product);
                 
-                // Update product price with selected HP option price
-                const productWithPrice = {
-                  ...product,
-                  price: displayPrice
-                };
+                // Extract brand/category
+                const brand = product.brand || 
+                              (typeof product.category === 'string' ? product.category : 
+                               product.category?.englishName || product.category?.name || 
+                               product.category?.title || 'PUMPS');
                 
-                // Grid View Layout - Use ProductCard
+                // Calculate rating
+                const ratingValue = (() => {
+                  const r = product.rating;
+                  if (typeof r === 'number') return r;
+                  if (Array.isArray(r) && r.length > 0) {
+                    const sum = r.reduce((acc, item) => acc + (Number(item?.rating) || 0), 0);
+                    return sum / r.length;
+                  }
+                  return 0;
+                })();
+                
+                const reviewCount = Array.isArray(product.rating) ? product.rating.length : 0;
+                
+                // Grid View Layout
                 if (viewMode === 'grid') {
-                  return (
-                    <ProductCard 
-                      key={product.id || index}
-                      product={productWithPrice}
-                    />
+                return (
+                  <Link 
+                    href={`/product/${product.id}`}
+                    key={index}
+                      className="block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 group"
+                    >
+                      {/* Product Image */}
+                      <div className="relative w-full aspect-square bg-white p-3 sm:p-4 flex items-center justify-center">
+                        {product.images && product.images.length > 0 && product.images[0] ? (
+                          <img
+                            src={product.images[0]?.src || product.images[0]}
+                            alt={product.name || 'Product image'}
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = assets.product_img0 || '/placeholder-image.png';
+                            }}
+                          />
+                        ) : (
+                          <img
+                            src={assets.product_img0 || '/placeholder-image.png'}
+                            alt="Placeholder"
+                            className="w-full h-full object-contain opacity-50"
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Product Info */}
+                      <div className="p-3 sm:p-4">
+                        {/* Brand */}
+                        <div className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+                          {brand}
+                        </div>
+                        
+                        {/* Product Name */}
+                        <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#7C2A47] transition-colors">
+                          {product.name || 'Untitled Product'}
+                        </h3>
+                        
+                        {/* Price */}
+                        <div className="flex items-baseline gap-2 mb-2">
+                          {displayPrice !== undefined && displayPrice !== null ? (
+                            <>
+                              <span className="text-lg font-bold text-[#7C2A47]">
+                                {currency}{displayPrice.toLocaleString()}
+                              </span>
+                              {product.mrp && product.mrp > displayPrice && (
+                                <span className="text-xs text-gray-400 line-through">
+                                  {currency}{product.mrp.toLocaleString()}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-500">Price on enquiry</span>
+                          )}
+                        </div>
+                        
+                        {/* Reviews */}
+                        <div className="flex items-center gap-2 mb-2">
+                          {ratingValue > 0 ? (
+                            <>
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <span 
+                                    key={i} 
+                                    className={`text-xs ${i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'}`}
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                              <span className="text-xs text-gray-600">
+                                {reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <span key={i} className="text-xs text-gray-300">★</span>
+                                ))}
+                              </div>
+                              <span className="text-xs text-gray-500">No reviews</span>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Stock Status */}
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-block w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className={`text-xs font-medium ${product.inStock ? 'text-green-600' : 'text-gray-500'}`}>
+                            {product.inStock ? 'In stock' : 'Sold out'}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
                   );
                 }
                 
@@ -916,10 +1027,10 @@ Hi, I'm interested in booking an enquiry for the following product:
             </p>
           )}
             </main>
-          </div>
         </div>
+      </div>
 
-        {/* WhatsApp Modal */}
+      {/* WhatsApp Modal */}
       {selectedProduct && (
         <ModalPopup
           isOpen={isModalOpen}

@@ -151,11 +151,11 @@ export default function Categories() {
             style={{ transform: `translateX(-${startIndex * (100 / 5)}%)` }}
           >
             {categories.map((cat, index) => (
-              <Link
-                key={index}
-                href={`/category/products?category=${encodeURIComponent(cat)}`}
-                className="group flex-shrink-0 w-1/5 flex flex-col snap-center"
-              >
+                <Link
+                  key={index}
+                  href={`/category/products?category=${encodeURIComponent(cat)}`}
+                  className="group flex-shrink-0 w-1/5 flex flex-col snap-center"
+                >
                 <motion.div
                   whileHover={{ y: -6 }}
                   className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col"

@@ -39,97 +39,6 @@ const ShopByCategory = () => {
     },
   ];
 
-  // Transform product to match ProductCard format
-  const transformProduct = (apiProduct) => {
-    if (!apiProduct) return null;
-
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    
-    // Handle images
-    let productImages = [];
-    if (apiProduct.images) {
-      if (Array.isArray(apiProduct.images) && apiProduct.images.length > 0) {
-        productImages = apiProduct.images
-          .filter(img => img && img.trim() !== '')
-          .map(img => {
-            if (img.startsWith('http')) return img;
-            return img.startsWith('/uploads/') ? `${baseUrl}${img}` : `${baseUrl}/uploads/${img}`;
-          });
-      } else if (typeof apiProduct.images === 'string' && apiProduct.images.trim() !== '') {
-        const img = apiProduct.images.startsWith('http') 
-          ? apiProduct.images 
-          : apiProduct.images.startsWith('/uploads/') 
-            ? `${baseUrl}${apiProduct.images}` 
-            : `${baseUrl}/uploads/${apiProduct.images}`;
-        productImages = [img];
-      }
-    }
-
-    // Get category name
-    let categoryNameValue = '';
-    if (typeof apiProduct.category === 'string' && apiProduct.category.trim() !== '') {
-      categoryNameValue = apiProduct.category;
-    } else if (apiProduct.category?.title) {
-      categoryNameValue = apiProduct.category.title;
-    } else if (apiProduct.categoryId) {
-      if (typeof apiProduct.categoryId === 'object') {
-        if (apiProduct.categoryId.parentId && typeof apiProduct.categoryId.parentId === 'object' && apiProduct.categoryId.parentId.title) {
-          categoryNameValue = apiProduct.categoryId.parentId.title;
-        } else if (apiProduct.categoryId.isParent || !apiProduct.categoryId.parentId) {
-          categoryNameValue = apiProduct.categoryId.title || '';
-        } else {
-          categoryNameValue = apiProduct.categoryId.title || '';
-        }
-      }
-    }
-
-    // Get brand
-    let brandValue = '';
-    if (apiProduct.brand) {
-      if (typeof apiProduct.brand === 'string') {
-        brandValue = apiProduct.brand;
-      } else if (typeof apiProduct.brand === 'object' && apiProduct.brand !== null) {
-        brandValue = apiProduct.brand.name || apiProduct.brand.title || apiProduct.brand.englishName || '';
-      }
-    }
-    if (!brandValue && apiProduct.store?.name) {
-      brandValue = apiProduct.store.name;
-    }
-    if (!brandValue && apiProduct.vendor) {
-      brandValue = typeof apiProduct.vendor === 'string' ? apiProduct.vendor : apiProduct.vendor.name || '';
-    }
-
-    // Handle price
-    let price = 0;
-    if (apiProduct.hasVariants && apiProduct.brandVariants && Array.isArray(apiProduct.brandVariants) && apiProduct.brandVariants.length > 0) {
-      const variantPrice = apiProduct.brandVariants[0]?.price;
-      if (variantPrice !== undefined && variantPrice !== null) {
-        price = Number(variantPrice);
-      }
-    }
-    if (price === 0 && apiProduct.price !== undefined && apiProduct.price !== null) {
-      price = Number(apiProduct.price);
-    }
-
-    return {
-      id: apiProduct.id || apiProduct._id,
-      name: apiProduct.title || apiProduct.name || 'Untitled Product',
-      description: apiProduct.description || '',
-      price: price,
-      mrp: apiProduct.mrp || price,
-      discount: apiProduct.mrp && price < apiProduct.mrp 
-        ? Math.round(((apiProduct.mrp - price) / apiProduct.mrp) * 100) 
-        : 0,
-      images: productImages.length > 0 ? productImages : [],
-      category: categoryNameValue,
-      brand: brandValue,
-      inStock: (apiProduct.stock !== undefined && apiProduct.stock !== null) ? apiProduct.stock > 0 : true,
-      stock: Number(apiProduct.stock) || 0,
-      rating: Array.isArray(apiProduct.rating) ? apiProduct.rating : [],
-      originalProduct: apiProduct,
-    };
-  };
-
   // Group products by category
   const categorizedProducts = useMemo(() => {
     const grouped = {};
@@ -144,7 +53,7 @@ const ShopByCategory = () => {
     }
 
     products.forEach((product, idx) => {
-      if (!product.category && !product.categoryId) return;
+      if (!product.category) return;
       
       // Handle case where category might be an object or string
       let categoryValue = product.category;
@@ -163,33 +72,34 @@ const ShopByCategory = () => {
       // Ensure categoryValue is a string
       if (typeof categoryValue !== 'string' || !categoryValue) return;
       
-      // Normalize product category for comparison - handle singular/plural
+      // Normalize product category for comparison
       const productCategory = categoryValue.toLowerCase().trim().replace(/\s+/g, '').replace(/-/g, '');
-      // Normalize to handle both "pump" and "pumps" as the same
-      const normalizedCategory = productCategory.endsWith('s') ? productCategory.slice(0, -1) : productCategory;
       
       let matched = false;
       categories.forEach(category => {
         // Check if product category matches any of the category keys
         const matches = category.keys.some(key => {
           const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
-          const normalizedKeyBase = normalizedKey.endsWith('s') ? normalizedKey.slice(0, -1) : normalizedKey;
-          // Try exact match first, then normalized match (handles pump/pumps)
+          // Try exact match first, then partial match
           if (productCategory === normalizedKey) return true;
-          if (normalizedCategory === normalizedKeyBase) return true;
           if (productCategory.includes(normalizedKey) || normalizedKey.includes(productCategory)) return true;
           return false;
         });
         
         if (matches) {
-          // Transform product before adding to group
-          const transformedProduct = transformProduct(product);
-          if (transformedProduct) {
-            grouped[category.slug].push(transformedProduct);
-          }
+          grouped[category.slug].push(product);
           matched = true;
         }
       });
+      
+      // Debug: Log unmatched categories (only first few to avoid spam)
+      if (!matched && idx < 5) {
+        console.log('Unmatched product category:', {
+          productName: product.title || product.name,
+          categoryValue: categoryValue,
+          normalized: productCategory
+        });
+      }
     });
 
     return grouped;
@@ -239,7 +149,7 @@ const ShopByCategory = () => {
                   {/* View More Link */}
                   {categoryProducts.length > 4 && (
                     <Link
-                      href={`/category/products?category=${encodeURIComponent(category.slug)}`}
+                      href={`/category/products?category=${encodeURIComponent(category.name)}`}
                       className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-[#7C2A47] hover:text-[#8B3A5A] transition-colors duration-200 group"
                     >
                       <span>View more</span>
