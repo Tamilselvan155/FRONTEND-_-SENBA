@@ -1,13 +1,13 @@
 
 'use client'
 
-import { addToCart } from "@/lib/features/cart/cartSlice";
+import { useCart } from "@/lib/hooks/useCart";
 import { StarIcon, TagIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import ModalPopup from './PopupModel';
 import { assets } from '@/assets/assets';
 
@@ -20,7 +20,7 @@ const ProductDetails = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
 
   const cart = useSelector(state => state.cart.cartItems);
-  const dispatch = useDispatch();
+  const { addToCart } = useCart();
 
   const router = useRouter();
   
@@ -164,16 +164,20 @@ const ProductDetails = ({ product }) => {
     setSelectedHP(hp);
   };
 
-  const addToCartHandler = () => {
+  const addToCartHandler = async () => {
     // Include selected HP option in cart data
     const { price: priceForSelectedHP } = getPriceAndMrpForHP(selectedHP);
     // Add quantity to cart
-    for (let i = 0; i < quantity; i++) {
-      dispatch(addToCart({ 
-        productId,
-        selectedOption: selectedHP,
-        price: priceForSelectedHP
-      }));
+    try {
+      for (let i = 0; i < quantity; i++) {
+        await addToCart({ 
+          productId,
+          selectedOption: selectedHP,
+          price: priceForSelectedHP
+        });
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
     }
   };
 
