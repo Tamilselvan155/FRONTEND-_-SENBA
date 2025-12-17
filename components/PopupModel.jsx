@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { X, PhoneCall, User,MessageCircle , Phone} from 'lucide-react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addEnquiry } from '@/lib/features/enquiry/enquirySlice';
-import { addToGoogleSheet } from '@/lib/actions/googleSheetActions';
+import { createEnquiry } from '@/lib/actions/enquiryActions';
 import toast from 'react-hot-toast';
 
 const ModalPopup = ({
@@ -21,6 +21,7 @@ const ModalPopup = ({
   const [userName, setUserName] = useState('');
   const [userMobile, setUserMobile] = useState('');
   const dispatch = useDispatch();
+  const { email } = useSelector((state) => state.auth);
 
   // 🧠 Validate name and mobile before submitting
   const validateInputs = () => {
@@ -54,20 +55,33 @@ const ModalPopup = ({
     const enquiryData = {
       userName,
       userMobile,
+      userEmail: email || null,
       items: enhancedItems,
       totalPrice,
       totalQuantity,
+      contactMethod: 'form',
       createdAt: new Date().toISOString(),
     };
 
+    // Save to Redux (local state)
     dispatch(addEnquiry(enquiryData));
 
     try {
-      await addToGoogleSheet(enquiryData);
+      // Send to backend API
+      await createEnquiry({
+        userName,
+        userMobile,
+        userEmail: email || null,
+        items: enhancedItems,
+        totalPrice,
+        totalQuantity,
+        contactMethod: 'form',
+      });
+      
       toast.success('Enquiry submitted successfully!');
     } catch (error) {
-      console.error('Error sending enquiry to Google Sheet:', error);
-      toast.error('Enquiry saved locally, but failed to sync with Google Sheet.');
+      console.error('Error submitting enquiry:', error);
+      toast.error(error.message || 'Failed to submit enquiry. Please try again.');
     }
 
     // Reset form
@@ -77,7 +91,7 @@ const ModalPopup = ({
     onClose();
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = async () => {
     const enhancedItems = items.map((item) => {
       const productLink =
         typeof window !== 'undefined'
@@ -85,6 +99,10 @@ const ModalPopup = ({
           : '';
       return { ...item, link: productLink };
     });
+
+    // Get user info if available (from form or logged in user)
+    const finalUserName = userName || (typeof window !== 'undefined' ? localStorage.getItem('userName') : null) || 'Customer';
+    const finalUserMobile = userMobile || (typeof window !== 'undefined' ? localStorage.getItem('userMobile') : null) || '';
 
     let message = `Hello, I'm interested in placing an order. Here are the details:\n\n`;
     enhancedItems.forEach((item, index) => {
@@ -95,8 +113,8 @@ const ModalPopup = ({
       message += `🖼 *Product Link:* ${item.link}\n\n`;
     });
 
-    if (userName && userMobile) {
-      message += `🙋 *Name:* ${userName}\n📱 *Mobile:* ${userMobile}\n`;
+    if (finalUserName && finalUserMobile) {
+      message += `🙋 *Name:* ${finalUserName}\n📱 *Mobile:* ${finalUserMobile}\n`;
     }
 
     message += `\nTotal: ${currency}${totalPrice}\nTotal Items: ${totalQuantity}\n\nPlease let me know the next steps.`;
@@ -104,6 +122,37 @@ const ModalPopup = ({
     const encodedMessage = encodeURIComponent(message);
     const phoneNumber = '9345795629';
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+
+    // Save enquiry to backend with WhatsApp method
+    try {
+      const enquiryData = {
+        userName: finalUserName,
+        userMobile: finalUserMobile || 'Not provided',
+        userEmail: email || null,
+        items: enhancedItems,
+        totalPrice,
+        totalQuantity,
+        contactMethod: 'whatsapp',
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save to Redux (local state)
+      dispatch(addEnquiry(enquiryData));
+
+      // Send to backend API
+      await createEnquiry({
+        userName: finalUserName,
+        userMobile: finalUserMobile || 'Not provided',
+        userEmail: email || null,
+        items: enhancedItems,
+        totalPrice,
+        totalQuantity,
+        contactMethod: 'whatsapp',
+      });
+    } catch (error) {
+      console.error('Error saving WhatsApp enquiry:', error);
+      // Don't show error to user as WhatsApp is already opened
+    }
 
     setShowForm(false);
     setUserName('');
