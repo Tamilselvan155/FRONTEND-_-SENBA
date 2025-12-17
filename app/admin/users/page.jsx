@@ -6,7 +6,10 @@ import { useDispatch, useSelector } from "react-redux"
 import DataTable from "@/components/common/DataTable"
 import ConfirmModal from "@/components/common/ConfirmModal"
 import ViewUserModal from "@/components/common/ViewUserModal"
+import ViewUserCartModal from "@/components/admin/ViewUserCartModal"
+import ViewUserEnquiriesModal from "@/components/admin/ViewUserEnquiriesModal"
 import { fetchUsersAsync, deleteUserAsync } from "@/lib/features/user/userSlice"
+import { ShoppingCart, MessageSquare } from "lucide-react"
 import toast from "react-hot-toast"
 
 export default function AdminUsers() {
@@ -15,6 +18,8 @@ export default function AdminUsers() {
     const { users, loading } = useSelector((state) => state.user)
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [viewModalOpen, setViewModalOpen] = useState(false)
+    const [cartModalOpen, setCartModalOpen] = useState(false)
+    const [enquiriesModalOpen, setEnquiriesModalOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState(null)
 
     useEffect(() => {
@@ -106,6 +111,32 @@ export default function AdminUsers() {
         setDeleteModalOpen(true)
     }
 
+    const handleViewCart = (user) => {
+        setSelectedUser(user)
+        setCartModalOpen(true)
+    }
+
+    const handleViewEnquiries = (user) => {
+        setSelectedUser(user)
+        setEnquiriesModalOpen(true)
+    }
+
+    // Custom actions for the dropdown menu
+    const customActions = (user) => [
+        {
+            key: 'viewCart',
+            label: 'View Cart',
+            icon: <ShoppingCart className="w-4 h-4" />,
+            onClick: () => handleViewCart(user),
+        },
+        {
+            key: 'viewEnquiries',
+            label: 'View Enquiries',
+            icon: <MessageSquare className="w-4 h-4" />,
+            onClick: () => handleViewEnquiries(user),
+        },
+    ]
+
     const confirmDelete = async () => {
         if (selectedUser) {
             try {
@@ -147,6 +178,7 @@ export default function AdminUsers() {
                     onEdit={handleEdit}
                     onView={handleView}
                     onDelete={handleDelete}
+                    customActions={customActions}
                     showActions={true}
                 />
             )}
@@ -172,6 +204,26 @@ export default function AdminUsers() {
                 confirmText="Delete"
                 cancelText="Cancel"
                 type="danger"
+            />
+
+            <ViewUserCartModal
+                isOpen={cartModalOpen}
+                onClose={() => {
+                    setCartModalOpen(false)
+                    setSelectedUser(null)
+                }}
+                userId={selectedUser?.id || selectedUser?._id}
+                userName={selectedUser?.name || selectedUser?.email}
+            />
+
+            <ViewUserEnquiriesModal
+                isOpen={enquiriesModalOpen}
+                onClose={() => {
+                    setEnquiriesModalOpen(false)
+                    setSelectedUser(null)
+                }}
+                userId={selectedUser?.id || selectedUser?._id}
+                userName={selectedUser?.name || selectedUser?.email}
             />
         </div>
     )

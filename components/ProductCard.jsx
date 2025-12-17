@@ -5,13 +5,12 @@ import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
 import ModalPopup from './PopupModel';
-import { useDispatch } from 'react-redux';
-import { addToCart } from '@/lib/features/cart/cartSlice';
+import { useCart } from '@/lib/hooks/useCart';
 import toast from 'react-hot-toast';
 import { assets } from '@/assets/assets';
 
 const ProductCard = ({ product }) => {
-  const dispatch = useDispatch();
+  const { addToCart } = useCart();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   
@@ -115,14 +114,23 @@ const ProductCard = ({ product }) => {
   const productId = product.id || product._id || productData.id || productData._id;
   
   // 🛒 Add to Cart
-  const handleAddToCart = (e, product) => {
+  const handleAddToCart = async (e, product) => {
     e.preventDefault();
     if (!productId) {
       toast.error('Product ID is missing');
       return;
     }
-    dispatch(addToCart({ productId: productId }));
-    toast.success(`${productName} added to cart!`);
+    try {
+      // Get product price - use the product from props or productData
+      const productPrice = product?.price || productData?.price || 0;
+      await addToCart({ 
+        productId: productId,
+        price: productPrice
+      });
+      toast.success(`${productName} added to cart!`);
+    } catch (error) {
+      toast.error('Failed to add to cart');
+    }
   };
 
   const handleEnquiry = (e) => {

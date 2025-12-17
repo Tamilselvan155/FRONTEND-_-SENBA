@@ -301,6 +301,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -309,13 +311,21 @@ import {
   ArrowRight,
   CheckCircle2,
 } from 'lucide-react';
+import { loginRequest, loginSuccess, loginFailure } from '@/lib/features/login/authSlice';
+import { syncCartAsync, fetchCartAsync } from '@/lib/features/cart/cartSlice';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { isLoading: reduxLoading, error: reduxError } = useSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
+
+  const isLoading = reduxLoading;
+  const error = reduxError;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -323,13 +333,90 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    const email = formData.email.trim();
+    const password = formData.password.trim();
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowPopup(true);
-    }, 1500);
+    if (!email || !password) {
+      dispatch(loginFailure('Please enter both email and password'));
+      return;
+    }
+
+    dispatch(loginRequest());
+
+    try {
+      // Use the real API endpoint for user login
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          userType: 'user', // Specify user type
+        }),
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        throw new Error('Server returned an invalid response. Please check if the backend is running.');
+      }
+
+      if (response.ok && data.success) {
+        // Verify that the user's role is 'user'
+        if (data.user.role !== 'user') {
+          const errorMessage = `Please use the Admin login page to login as admin.`;
+          dispatch(loginFailure(errorMessage));
+          toast.error(errorMessage);
+          return;
+        }
+
+        dispatch(loginSuccess({ email: data.user.email, ...data.user }));
+        
+        // Store token and user data
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        // Sync cart with backend after login
+        try {
+          const cartItems = JSON.parse(localStorage.getItem('cart') || '{}').cartItems || {};
+          if (Object.keys(cartItems).length > 0) {
+            // Sync localStorage cart with backend
+            await dispatch(syncCartAsync(cartItems)).unwrap();
+          } else {
+            // Fetch cart from backend if no local cart
+            await dispatch(fetchCartAsync()).unwrap();
+          }
+        } catch (cartError) {
+          console.error('Cart sync error:', cartError);
+          // Don't block login if cart sync fails
+        }
+
+        toast.success('Login successful!');
+        setShowPopup(true);
+        
+        setTimeout(() => {
+          setShowPopup(false);
+          router.push('/');
+          router.refresh();
+        }, 2000);
+      } else {
+        const errorMessage = data.message || 'Invalid email or password';
+        dispatch(loginFailure(errorMessage));
+        toast.error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error.message || 'An error occurred. Please try again.';
+      dispatch(loginFailure(errorMessage));
+      toast.error(errorMessage);
+    }
   };
 
   return (

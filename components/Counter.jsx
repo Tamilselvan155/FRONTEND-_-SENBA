@@ -1,22 +1,68 @@
 'use client'
-import { addToCart, removeFromCart } from "@/lib/features/cart/cartSlice";
-import { useDispatch, useSelector } from "react-redux";
+import { useCart } from "@/lib/hooks/useCart";
+import { useSelector } from "react-redux";
+import { useMemo } from "react";
 
-const Counter = ({ productId }) => {
-
-    const { cartItems } = useSelector(state => state.cart);
-
-    const dispatch = useDispatch();
+const Counter = ({ productId, initialQuantity, productPrice }) => {
+    const { cartItems, addToCart, removeFromCart, isLoggedIn } = useCart();
+    const cartItemsWithDetails = useSelector(state => state.cart.items || []);
 
     const addToCartHandler = () => {
-        dispatch(addToCart({ productId }))
+        // Get price from prop, or from cart item, or use 0
+        let price = productPrice || 0;
+        
+        // Try to get price from cart item if available
+        if (isLoggedIn && cartItemsWithDetails && Array.isArray(cartItemsWithDetails)) {
+            const cartItem = cartItemsWithDetails.find(item => {
+                const itemProductId = typeof item.productId === 'object' 
+                    ? (item.productId._id || item.productId.id) 
+                    : item.productId;
+                return itemProductId && itemProductId.toString() === productId.toString();
+            });
+            if (cartItem && cartItem.price && cartItem.price > 0) {
+                price = cartItem.price;
+            } else if (cartItem && cartItem.productId && typeof cartItem.productId === 'object') {
+                const product = cartItem.productId;
+                if (product.price && product.price > 0) {
+                    price = product.price;
+                }
+            }
+        }
+        
+        addToCart({ 
+            productId,
+            price: price
+        })
     }
 
     const removeFromCartHandler = () => {
-        dispatch(removeFromCart({ productId }))
+        removeFromCart(productId)
     }
 
-    const quantity = cartItems[productId] || 0;
+    // Get quantity from cart state - this will be reactive to changes
+    const quantity = useMemo(() => {
+        // For logged-in users, get quantity from cartItemsWithDetails
+        if (isLoggedIn && cartItemsWithDetails && Array.isArray(cartItemsWithDetails)) {
+            const cartItem = cartItemsWithDetails.find(item => {
+                const itemProductId = typeof item.productId === 'object' 
+                    ? (item.productId._id || item.productId.id) 
+                    : item.productId;
+                return itemProductId && itemProductId.toString() === productId.toString();
+            });
+            if (cartItem) {
+                return cartItem.quantity || 0;
+            }
+        }
+        
+        // Fallback to cartItems object (for guest users or if cartItemsWithDetails not available)
+        if (cartItems) {
+            const productIdStr = productId?.toString();
+            return cartItems[productIdStr] || cartItems[productId] || initialQuantity || 0;
+        }
+        
+        // Final fallback to initialQuantity prop
+        return initialQuantity || 0;
+    }, [productId, cartItemsWithDetails, cartItems, isLoggedIn, initialQuantity]);
 
     return (
         <div className="flex items-center border border-gray-300 rounded-lg w-fit overflow-hidden">

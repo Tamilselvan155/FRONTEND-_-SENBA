@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react';
 
-const SignOut = () => {
+const Account = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { email } = useSelector((state) => state.auth);
@@ -98,7 +98,7 @@ const SignOut = () => {
   };
 
   return (
-    <div className="flex items-center justify-center bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 relative">
+    <div className="flex items-center justify-center bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 relative min-h-screen">
       <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg bg-white rounded-2xl shadow-md overflow-hidden">
         {/* Profile Header */}
         <div className="flex flex-col items-center py-6 sm:py-8 border-b border-gray-100">
@@ -197,4 +197,5 @@ const SignOut = () => {
   );
 };
 
-export default SignOut;
+export default Account;
+

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { fetchProducts } from "@/lib/actions/productActions";
-import { useDispatch, useSelector } from "react-redux";
-import { addToCart } from "@/lib/features/cart/cartSlice";
+import { useSelector } from "react-redux";
+import { useCart } from "@/lib/hooks/useCart";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { ShoppingCart, ArrowRight, Send } from "lucide-react";
@@ -13,8 +13,7 @@ import Loading from "./Loading";
 import { assets } from "@/assets/assets";
 
 export default function CategoryProducts({ categoryName, subCategoryName }) {
-  const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.cartItems);
+  const { cartItems, addToCart } = useCart();
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -545,9 +544,17 @@ export default function CategoryProducts({ categoryName, subCategoryName }) {
   };
 
   // 🛒 Add to Cart
-  const handleAddToCart = (product) => {
-    dispatch(addToCart({ productId: product.id }));
-    toast.success(`${product.name} added to cart!`);
+  const handleAddToCart = async (product) => {
+    try {
+      const productPrice = product.price || 0;
+      await addToCart({ 
+        productId: product.id,
+        price: productPrice
+      });
+      toast.success(`${product.name} added to cart!`);
+    } catch (error) {
+      toast.error('Failed to add to cart');
+    }
   };
 
   function handleEnquiry(e, product) {

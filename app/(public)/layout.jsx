@@ -9,12 +9,16 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Banner from '@/components/Banner';
 import CategoryNavBar from "@/components/CategoryNavBar";
+import { useCartSync } from '@/lib/hooks/useCartSync';
 
 export default function PublicLayout({ children }) {
     const pathname = usePathname();
     const { email } = useSelector((state) => state.auth);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
+    
+    // Sync cart with backend when user is logged in
+    useCartSync();
 
     useEffect(() => {
         const checkAuth = () => {
