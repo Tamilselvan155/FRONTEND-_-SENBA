@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, memo } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useRouter } from "next/navigation"
-import { FolderTree, Package, ClipboardList, FolderOpen, Store, Tag, ImageIcon } from "lucide-react"
+import { FolderTree, Package, ClipboardList, FolderOpen, Store, Tag, ImageIcon, Users } from "lucide-react"
 import Link from "next/link"
 import { fetchCategoriesAsync } from "@/lib/features/category/categorySlice"
 import { fetchProductsAsync } from "@/lib/features/product/productSlice"
@@ -12,6 +12,7 @@ import { fetchAttributesAsync } from "@/lib/features/attribute/attributeSlice"
 import { fetchAttributeValuesAsync } from "@/lib/features/attributeValue/attributeValueSlice"
 import { fetchBannersAsync } from "@/lib/features/banner/bannerSlice"
 import { fetchAllMediaFilesAsync } from "@/lib/features/asset/assetSlice"
+import { fetchUsersAsync } from "@/lib/features/user/userSlice"
 import AdminLogin from "@/components/admin/AdminLogin"
 
 // Memoize module card to prevent unnecessary re-renders
@@ -139,6 +140,7 @@ export default function AdminDashboard() {
     const attributeValues = useSelector((state) => state.attributeValue.attributeValues || [])
     const banners = useSelector((state) => state.banner.banners || [])
     const assetManager = useSelector((state) => state.asset.mediaFiles?.length || 0)
+    const users = useSelector((state) => state.user.users || [])
     
     // Fetch data on mount only if authenticated
     useEffect(() => {
@@ -150,6 +152,7 @@ export default function AdminDashboard() {
             dispatch(fetchAttributeValuesAsync())
             dispatch(fetchBannersAsync())
             dispatch(fetchAllMediaFilesAsync())
+            dispatch(fetchUsersAsync())
         }
     }, [dispatch, isAuthenticated, isChecking])
     
@@ -162,9 +165,10 @@ export default function AdminDashboard() {
         attributeValues: Array.isArray(attributeValues) ? attributeValues.length : 0,
         banners: Array.isArray(banners) ? banners.length : 0,
         assetManager: assetManager,
+        users: Array.isArray(users) ? users.length : 0,
         order: 0,
         stores: 0,
-    }), [categories, products, brands, attributes, attributeValues, banners, assetManager])
+    }), [categories, products, brands, attributes, attributeValues, banners, assetManager, users])
 
     const modules = useMemo(() => [
         {
@@ -242,6 +246,17 @@ export default function AdminDashboard() {
             route: '/admin/asset-manager',
             subNav: [
                 { label: 'View All', route: '/admin/asset-manager', icon: FolderOpen }
+            ]
+        },
+        {
+            id: 'users',
+            name: 'User Management',
+            count: stats.users,
+            color: 'indigo',
+            icon: Users,
+            route: '/admin/users',
+            subNav: [
+                { label: 'Add User', route: '/admin/users/add', icon: Users }
             ]
         },
     ], [stats])

@@ -6,7 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
 import { useState, useEffect } from "react"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { signOut } from "@/lib/features/login/authSlice"
 import { clearAuthData } from "@/lib/utils/authUtils"
 import toast from "react-hot-toast"
@@ -18,6 +18,9 @@ const AdminNavbar = () => {
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [userEmail, setUserEmail] = useState('admin@gocart.com')
     const [userName, setUserName] = useState('Admin')
+
+    // Get current user from Redux for edit pages
+    const currentUser = useSelector((state) => state.user.currentUser)
 
     // Get user data from localStorage
     useEffect(() => {
@@ -68,12 +71,28 @@ const AdminNavbar = () => {
             if (path.includes('/add')) return 'Add Attribute'
             return 'Attributes'
         }
+        if (path.includes('/users')) {
+            if (path.includes('/add')) return 'Add User'
+            if (path.includes('/edit')) {
+                // Get user name from Redux store
+                const user = currentUser?.data || currentUser
+                if (user?.name) return `Edit User: ${user.name}`
+                if (user?.email) return `Edit User: ${user.email}`
+                return 'Edit User'
+            }
+            return 'User Management'
+        }
         if (path.includes('/stores')) return 'Stores'
         if (path.includes('/coupons')) return 'Coupons'
         if (path.includes('/asset-manager')) return 'Asset Manager'
         
         const pathName = path.split('/').pop()
         if (!pathName) return ''
+        
+        // Don't show MongoDB IDs - return empty or generic name
+        if (pathName.match(/^[0-9a-fA-F]{24}$/)) {
+            return ''
+        }
         
         return pathName
             .split('-')
@@ -89,6 +108,7 @@ const AdminNavbar = () => {
         if (path.includes('/banners')) return '/admin/banners/add'
         if (path.includes('/attribute-value')) return '/admin/attribute-value/add'
         if (path.includes('/attribute')) return '/admin/attribute/add'
+        if (path.includes('/users')) return '/admin/users/add'
         return null
     }
 
@@ -104,6 +124,7 @@ const AdminNavbar = () => {
         if (path.includes('/banners')) return '/admin/banners'
         if (path.includes('/attribute-value')) return '/admin/attribute-value'
         if (path.includes('/attribute')) return '/admin/attribute'
+        if (path.includes('/users')) return '/admin/users'
         if (path.includes('/asset-manager')) return '/admin/asset-manager'
         return '/admin'
     }

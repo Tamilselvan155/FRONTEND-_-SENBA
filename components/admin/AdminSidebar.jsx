@@ -21,6 +21,7 @@ const AdminSidebar = ({ isSidebarOpen, isSidebarHovered, toggleSidebar, onMouseE
         { name: 'Brands', href: '/admin/brands', icon: Building2 },
         { name: 'Products', href: '/admin/products', icon: Package },
         { name: 'Asset Manager', href: '/admin/asset-manager', icon: FolderOpen },
+        { name: 'User Management', href: '/admin/users', icon: User },
     ]
 
     const isActiveRoute = (path) => {
