@@ -10,7 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const ProductTabsContent = () => {
   const dispatch = useDispatch()
-  const { products, loading } = useSelector((state) => state.product)
+  // Handle both products and list from Redux (different components use different keys)
+  const products = useSelector((state) => state.product.list || state.product.products || [])
+  const loading = useSelector((state) => state.product.loading || false)
 
   // Fetch products on mount
   useEffect(() => {
@@ -25,6 +27,8 @@ const ProductTabsContent = () => {
 
   // Memoize product transformation function
   const transformProduct = useCallback((product) => {
+    if (!product) return null;
+
     // Handle images
     let productImages = []
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
@@ -40,23 +44,76 @@ const ProductTabsContent = () => {
       productImages = [assets.product_img0]
     }
 
-    // Get category name if it's an object
-    let categoryName = ''
-    if (product.category) {
-      if (typeof product.category === 'string') {
-        categoryName = product.category
-      } else if (product.category.name) {
-        categoryName = product.category.name
+    // Get category name - handle multiple formats
+    let categoryName = '';
+    if (product.categoryId) {
+      if (typeof product.categoryId === 'object' && product.categoryId !== null) {
+        // If categoryId has a populated parentId, use the parent's title (e.g., "PUMP")
+        if (product.categoryId.parentId && typeof product.categoryId.parentId === 'object' && product.categoryId.parentId.title) {
+          categoryName = product.categoryId.parentId.title;
+        } 
+        // If categoryId itself is a parent category (no parentId or isParent is true), use its own title
+        else if (product.categoryId.isParent || !product.categoryId.parentId) {
+          categoryName = product.categoryId.title || '';
+        } 
+        // Fallback to categoryId title
+        else {
+          categoryName = product.categoryId.title || '';
+        }
       }
+    }
+    
+    // Fallback to category field if categoryId didn't provide a name
+    if (!categoryName && product.category) {
+      if (typeof product.category === 'string') {
+        categoryName = product.category;
+      } else if (typeof product.category === 'object' && product.category !== null) {
+        categoryName = product.category.title || product.category.name || '';
+      }
+    }
+
+    // Handle price - check if product has variants
+    let price = 0;
+    if (product.hasVariants && product.brandVariants && Array.isArray(product.brandVariants) && product.brandVariants.length > 0) {
+      // If product has variants, get price from first variant
+      const variantPrice = product.brandVariants[0]?.price;
+      if (variantPrice !== undefined && variantPrice !== null) {
+        price = Number(variantPrice);
+      }
+    }
+    
+    // If price is still 0, try root level price
+    if (price === 0 && product.price !== undefined && product.price !== null) {
+      price = Number(product.price);
+    }
+
+    // Calculate MRP from discount if available
+    let mrp = price;
+    if (product.discount && product.discount > 0 && price > 0) {
+      // MRP = Price / (1 - discount/100)
+      mrp = Math.round(price / (1 - product.discount / 100));
+    } else if (product.mrp && product.mrp > price) {
+      mrp = Number(product.mrp);
     }
 
     return {
       id: product.id || product._id,
+      _id: product._id || product.id,
       name: product.title || product.name || 'Untitled Product',
+      title: product.title || product.name || 'Untitled Product',
       images: productImages,
-      price: product.price || 0,
+      price: price,
+      mrp: mrp,
+      discount: product.discount || 0,
       category: categoryName,
+      categoryId: product.categoryId,
+      stock: Number(product.stock) || 0,
+      inStock: (product.stock !== undefined && product.stock !== null) ? product.stock > 0 : true,
+      rating: Array.isArray(product.rating) ? product.rating : [],
+      hasVariants: product.hasVariants || false,
+      brandVariants: product.brandVariants || [],
       createdAt: product.createdAt || product.created_at || product.updatedAt || product.updated_at || new Date(),
+      originalProduct: product, // Store original for reference
     }
   }, [baseUrl])
 
@@ -80,7 +137,7 @@ const ProductTabsContent = () => {
   // Just Added (Latest products) - sort by date, then transform
   const justAddedProducts = useMemo(() => {
     if (activeProducts.length === 0) return []
-    return [...activeProducts]
+    const transformed = [...activeProducts]
       .sort((a, b) => {
         const dateA = new Date(a.createdAt || a.created_at || a.updatedAt || a.updated_at || 0)
         const dateB = new Date(b.createdAt || b.created_at || b.updatedAt || b.updated_at || 0)
@@ -88,7 +145,19 @@ const ProductTabsContent = () => {
       })
       .slice(0, 12)
       .map(transformProduct)
-      .filter(product => product.id)
+      .filter(product => product && product.id)
+    
+    // Debug: Log first product to help troubleshoot
+    if (transformed.length > 0 && process.env.NODE_ENV === 'development') {
+      console.log('Sample transformed product from ProductTabs:', {
+        name: transformed[0].name,
+        price: transformed[0].price,
+        category: transformed[0].category,
+        originalProduct: transformed[0].originalProduct
+      });
+    }
+    
+    return transformed
   }, [activeProducts, transformProduct])
 
   return (

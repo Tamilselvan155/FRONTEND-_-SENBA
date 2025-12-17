@@ -113,7 +113,7 @@ const CategoryNavBar = () => {
                     {pumpSubCategories.map((subCat, subIndex) => (
                       <Link
                         key={subIndex}
-                        href={`/category/${category}/${subCat.replace(/\s+/g, '')}`}
+                        href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
                         className="block px-4 py-2.5 text-xs text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 transition-colors duration-200"
                         onClick={() => {
                           setActiveCategory(null)
