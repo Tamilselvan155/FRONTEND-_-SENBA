@@ -344,7 +344,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
     };
 
     loadProducts();
-  }, [categoryName]);
+  }, [categoryName, subCategoryName]);
 
   // Auto-select category from URL query params after products are loaded
   useEffect(() => {
@@ -423,30 +423,42 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
 
     let updatedProducts = [...products];
 
+    // Helper function to normalize category/subcategory names
+    const normalizeCategory = (cat) => {
+      if (!cat) return '';
+      return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+    };
+
+    // Apply subcategory filter first (if subcategory is provided from query params)
+    if (subCategoryName) {
+      const normalizedSubCategoryName = normalizeCategory(subCategoryName);
+      updatedProducts = updatedProducts.filter((p) => {
+        const productSubCat = normalizeCategory(p.subCategory || '');
+        return productSubCat === normalizedSubCategoryName ||
+               productSubCat.includes(normalizedSubCategoryName) ||
+               normalizedSubCategoryName.includes(productSubCat);
+      });
+    }
+
     // Apply category filter (OR logic - match ANY selected category)
     // Apply filter if categories are selected OR if categoryName is provided from query params
     if (filters.selectedCategories.length > 0) {
       updatedProducts = updatedProducts.filter((p) =>
         // Match if product category matches ANY selected category
         filters.selectedCategories.some(selectedCat => {
-          const productCat = (p.category || '').toLowerCase().trim();
-          const selectedCatLower = selectedCat.toLowerCase().trim();
+          const productCat = normalizeCategory(p.category || '');
+          const selectedCatLower = normalizeCategory(selectedCat);
           return productCat === selectedCatLower || 
                  productCat.includes(selectedCatLower) || 
                  selectedCatLower.includes(productCat);
         })
       );
-    } else if (categoryName && categoryName !== "products") {
-      // If no categories selected but categoryName provided, filter by it
-      const normalizeCategory = (cat) => {
-        if (!cat) return '';
-        return cat.trim().toLowerCase().replace(/\s+/g, ' ');
-      };
-      
+    } else if (categoryName && categoryName !== "products" && !subCategoryName) {
+      // If no categories selected but categoryName provided (and no subcategory), filter by it
       const normalizedCategoryName = normalizeCategory(categoryName);
       
       updatedProducts = updatedProducts.filter((p) => {
-        const productCat = normalizeCategory(p.category);
+        const productCat = normalizeCategory(p.category || '');
         return productCat === normalizedCategoryName ||
                productCat.includes(normalizedCategoryName) ||
                normalizedCategoryName.includes(productCat);
@@ -636,7 +648,11 @@ Hi, I'm interested in booking an enquiry for the following product:
         </Link>
         <span>&gt;</span>
           <span className="text-gray-900 font-medium">
-          {categoryName === "products" ? "All Products" : categoryName}
+          {subCategoryName 
+            ? subCategoryName 
+            : categoryName === "products" || !categoryName 
+              ? "All Products" 
+              : categoryName}
         </span>
       </div>
 
@@ -656,7 +672,11 @@ Hi, I'm interested in booking an enquiry for the following product:
             <div className="mb-4 sm:mb-6 bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
               {/* Title */}
               <h1 className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                {categoryName === "products" ? "All Products" : categoryName}
+                {subCategoryName 
+                  ? subCategoryName 
+                  : categoryName === "products" || !categoryName 
+                    ? "All Products" 
+                    : categoryName}
               </h1>
               
               {/* Product Count and Controls */}

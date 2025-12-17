@@ -7,7 +7,7 @@ import { useState } from "react"
 
 const ProductDescription = ({ product }) => {
   const [selectedTab, setSelectedTab] = useState('Specifications')
-  const [selectedSubTab, setSelectedSubTab] = useState('Applications')
+  const [selectedSubTab, setSelectedSubTab] = useState('Technical Specifications')
   const [openSection, setOpenSection] = useState(null)
 
   const toggleSection = (section) => {
@@ -15,10 +15,11 @@ const ProductDescription = ({ product }) => {
   }
 
   const subTabs = [
-    'Applications',
+    'Technical Specifications',
     'Materials',
     'Operating Conditions',
-    'Technical Specifications',
+    'Applications',
+
   ]
 
   // Extract applications from specificationGroups
@@ -88,23 +89,25 @@ const ProductDescription = ({ product }) => {
               <div>
                 <h3 className="text-lg font-semibold text-[#c31e5a] mb-3 uppercase">Applications</h3>
                 {applications && applications.length > 0 ? (
-                  <table className="w-full border border-slate-200 text-sm md:text-base">
-                    <tbody>
-                      {applications.map((app, index) => {
-                        const label = app.label || app.attributeName || app.name || '';
-                        const value = app.value || app.attributeValue || app.description || '';
-                        return (
-                          <tr 
-                            key={index}
-                            className={index % 2 === 0 ? 'border-b border-slate-200 bg-gray-50' : 'border-b border-slate-200'}
-                          >
-                            <td className="font-semibold p-2 w-1/3">{label}</td>
-                            <td className="p-2">{value}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border border-slate-200 text-sm md:text-base">
+                      <tbody>
+                        {applications.map((app, index) => {
+                          const label = app.label || app.attributeName || app.name || '';
+                          const value = app.value || app.attributeValue || app.description || '';
+                          return (
+                            <tr 
+                              key={index}
+                              className={index % 2 === 0 ? 'border-b border-slate-200 bg-gray-50' : 'border-b border-slate-200'}
+                            >
+                              <td className="font-semibold p-3 w-1/3 align-top">{label}</td>
+                              <td className="p-3 align-top">{value}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <p className="text-slate-500 italic">No applications information available</p>
                 )}
@@ -176,7 +179,7 @@ const ProductDescription = ({ product }) => {
                 <h3 className="text-lg font-semibold text-[#c31e5a] mb-3 uppercase">
                   Technical Specifications
                 </h3>
-                <table className="w-full border border-slate-200 text-sm md:text-base">
+                <table className="w-full border border-slate-200 text-sm md:text-base mb-6">
                   <tbody>
                     <tr className="border-b border-slate-200 bg-gray-50">
                       <td className="font-semibold p-2 w-1/3">Power Range</td>
@@ -204,6 +207,31 @@ const ProductDescription = ({ product }) => {
                     </tr>
                   </tbody>
                 </table>
+                
+                {/* Benefits Section */}
+                <div className="border-t border-slate-200 pt-6">
+                  <h4 className="text-base font-semibold text-slate-900 mb-4">Benefits</h4>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 text-gray-700 text-sm">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
+                        <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
+                      </svg>
+                      <span>Free shipping worldwide</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-700 text-sm">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
+                        <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
+                      </svg>
+                      <span>100% Secured Payment</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-700 text-sm">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
+                        <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
+                      </svg>
+                      <span>Trusted by top brands</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -229,23 +257,25 @@ const ProductDescription = ({ product }) => {
                     {subTab === 'Applications' && (
                       <div>
                         {applications && applications.length > 0 ? (
-                          <table className="w-full border border-slate-200 text-sm">
-                            <tbody>
-                              {applications.map((app, index) => {
-                                const label = app.label || app.attributeName || app.name || '';
-                                const value = app.value || app.attributeValue || app.description || '';
-                                return (
-                                  <tr 
-                                    key={index}
-                                    className={index % 2 === 0 ? 'border-b bg-gray-50' : 'border-b'}
-                                  >
-                                    <td className="font-semibold p-2 w-1/3">{label}</td>
-                                    <td className="p-2">{value}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                          <div className="overflow-x-auto">
+                            <table className="w-full border border-slate-200 text-sm">
+                              <tbody>
+                                {applications.map((app, index) => {
+                                  const label = app.label || app.attributeName || app.name || '';
+                                  const value = app.value || app.attributeValue || app.description || '';
+                                  return (
+                                    <tr 
+                                      key={index}
+                                      className={index % 2 === 0 ? 'border-b bg-gray-50' : 'border-b'}
+                                    >
+                                      <td className="font-semibold p-2 w-1/3 align-top">{label}</td>
+                                      <td className="p-2 align-top">{value}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
                         ) : (
                           <div className="p-4">
                             <p className="text-slate-500 italic text-sm">No applications information available</p>
@@ -308,34 +338,61 @@ const ProductDescription = ({ product }) => {
                     )}
 
                     {subTab === 'Technical Specifications' && (
-                      <table className="w-full border border-slate-200 text-sm">
-                        <tbody>
-                          <tr className="border-b bg-gray-50">
-                            <td className="font-semibold p-2 w-1/3">Power Range</td>
-                            <td className="p-2">0.75 kW – 1.5 kW (1HP–2HP)</td>
-                          </tr>
-                          <tr className="border-b">
-                            <td className="font-semibold p-2">Version</td>
-                            <td className="p-2">Single-phase, 220V, 50Hz, AC supply</td>
-                          </tr>
-                          <tr className="border-b bg-gray-50">
-                            <td className="font-semibold p-2">Maximum Total Head</td>
-                            <td className="p-2">214 Metre</td>
-                          </tr>
-                          <tr className="border-b">
-                            <td className="font-semibold p-2">Maximum Flow Rate</td>
-                            <td className="p-2">0.9 lps (3.4 m³/h)</td>
-                          </tr>
-                          <tr className="border-b bg-gray-50">
-                            <td className="font-semibold p-2">Speed</td>
-                            <td className="p-2">2900 RPM</td>
-                          </tr>
-                          <tr>
-                            <td className="font-semibold p-2">Insulation</td>
-                            <td className="p-2">Class B/F</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div>
+                        <table className="w-full border border-slate-200 text-sm mb-4">
+                          <tbody>
+                            <tr className="border-b bg-gray-50">
+                              <td className="font-semibold p-2 w-1/3">Power Range</td>
+                              <td className="p-2">0.75 kW – 1.5 kW (1HP–2HP)</td>
+                            </tr>
+                            <tr className="border-b">
+                              <td className="font-semibold p-2">Version</td>
+                              <td className="p-2">Single-phase, 220V, 50Hz, AC supply</td>
+                            </tr>
+                            <tr className="border-b bg-gray-50">
+                              <td className="font-semibold p-2">Maximum Total Head</td>
+                              <td className="p-2">214 Metre</td>
+                            </tr>
+                            <tr className="border-b">
+                              <td className="font-semibold p-2">Maximum Flow Rate</td>
+                              <td className="p-2">0.9 lps (3.4 m³/h)</td>
+                            </tr>
+                            <tr className="border-b bg-gray-50">
+                              <td className="font-semibold p-2">Speed</td>
+                              <td className="p-2">2900 RPM</td>
+                            </tr>
+                            <tr>
+                              <td className="font-semibold p-2">Insulation</td>
+                              <td className="p-2">Class B/F</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        
+                        {/* Benefits Section */}
+                        <div className="border-t border-slate-200 pt-4 px-2">
+                          <h4 className="text-sm font-semibold text-slate-900 mb-3">Benefits</h4>
+                          <div className="flex flex-col gap-2.5">
+                            <div className="flex items-center gap-2.5 text-gray-700 text-xs">
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
+                                <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
+                              </svg>
+                              <span>Free shipping worldwide</span>
+                            </div>
+                            <div className="flex items-center gap-2.5 text-gray-700 text-xs">
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
+                                <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
+                              </svg>
+                              <span>100% Secured Payment</span>
+                            </div>
+                            <div className="flex items-center gap-2.5 text-gray-700 text-xs">
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
+                                <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
+                              </svg>
+                              <span>Trusted by top brands</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}

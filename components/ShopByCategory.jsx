@@ -8,7 +8,101 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const ShopByCategory = () => {
-  const products = useSelector((state) => state.product.list || state.product.products || []);
+  const rawProducts = useSelector((state) => state.product.list || state.product.products || []);
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // Transform products to ensure they have correct structure
+  const transformProduct = (product) => {
+    if (!product) return null;
+
+    // Get category name - handle multiple formats
+    let categoryName = '';
+    if (product.categoryId) {
+      if (typeof product.categoryId === 'object' && product.categoryId !== null) {
+        // If categoryId has a populated parentId, use the parent's title (e.g., "PUMP")
+        if (product.categoryId.parentId && typeof product.categoryId.parentId === 'object' && product.categoryId.parentId.title) {
+          categoryName = product.categoryId.parentId.title;
+        } 
+        // If categoryId itself is a parent category (no parentId or isParent is true), use its own title
+        else if (product.categoryId.isParent || !product.categoryId.parentId) {
+          categoryName = product.categoryId.title || '';
+        } 
+        // Fallback to categoryId title
+        else {
+          categoryName = product.categoryId.title || '';
+        }
+      }
+    }
+    
+    // Fallback to category field if categoryId didn't provide a name
+    if (!categoryName && product.category) {
+      if (typeof product.category === 'string') {
+        categoryName = product.category;
+      } else if (typeof product.category === 'object' && product.category !== null) {
+        categoryName = product.category.title || product.category.name || '';
+      }
+    }
+
+    // Handle price - check if product has variants
+    let price = 0;
+    if (product.hasVariants && product.brandVariants && Array.isArray(product.brandVariants) && product.brandVariants.length > 0) {
+      // If product has variants, get price from first variant
+      const variantPrice = product.brandVariants[0]?.price;
+      if (variantPrice !== undefined && variantPrice !== null) {
+        price = Number(variantPrice);
+      }
+    }
+    
+    // If price is still 0, try root level price
+    if (price === 0 && product.price !== undefined && product.price !== null) {
+      price = Number(product.price);
+    }
+
+    // Calculate MRP from discount if available
+    let mrp = price;
+    if (product.discount && product.discount > 0 && price > 0) {
+      // MRP = Price / (1 - discount/100)
+      mrp = Math.round(price / (1 - product.discount / 100));
+    } else if (product.mrp && product.mrp > price) {
+      mrp = Number(product.mrp);
+    }
+
+    // Handle images
+    let productImages = [];
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      productImages = product.images
+        .filter(img => img && img.trim() !== '')
+        .map(img => {
+          if (img.startsWith('http')) return img;
+          return img.startsWith('/uploads/') ? `${baseUrl}${img}` : `${baseUrl}/uploads/${img}`;
+        });
+    }
+
+    return {
+      ...product,
+      id: product.id || product._id,
+      _id: product._id || product.id,
+      name: product.title || product.name || 'Untitled Product',
+      title: product.title || product.name || 'Untitled Product',
+      price: price,
+      mrp: mrp,
+      discount: product.discount || 0,
+      category: categoryName,
+      images: productImages.length > 0 ? productImages : product.images || [],
+      stock: Number(product.stock) || 0,
+      inStock: (product.stock !== undefined && product.stock !== null) ? product.stock > 0 : true,
+      rating: Array.isArray(product.rating) ? product.rating : [],
+      originalProduct: product, // Store original for reference
+    };
+  };
+
+  // Transform all products
+  const products = useMemo(() => {
+    if (!rawProducts || !Array.isArray(rawProducts)) return [];
+    return rawProducts
+      .map(transformProduct)
+      .filter(product => product !== null);
+  }, [rawProducts]);
 
   // Define categories in display order
   const categories = [
@@ -53,24 +147,11 @@ const ShopByCategory = () => {
     }
 
     products.forEach((product, idx) => {
-      if (!product.category) return;
-      
-      // Handle case where category might be an object or string
-      let categoryValue = product.category;
-      if (typeof categoryValue === 'object' && categoryValue !== null) {
-        // Try multiple possible fields from the Category model
-        categoryValue = categoryValue.englishName || categoryValue.name || categoryValue.title || categoryValue.slug || '';
-      }
-      
-      // Also check categoryId if it's populated
-      if ((!categoryValue || categoryValue === '') && product.categoryId) {
-        if (typeof product.categoryId === 'object' && product.categoryId !== null) {
-          categoryValue = product.categoryId.englishName || product.categoryId.name || product.categoryId.title || product.categoryId.slug || '';
-        }
-      }
+      // Use the transformed category from the product
+      const categoryValue = product.category;
       
       // Ensure categoryValue is a string
-      if (typeof categoryValue !== 'string' || !categoryValue) return;
+      if (!categoryValue || typeof categoryValue !== 'string') return;
       
       // Normalize product category for comparison
       const productCategory = categoryValue.toLowerCase().trim().replace(/\s+/g, '').replace(/-/g, '');
@@ -93,7 +174,7 @@ const ShopByCategory = () => {
       });
       
       // Debug: Log unmatched categories (only first few to avoid spam)
-      if (!matched && idx < 5) {
+      if (!matched && idx < 5 && process.env.NODE_ENV === 'development') {
         console.log('Unmatched product category:', {
           productName: product.title || product.name,
           categoryValue: categoryValue,
