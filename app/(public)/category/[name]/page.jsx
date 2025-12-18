@@ -1,12 +1,13 @@
 // app/category/[name]/page.jsx
 'use client';
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import CategoryProducts from "@/components/Categoryproducts";
 import CategoryProductsFilter from "@/components/CategoryProductsFilter";
+import Loading from "@/components/Loading";
 
-export default function CategoryPage() {
+function CategoryPageContent() {
   const { name } = useParams();
   const searchParams = useSearchParams();
 
@@ -31,5 +32,17 @@ export default function CategoryPage() {
   // For old category routes, redirect to products page with category filter
   return (
     <CategoryProducts categoryName={decodedCategoryName} />
+  );
+}
+
+export default function CategoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loading />
+      </div>
+    }>
+      <CategoryPageContent />
+    </Suspense>
   );
 }

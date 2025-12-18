@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signOut } from '../../../lib/features/login/authSlice';
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const Account = () => {
+const AccountContent = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1018,6 +1018,21 @@ const Account = () => {
         </div>
       )}
     </div>
+  );
+};
+
+const Account = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7C2A47] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading account...</p>
+        </div>
+      </div>
+    }>
+      <AccountContent />
+    </Suspense>
   );
 };
 
