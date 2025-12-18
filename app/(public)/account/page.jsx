@@ -56,6 +56,12 @@ const Account = () => {
     country: 'India',
     isDefault: false,
   });
+  
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const ordersPerPage = 5;
 
   // Fetch user data from localStorage or backend
   useEffect(() => {
@@ -134,6 +140,18 @@ const Account = () => {
     }
   }, [activeSection]);
 
+  // Fetch orders when orders section is active
+  useEffect(() => {
+    if (activeSection === 'orders') {
+      fetchOrders();
+    }
+  }, [activeSection]);
+
+  // Reset pagination when orders change
+  useEffect(() => {
+    setOrdersPage(1);
+  }, [orders.length]);
+
   const fetchAddresses = async () => {
     setLoadingAddresses(true);
     try {
@@ -161,6 +179,38 @@ const Account = () => {
       toast.error('Failed to load addresses');
     } finally {
       setLoadingAddresses(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoadingOrders(false);
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/my-orders`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setOrders(data.data || []);
+        }
+      } else {
+        console.error('Failed to fetch orders');
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to load orders');
+    } finally {
+      setLoadingOrders(false);
     }
   };
 
@@ -523,11 +573,149 @@ const Account = () => {
               {activeSection === 'orders' && (
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Orders</h2>
-                  <div className="text-center py-12">
-                    <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No orders yet</p>
-                    <p className="text-sm text-gray-500 mt-2">Your order history will appear here</p>
-                  </div>
+                  
+                  {loadingOrders ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7C2A47] mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading orders...</p>
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="text-center py-12">
+                      <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">No orders yet</p>
+                      <p className="text-sm text-gray-500 mt-2">Your order history will appear here</p>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Calculate paginated orders */}
+                      {(() => {
+                        const ordersStartIndex = (ordersPage - 1) * ordersPerPage;
+                        const ordersEndIndex = ordersStartIndex + ordersPerPage;
+                        const paginatedOrders = orders.slice(ordersStartIndex, ordersEndIndex);
+                        const totalOrdersPages = Math.ceil(orders.length / ordersPerPage);
+                        
+                        return (
+                          <>
+                            <div className="overflow-x-auto">
+                              <table className="w-full border-collapse">
+                                <thead>
+                                  <tr className="border-b-2 border-gray-300 bg-gray-50">
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Order Placed</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Items</th>
+                                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Quantity</th>
+                                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Price</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {paginatedOrders.map((order, orderIndex) => {
+                                    const orderDate = new Date(order.createdAt);
+                                    const formattedDate = orderDate.toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                    });
+                                    const formattedTime = orderDate.toLocaleTimeString('en-US', {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true,
+                                    });
+                                    
+                                    const statusColors = {
+                                      pending: 'bg-yellow-100 text-yellow-800',
+                                      confirmed: 'bg-blue-100 text-blue-800',
+                                      shipped: 'bg-purple-100 text-purple-800',
+                                      delivered: 'bg-green-100 text-green-800',
+                                      cancelled: 'bg-red-100 text-red-800',
+                                    };
+                                    
+                                    const statusColor = statusColors[order.status] || 'bg-gray-100 text-gray-800';
+                                    
+                                    return (
+                                      <tr key={order._id || orderIndex} className="border-b border-gray-200 hover:bg-gray-50">
+                                        <td className="py-4 px-4">
+                                          <div className="flex items-center gap-2">
+                                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                            <div>
+                                              <p className="text-sm font-medium text-gray-900">{formattedDate}</p>
+                                              <p className="text-xs text-gray-500">{formattedTime}</p>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                          <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${statusColor}`}>
+                                            {order.status || 'pending'}
+                                          </span>
+                                        </td>
+                                        <td className="py-4 px-4">
+                                          <div className="space-y-2">
+                                            {order.items && order.items.length > 0 ? (
+                                              order.items.slice(0, 3).map((item, itemIndex) => {
+                                                const productName = item.name || (item.productId && typeof item.productId === 'object' 
+                                                  ? (item.productId.title || item.productId.name) 
+                                                  : 'Unknown Product');
+                                                const quantity = Number(item.quantity || 1);
+                                                
+                                                return (
+                                                  <div key={itemIndex} className="flex items-center gap-2 text-sm text-gray-700">
+                                                    <span className="font-medium">{productName}</span>
+                                                    <span className="text-gray-500">× {quantity}</span>
+                                                  </div>
+                                                );
+                                              })
+                                            ) : (
+                                              <span className="text-sm text-gray-500">No items</span>
+                                            )}
+                                            {order.items && order.items.length > 3 && (
+                                              <p className="text-xs text-gray-500">+{order.items.length - 3} more item(s)</p>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="py-4 px-4 text-right">
+                                          <span className="text-sm font-medium text-gray-900">{order.totalQuantity || 0}</span>
+                                        </td>
+                                        <td className="py-4 px-4 text-right">
+                                          <span className="text-sm font-semibold text-[#7C2A47]">₹{Number(order.totalPrice || 0).toLocaleString()}</span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                            
+                            {/* Pagination */}
+                            {totalOrdersPages > 1 && (
+                              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                                <div className="text-sm text-gray-600">
+                                  Showing {ordersStartIndex + 1} to {Math.min(ordersEndIndex, orders.length)} of {orders.length} orders
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => setOrdersPage(prev => Math.max(1, prev - 1))}
+                                    disabled={ordersPage === 1}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Previous
+                                  </button>
+                                  <span className="text-sm text-gray-700">
+                                    Page {ordersPage} of {totalOrdersPages}
+                                  </span>
+                                  <button
+                                    onClick={() => setOrdersPage(prev => Math.min(totalOrdersPages, prev + 1))}
+                                    disabled={ordersPage === totalOrdersPages}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Next
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               )}
 
