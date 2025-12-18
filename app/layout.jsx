@@ -52,8 +52,10 @@ export default function RootLayout({ children }) {
                                     selectors.forEach(selector => {
                                         try {
                                             document.querySelectorAll(selector).forEach(el => {
-                                                el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important;';
-                                                el.remove();
+                                                // Just hide with CSS - never remove to avoid React conflicts
+                                                if (el && el.style) {
+                                                    el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important;';
+                                                }
                                             });
                                         } catch(e) {}
                                     });
@@ -97,17 +99,15 @@ export default function RootLayout({ children }) {
                                                 const isSmall = rect.width < 100 && rect.height < 100;
                                                 const isCircular = style.borderRadius === '50%' || (parseFloat(style.borderRadius) > 0 && rect.width === rect.height);
                                                 
-                                                // Remove button watermark FIRST (highest priority)
+                                                // Hide button watermark FIRST (highest priority) - never remove to avoid React conflicts
                                                 if (isButtonWatermark) {
                                                     el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; top: -9999px !important;';
-                                                    el.remove();
                                                     continue;
                                                 }
                                                 
-                                                // Remove SVG watermark
+                                                // Hide SVG watermark - never remove to avoid React conflicts
                                                 if (isSvgWatermark) {
                                                     el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important;';
-                                                    el.remove();
                                                     continue;
                                                 }
                                                 
@@ -125,10 +125,9 @@ export default function RootLayout({ children }) {
                                                         parent.closest('aside') && !parent.closest('aside').classList.toString().includes('bg-blue-900')
                                                     );
                                                     
-                                                    // If it's a small circular/fixed element with "N" and not in legitimate content, remove it
+                                                    // If it's a small circular/fixed element with "N" and not in legitimate content, hide it
                                                     if (!isInContent || (isFixed && isSmall)) {
                                                         el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important;';
-                                                        el.remove();
                                                         continue;
                                                     }
                                                 }
@@ -137,7 +136,6 @@ export default function RootLayout({ children }) {
                                                 const isBottomLeft = rect.left < 200 && (rect.bottom < 200 || (window.innerHeight - rect.bottom) < 200);
                                                 if (hasN && isBottomLeft && isSmall && (isFixed || rect.left < 150)) {
                                                     el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important;';
-                                                    el.remove();
                                                     continue;
                                                 }
                                                 
@@ -160,10 +158,9 @@ export default function RootLayout({ children }) {
                                                         }
                                                     });
                                                     
-                                                    // Remove menu overlay or black background elements
+                                                    // Hide menu overlay or black background elements - never remove to avoid React conflicts
                                                     if (menuId || hasNextJsContent || (isBlackBg && isBottomLeft && isFixed)) {
                                                         el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; top: -9999px !important;';
-                                                        el.remove();
                                                         continue;
                                                     }
                                                 }
@@ -178,7 +175,6 @@ export default function RootLayout({ children }) {
                                                 
                                                 if (isBlackLine) {
                                                     el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; top: -9999px !important;';
-                                                    el.remove();
                                                     continue;
                                                 }
                                             } catch(e) {}
@@ -223,10 +219,22 @@ export default function RootLayout({ children }) {
                                     }, 10000);
                                 }
                                 
-                                // Use MutationObserver
+                                // Use MutationObserver with debounce to avoid interfering with React
                                 try {
+                                    let mutationTimeout;
                                     const observer = new MutationObserver(function(mutations) {
-                                        removeIndicator();
+                                        // Debounce to avoid interfering with React's render cycles
+                                        clearTimeout(mutationTimeout);
+                                        mutationTimeout = setTimeout(function() {
+                                            // Use requestIdleCallback if available to avoid blocking React
+                                            if (window.requestIdleCallback) {
+                                                requestIdleCallback(function() {
+                                                    removeIndicator();
+                                                }, { timeout: 100 });
+                                            } else {
+                                                setTimeout(removeIndicator, 50);
+                                            }
+                                        }, 100);
                                     });
                                     
                                     observer.observe(document.body || document.documentElement, {
@@ -273,7 +281,7 @@ export default function RootLayout({ children }) {
                                                     ariaLabel === 'Open Next.js Dev Tools' ||
                                                     ariaControls === 'nextjs-dev-tools-menu') {
                                                     el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; top: -9999px !important;';
-                                                    el.remove();
+                                                    // Don't remove here - let React manage it, just hide it
                                                     return;
                                                 }
                                             } catch(e) {}
@@ -292,7 +300,7 @@ export default function RootLayout({ children }) {
                                                 // Check if it's the Next.js SVG watermark
                                                 if (dataAttr !== null || (viewBox === '0 0 40 40') || (width === '40' && height === '40')) {
                                                     el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; top: -9999px !important;';
-                                                    el.remove();
+                                                    // Don't remove here - let React manage it, just hide it
                                                     return;
                                                 }
                                             } catch(e) {}
@@ -319,7 +327,7 @@ export default function RootLayout({ children }) {
                                             // Remove ANY element with "N" that looks like watermark
                                             if (hasN && isSmall && (isFixed || isAbsolute || isCircular || isBottomLeft)) {
                                                 el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important; top: -9999px !important;';
-                                                el.remove();
+                                                // Don't remove here - let React manage it, just hide it
                                             }
                                         } catch(e) {}
                                     }, 0);
@@ -330,103 +338,119 @@ export default function RootLayout({ children }) {
                                 // Override appendChild to catch elements being added - TARGET BUTTON AND SVG WATERMARK
                                 Node.prototype.appendChild = function(child) {
                                     try {
-                                        // Check for button watermark FIRST (highest priority)
-                                        if (child && child.tagName && child.tagName.toLowerCase() === 'button') {
-                                            const id = child.id;
-                                            const dataNextMark = child.getAttribute('data-next-mark');
-                                            const dataNextMarkLoading = child.getAttribute('data-next-mark-loading');
-                                            const dataNextjsDevTools = child.getAttribute('data-nextjs-dev-tools-button');
-                                            const ariaLabel = child.getAttribute('aria-label');
-                                            const ariaControls = child.getAttribute('aria-controls');
+                                        // First append the child (let React manage it)
+                                        const result = originalAppendChild.call(this, child);
+                                        
+                                        // Then hide it if it's a watermark (but don't prevent append)
+                                        if (child && child.tagName) {
+                                            const tagName = child.tagName.toLowerCase();
                                             
-                                            if (id === 'next-logo' || 
-                                                dataNextMark === 'true' || 
-                                                dataNextMarkLoading !== null ||
-                                                dataNextjsDevTools === 'true' ||
-                                                ariaLabel === 'Open Next.js Dev Tools' ||
-                                                ariaControls === 'nextjs-dev-tools-menu') {
-                                                child.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
-                                                return child; // Return without appending
+                                            // Check for button watermark
+                                            if (tagName === 'button') {
+                                                const id = child.id;
+                                                const dataNextMark = child.getAttribute('data-next-mark');
+                                                const dataNextMarkLoading = child.getAttribute('data-next-mark-loading');
+                                                const dataNextjsDevTools = child.getAttribute('data-nextjs-dev-tools-button');
+                                                const ariaLabel = child.getAttribute('aria-label');
+                                                const ariaControls = child.getAttribute('aria-controls');
+                                                
+                                                if (id === 'next-logo' || 
+                                                    dataNextMark === 'true' || 
+                                                    dataNextMarkLoading !== null ||
+                                                    dataNextjsDevTools === 'true' ||
+                                                    ariaLabel === 'Open Next.js Dev Tools' ||
+                                                    ariaControls === 'nextjs-dev-tools-menu') {
+                                                    child.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
+                                                }
+                                            }
+                                            
+                                            // Check for SVG watermark
+                                            if (tagName === 'svg') {
+                                                const dataAttr = child.getAttribute('data-next-mark-loading');
+                                                const viewBox = child.getAttribute('viewBox');
+                                                const width = child.getAttribute('width');
+                                                const height = child.getAttribute('height');
+                                                
+                                                if (dataAttr !== null || (viewBox === '0 0 40 40') || (width === '40' && height === '40')) {
+                                                    child.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
+                                                }
+                                            }
+                                            
+                                            // Check for "N" text elements
+                                            if (child.textContent) {
+                                                const text = child.textContent.trim();
+                                                const style = window.getComputedStyle(child);
+                                                const rect = child.getBoundingClientRect ? child.getBoundingClientRect() : { width: 0, height: 0, left: 0, bottom: 0 };
+                                                
+                                                if (text === 'N' && rect.width < 150 && rect.height < 150) {
+                                                    child.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
+                                                }
                                             }
                                         }
                                         
-                                        // Check for SVG watermark
-                                        if (child && child.tagName && child.tagName.toLowerCase() === 'svg') {
-                                            const dataAttr = child.getAttribute('data-next-mark-loading');
-                                            const viewBox = child.getAttribute('viewBox');
-                                            const width = child.getAttribute('width');
-                                            const height = child.getAttribute('height');
-                                            
-                                            if (dataAttr !== null || (viewBox === '0 0 40 40') || (width === '40' && height === '40')) {
-                                                child.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
-                                                return child; // Return without appending
-                                            }
-                                        }
-                                        
-                                        // Check for "N" text elements
-                                        if (child && child.textContent) {
-                                            const text = child.textContent.trim();
-                                            const style = window.getComputedStyle(child);
-                                            const rect = child.getBoundingClientRect ? child.getBoundingClientRect() : { width: 0, height: 0, left: 0, bottom: 0 };
-                                            
-                                            if (text === 'N' && rect.width < 150 && rect.height < 150) {
-                                                child.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
-                                                return child; // Return without appending
-                                            }
-                                        }
-                                    } catch(e) {}
-                                    return originalAppendChild.call(this, child);
+                                        return result;
+                                    } catch(e) {
+                                        return originalAppendChild.call(this, child);
+                                    }
                                 };
                                 
                                 // Override insertBefore to catch elements being inserted - TARGET BUTTON AND SVG WATERMARK
                                 Node.prototype.insertBefore = function(newNode, referenceNode) {
                                     try {
-                                        // Check for button watermark FIRST (highest priority)
-                                        if (newNode && newNode.tagName && newNode.tagName.toLowerCase() === 'button') {
-                                            const id = newNode.id;
-                                            const dataNextMark = newNode.getAttribute('data-next-mark');
-                                            const dataNextMarkLoading = newNode.getAttribute('data-next-mark-loading');
-                                            const dataNextjsDevTools = newNode.getAttribute('data-nextjs-dev-tools-button');
-                                            const ariaLabel = newNode.getAttribute('aria-label');
-                                            const ariaControls = newNode.getAttribute('aria-controls');
+                                        // First insert the node (let React manage it)
+                                        const result = originalInsertBefore.call(this, newNode, referenceNode);
+                                        
+                                        // Then hide it if it's a watermark (but don't prevent insert)
+                                        if (newNode && newNode.tagName) {
+                                            const tagName = newNode.tagName.toLowerCase();
                                             
-                                            if (id === 'next-logo' || 
-                                                dataNextMark === 'true' || 
-                                                dataNextMarkLoading !== null ||
-                                                dataNextjsDevTools === 'true' ||
-                                                ariaLabel === 'Open Next.js Dev Tools' ||
-                                                ariaControls === 'nextjs-dev-tools-menu') {
-                                                newNode.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
-                                                return newNode; // Return without inserting
+                                            // Check for button watermark
+                                            if (tagName === 'button') {
+                                                const id = newNode.id;
+                                                const dataNextMark = newNode.getAttribute('data-next-mark');
+                                                const dataNextMarkLoading = newNode.getAttribute('data-next-mark-loading');
+                                                const dataNextjsDevTools = newNode.getAttribute('data-nextjs-dev-tools-button');
+                                                const ariaLabel = newNode.getAttribute('aria-label');
+                                                const ariaControls = newNode.getAttribute('aria-controls');
+                                                
+                                                if (id === 'next-logo' || 
+                                                    dataNextMark === 'true' || 
+                                                    dataNextMarkLoading !== null ||
+                                                    dataNextjsDevTools === 'true' ||
+                                                    ariaLabel === 'Open Next.js Dev Tools' ||
+                                                    ariaControls === 'nextjs-dev-tools-menu') {
+                                                    newNode.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
+                                                }
+                                            }
+                                            
+                                            // Check for SVG watermark
+                                            if (tagName === 'svg') {
+                                                const dataAttr = newNode.getAttribute('data-next-mark-loading');
+                                                const viewBox = newNode.getAttribute('viewBox');
+                                                const width = newNode.getAttribute('width');
+                                                const height = newNode.getAttribute('height');
+                                                
+                                                if (dataAttr !== null || (viewBox === '0 0 40 40') || (width === '40' && height === '40')) {
+                                                    newNode.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
+                                                }
+                                            }
+                                            
+                                            // Check for "N" text elements
+                                            if (newNode.textContent) {
+                                                const text = newNode.textContent.trim();
+                                                const style = window.getComputedStyle(newNode);
+                                                const rect = newNode.getBoundingClientRect ? newNode.getBoundingClientRect() : { width: 0, height: 0, left: 0, bottom: 0 };
+                                                
+                                                if (text === 'N' && rect.width < 150 && rect.height < 150) {
+                                                    newNode.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
+                                                }
                                             }
                                         }
                                         
-                                        // Check for SVG watermark
-                                        if (newNode && newNode.tagName && newNode.tagName.toLowerCase() === 'svg') {
-                                            const dataAttr = newNode.getAttribute('data-next-mark-loading');
-                                            const viewBox = newNode.getAttribute('viewBox');
-                                            const width = newNode.getAttribute('width');
-                                            const height = newNode.getAttribute('height');
-                                            
-                                            if (dataAttr !== null || (viewBox === '0 0 40 40') || (width === '40' && height === '40')) {
-                                                newNode.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
-                                                return newNode; // Return without inserting
-                                            }
-                                        }
-                                        
-                                        // Check for "N" text elements
-                                        if (newNode && newNode.textContent) {
-                                            const text = newNode.textContent.trim();
-                                            const style = window.getComputedStyle(newNode);
-                                            const rect = newNode.getBoundingClientRect ? newNode.getBoundingClientRect() : { width: 0, height: 0, left: 0, bottom: 0 };
-                                            
-                                            if (text === 'N' && rect.width < 150 && rect.height < 150) {
-                                                newNode.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;';
-                                                return newNode; // Return without inserting
-                                            }
-                                        }
-                                    } catch(e) {}
-                                    return originalInsertBefore.call(this, newNode, referenceNode);
+                                        return result;
+                                    } catch(e) {
+                                        return originalInsertBefore.call(this, newNode, referenceNode);
+                                    }
                                 };
                             })();
                         `,

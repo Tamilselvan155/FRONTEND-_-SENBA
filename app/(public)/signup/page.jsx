@@ -329,16 +329,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, CheckCircle2, UserPlus, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   signupRequest,
   signupSuccess,
   signupFailure,
+  clearError,
 } from '../../../lib/features/login/authSlice';
 
 const SignUp = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { isLoading, error, users } = useSelector((state) => state.auth);
+  const { isLoading, error, email } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -353,38 +355,96 @@ const SignUp = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) {
+      dispatch(clearError());
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { fullName, email, password, confirmPassword } = formData;
 
+    // Client-side validation
+    if (!fullName || !email || !password || !confirmPassword) {
+      dispatch(signupFailure('All fields are required'));
+      toast.error('All fields are required');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      dispatch(signupFailure('Passwords do not match'));
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 8) {
+      dispatch(signupFailure('Password must be at least 8 characters long'));
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      dispatch(signupFailure('Please enter a valid email address'));
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     dispatch(signupRequest());
 
-    setTimeout(() => {
-      if (!fullName || !email || !password || !confirmPassword) {
-        dispatch(signupFailure('All fields are required'));
-        return;
+    try {
+      // Call the signup API endpoint
+      // The backend accepts name, firstName+lastName, or just firstName
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: fullName.trim(), // Send full name directly
+          email: email,
+          password: password,
+        }),
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        throw new Error('Server returned an invalid response. Please check if the backend is running.');
       }
 
-      if (password !== confirmPassword) {
-        dispatch(signupFailure('Passwords do not match'));
-        return;
-      }
+      if (response.ok && data.success) {
+        // Signup successful
+        dispatch(signupSuccess({ 
+          name: fullName.trim(),
+          email: email, 
+          password: password 
+        }));
 
-      if (password.length < 8) {
-        dispatch(signupFailure('Password must be at least 8 characters long'));
-        return;
+        // Don't auto-login, just show success and redirect to login page with email
+        toast.success('Account created successfully! Please login to continue.');
+        setShowSuccess(true);
+        
+        // Redirect to login page with email pre-filled after 2 seconds
+        setTimeout(() => {
+          setShowSuccess(false);
+          router.push(`/login?email=${encodeURIComponent(email)}`);
+        }, 2000);
+      } else {
+        // Signup failed
+        const errorMessage = data.message || 'Failed to create account. Please try again.';
+        dispatch(signupFailure(errorMessage));
+        toast.error(errorMessage);
       }
-
-      if (users && users.some((user) => user.email === email)) {
-        dispatch(signupFailure('Email already exists'));
-        return;
-      }
-
-      dispatch(signupSuccess({ fullName, email, password }));
-      setShowSuccess(true);
-    }, 800);
+    } catch (error) {
+      console.error('Signup error:', error);
+      const errorMessage = error.message || 'An error occurred. Please try again.';
+      dispatch(signupFailure(errorMessage));
+      toast.error(errorMessage);
+    }
   };
 
   return (
@@ -550,9 +610,15 @@ const SignUp = () => {
             >
               <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Account Created!</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Redirecting to login page...
+              </p>
               <button
-                onClick={() => router.push('/login')}
-                className="mt-4 w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white py-2.5 rounded-lg"
+                onClick={() => {
+                  setShowSuccess(false);
+                  router.push(`/login?email=${encodeURIComponent(formData.email)}`);
+                }}
+                className="mt-4 w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all"
               >
                 Go to Login
               </button>
