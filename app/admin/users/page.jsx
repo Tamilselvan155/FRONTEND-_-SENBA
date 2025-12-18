@@ -125,7 +125,7 @@ export default function AdminUsers() {
     const customActions = (user) => [
         {
             key: 'viewCart',
-            label: 'View Cart',
+            label: 'View Orders',
             icon: <ShoppingCart className="w-4 h-4" />,
             onClick: () => handleViewCart(user),
         },
@@ -151,10 +151,15 @@ export default function AdminUsers() {
     }
 
     // Format data for table (serial numbers will be calculated by DataTable based on pagination)
-    const formattedData = users && Array.isArray(users) ? users.map(user => ({
-        ...user,
-        id: user.id || user._id,
-    })) : []
+    const formattedData = users && Array.isArray(users) ? users.map(user => {
+        const userId = user.id || user._id;
+        // Ensure we have a consistent userId format
+        return {
+            ...user,
+            id: userId,
+            _id: user._id || userId, // Keep both for compatibility
+        };
+    }) : []
 
     // Show loading if we're loading AND there are no users yet
     const isLoading = loading && formattedData.length === 0
@@ -212,7 +217,11 @@ export default function AdminUsers() {
                     setCartModalOpen(false)
                     setSelectedUser(null)
                 }}
-                userId={selectedUser?.id || selectedUser?._id}
+                userId={(() => {
+                    const uid = selectedUser?.id || selectedUser?._id;
+                    console.log('Admin: Passing userId to orders modal:', uid, 'type:', typeof uid, 'user:', selectedUser?.name || selectedUser?.email);
+                    return uid ? String(uid) : null;
+                })()}
                 userName={selectedUser?.name || selectedUser?.email}
             />
 

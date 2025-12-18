@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signOut } from '../../../lib/features/login/authSlice';
 import { clearAuthData } from '../../../lib/utils/authUtils';
 import {
@@ -27,6 +27,7 @@ import toast from 'react-hot-toast';
 const Account = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { email } = useSelector((state) => state.auth);
   
   const [userData, setUserData] = useState({
@@ -117,6 +118,14 @@ const Account = () => {
 
     fetchUserData();
   }, [email]);
+
+  // Check URL params for section navigation
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section && ['dashboard', 'orders', 'addresses', 'account'].includes(section)) {
+      setActiveSection(section);
+    }
+  }, [searchParams]);
 
   // Fetch addresses when addresses section is active
   useEffect(() => {
