@@ -3,12 +3,13 @@ import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
 import { useCart } from "@/lib/hooks/useCart";
-import { Trash2Icon } from "lucide-react";
+import { Trash2Icon, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProductsAsync } from "@/lib/features/product/productSlice";
 import { fetchCartAsync } from "@/lib/features/cart/cartSlice";
+import { getImageUrl } from "@/lib/utils/imageUtils";
 
 export default function Cart() {
 
@@ -21,7 +22,26 @@ export default function Cart() {
 
     const [cartArray, setCartArray] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [orderedItems, setOrderedItems] = useState([]);
     const hasFetchedCart = useRef(false);
+    
+    // Pagination for cart items
+    const [cartPage, setCartPage] = useState(1);
+    const cartItemsPerPage = 5;
+    
+    // Pagination for ordered items
+    const [ordersPage, setOrdersPage] = useState(1);
+    const ordersPerPage = 5;
+    
+    // Reset pagination when cart items change
+    useEffect(() => {
+        setCartPage(1);
+    }, [cartArray.length]);
+    
+    // Reset pagination when orders change
+    useEffect(() => {
+        setOrdersPage(1);
+    }, [orderedItems.length]);
 
     // Fetch cart for logged-in users when page loads or when user logs in
     useEffect(() => {
@@ -42,6 +62,161 @@ export default function Cart() {
             dispatch(fetchProductsAsync());
         }
     }, [isLoggedIn, products, dispatch]);
+
+    // Fetch orders from backend for logged-in users
+    useEffect(() => {
+        const fetchOrders = async () => {
+            if (isLoggedIn) {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/my-orders`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.data) {
+                                console.log('✅ Fetched orders from backend:', data.data.length);
+                                // Convert backend orders to display format
+                                const formattedOrders = data.data.map(order => ({
+                                    items: order.items.map(item => {
+                                        // Handle productId - can be ObjectId or populated object
+                                        const product = item.productId && typeof item.productId === 'object' 
+                                            ? item.productId 
+                                            : null;
+                                        
+                                        return {
+                                            id: product?._id?.toString() || item.productId?.toString() || item.productId,
+                                            name: item.name || product?.title || product?.name || 'Product',
+                                            price: Number(item.price || product?.price || 0),
+                                            quantity: Number(item.quantity || 1),
+                                            images: Array.isArray(item.images) && item.images.length > 0
+                                                ? item.images
+                                                : (Array.isArray(product?.images) && product.images.length > 0
+                                                    ? product.images
+                                                    : []),
+                                            sku: item.sku || product?.sku || null,
+                                        };
+                                    }),
+                                    totalPrice: Number(order.totalPrice || 0),
+                                    totalQuantity: Number(order.totalQuantity || 0),
+                                    orderedAt: order.createdAt || order.orderedAt,
+                                }));
+                                setOrderedItems(formattedOrders);
+                                return; // Don't load from localStorage if backend has orders
+                            }
+                        } else {
+                            console.warn('Failed to fetch orders from backend:', response.status);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching orders from backend:', error);
+                }
+            }
+            
+            // Fallback to localStorage for guest users or if backend fetch fails
+            if (typeof window !== 'undefined') {
+                try {
+                    const savedOrders = localStorage.getItem('orderedItems');
+                    if (savedOrders) {
+                        const orders = JSON.parse(savedOrders);
+                        setOrderedItems(orders);
+                    }
+                } catch (error) {
+                    console.error('Error loading ordered items from localStorage:', error);
+                }
+            }
+        };
+
+        fetchOrders();
+    }, [isLoggedIn]);
+
+    // Listen for storage changes and order placed events to refresh
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'orderedItems' && !isLoggedIn) {
+                try {
+                    const orders = JSON.parse(e.newValue || '[]');
+                    setOrderedItems(orders);
+                } catch (error) {
+                    console.error('Error parsing ordered items:', error);
+                }
+            }
+        };
+
+        const handleOrderPlaced = async () => {
+            // Refresh orders from backend if logged in
+            if (isLoggedIn) {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/my-orders`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.data) {
+                                const formattedOrders = data.data.map(order => ({
+                                    items: order.items.map(item => {
+                                        const product = item.productId && typeof item.productId === 'object' 
+                                            ? item.productId 
+                                            : null;
+                                        
+                                        return {
+                                            id: product?._id?.toString() || item.productId?.toString() || item.productId,
+                                            name: item.name || product?.title || product?.name || 'Product',
+                                            price: Number(item.price || product?.price || 0),
+                                            quantity: Number(item.quantity || 1),
+                                            images: Array.isArray(item.images) && item.images.length > 0
+                                                ? item.images
+                                                : (Array.isArray(product?.images) && product.images.length > 0
+                                                    ? product.images
+                                                    : []),
+                                            sku: item.sku || product?.sku || null,
+                                        };
+                                    }),
+                                    totalPrice: Number(order.totalPrice || 0),
+                                    totalQuantity: Number(order.totalQuantity || 0),
+                                    orderedAt: order.createdAt || order.orderedAt,
+                                }));
+                                setOrderedItems(formattedOrders);
+                                return;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error refreshing orders:', error);
+                }
+            } else {
+                // For guest users, load from localStorage
+                try {
+                    const savedOrders = localStorage.getItem('orderedItems');
+                    if (savedOrders) {
+                        const orders = JSON.parse(savedOrders);
+                        setOrderedItems(orders);
+                    }
+                } catch (error) {
+                    console.error('Error loading ordered items:', error);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('orderPlaced', handleOrderPlaced);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('orderPlaced', handleOrderPlaced);
+        };
+    }, [isLoggedIn]);
 
     // Helper function to clean product object and remove all MongoDB IDs
     const cleanProductObject = useCallback((product) => {
@@ -202,6 +377,18 @@ export default function Cart() {
         }
     }, [cartItems, cartItemsWithDetails, products, isLoggedIn, createCartArray]);
 
+    // Calculate paginated cart items
+    const cartStartIndex = (cartPage - 1) * cartItemsPerPage;
+    const cartEndIndex = cartStartIndex + cartItemsPerPage;
+    const paginatedCartItems = cartArray.slice(cartStartIndex, cartEndIndex);
+    const totalCartPages = Math.ceil(cartArray.length / cartItemsPerPage);
+
+    // Calculate paginated ordered items
+    const ordersStartIndex = (ordersPage - 1) * ordersPerPage;
+    const ordersEndIndex = ordersStartIndex + ordersPerPage;
+    const paginatedOrders = orderedItems.slice(ordersStartIndex, ordersEndIndex);
+    const totalOrdersPages = Math.ceil(orderedItems.length / ordersPerPage);
+
     return cartArray.length > 0 ? (
         <div className="min-h-screen mx-6 text-slate-800">
 
@@ -211,7 +398,8 @@ export default function Cart() {
 
                 <div className="flex items-start justify-between gap-5 max-lg:flex-col">
 
-                    <table className="w-full max-w-4xl text-slate-600 table-auto">
+                    <div className="w-full max-w-4xl">
+                        <table className="w-full text-slate-600 table-auto">
                         <thead>
                             <tr className="max-sm:text-sm">
                                 <th className="text-left">Product</th>
@@ -305,15 +493,247 @@ export default function Cart() {
                                     );
                                 })
                             }
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                        
+                        {/* Cart Items Pagination */}
+                        {totalCartPages > 1 && (
+                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                <div className="text-sm text-gray-600">
+                                    Showing {cartStartIndex + 1} to {Math.min(cartEndIndex, cartArray.length)} of {cartArray.length} items
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCartPage(prev => Math.max(1, prev - 1))}
+                                        disabled={cartPage === 1}
+                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="text-sm text-gray-700">
+                                        Page {cartPage} of {totalCartPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setCartPage(prev => Math.min(totalCartPages, prev + 1))}
+                                        disabled={cartPage === totalCartPages}
+                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <OrderSummary totalPrice={totalPrice} items={cartArray} />
                 </div>
+
+                {/* Ordered Items Section */}
+                {orderedItems.length > 0 && (
+                    <div className="mt-12 pt-8 border-t border-slate-200">
+                        <div className="flex items-center gap-2 mb-6">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <h2 className="text-xl font-semibold text-slate-800">Ordered Items</h2>
+                        </div>
+                        
+                        <div className="space-y-6">
+                            {paginatedOrders.map((order, orderIndex) => (
+                                <div key={orderIndex} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-green-900">
+                                                Order placed on {new Date(order.orderedAt).toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </p>
+                                            <p className="text-xs text-green-700 mt-1">
+                                                Total: {currency}{order.totalPrice.toLocaleString()} • {order.totalQuantity} item{order.totalQuantity !== 1 ? 's' : ''}
+                                            </p>
+                                        </div>
+                                        <span className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-full">
+                                            Ordered
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {order.items.map((item, itemIndex) => {
+                                            // Handle images - can be from item.images
+                                            const itemImages = item.images && Array.isArray(item.images) && item.images.length > 0 
+                                                ? item.images 
+                                                : [];
+                                            const itemImage = itemImages.length > 0 
+                                                ? (getImageUrl(itemImages[0]) || '/placeholder-image.jpg')
+                                                : '/placeholder-image.jpg';
+                                            
+                                            return (
+                                                <div key={itemIndex} className="flex items-center gap-4 bg-white rounded-lg p-3">
+                                                    <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
+                                                        <Image 
+                                                            src={itemImage} 
+                                                            className="h-14 w-auto" 
+                                                            alt={item.name || item.title || 'Product'} 
+                                                            width={45} 
+                                                            height={45}
+                                                            unoptimized
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-slate-800">{item.name || item.title || 'Product'}</p>
+                                                        <p className="text-xs text-slate-500">Quantity: {item.quantity}</p>
+                                                        <p className="text-sm font-semibold text-slate-700 mt-1">
+                                                            {currency}{(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Orders Pagination */}
+                        {totalOrdersPages > 1 && (
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                                <div className="text-sm text-gray-600">
+                                    Showing {ordersStartIndex + 1} to {Math.min(ordersEndIndex, orderedItems.length)} of {orderedItems.length} orders
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setOrdersPage(prev => Math.max(1, prev - 1))}
+                                        disabled={ordersPage === 1}
+                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="text-sm text-gray-700">
+                                        Page {ordersPage} of {totalOrdersPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setOrdersPage(prev => Math.min(totalOrdersPages, prev + 1))}
+                                        disabled={ordersPage === totalOrdersPages}
+                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     ) : (
-        <div className="min-h-[80vh] mx-6 flex items-center justify-center text-slate-400">
-            <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
+        <div className="min-h-screen mx-6">
+            <div className="max-w-7xl mx-auto">
+                {/* Title */}
+                <PageTitle heading="My Cart" text="items in your cart" linkText="Add more" />
+                
+                <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
+                    <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
+                </div>
+
+                {/* Ordered Items Section - Show even when cart is empty */}
+                {orderedItems.length > 0 && (
+                    <div className="mt-12 pt-8 border-t border-slate-200">
+                        <div className="flex items-center gap-2 mb-6">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <h2 className="text-xl font-semibold text-slate-800">Ordered Items</h2>
+                        </div>
+                        
+                        <div className="space-y-6">
+                            {paginatedOrders.map((order, orderIndex) => (
+                                <div key={orderIndex} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-green-900">
+                                                Order placed on {new Date(order.orderedAt).toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </p>
+                                            <p className="text-xs text-green-700 mt-1">
+                                                Total: {currency}{order.totalPrice.toLocaleString()} • {order.totalQuantity} item{order.totalQuantity !== 1 ? 's' : ''}
+                                            </p>
+                                        </div>
+                                        <span className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-full">
+                                            Ordered
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {order.items.map((item, itemIndex) => {
+                                            // Handle images - can be from item.images
+                                            const itemImages = item.images && Array.isArray(item.images) && item.images.length > 0 
+                                                ? item.images 
+                                                : [];
+                                            const itemImage = itemImages.length > 0 
+                                                ? (getImageUrl(itemImages[0]) || '/placeholder-image.jpg')
+                                                : '/placeholder-image.jpg';
+                                            
+                                            return (
+                                                <div key={itemIndex} className="flex items-center gap-4 bg-white rounded-lg p-3">
+                                                    <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
+                                                        <Image 
+                                                            src={itemImage} 
+                                                            className="h-14 w-auto" 
+                                                            alt={item.name || item.title || 'Product'} 
+                                                            width={45} 
+                                                            height={45}
+                                                            unoptimized
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-slate-800">{item.name || item.title || 'Product'}</p>
+                                                        <p className="text-xs text-slate-500">Quantity: {item.quantity}</p>
+                                                        <p className="text-sm font-semibold text-slate-700 mt-1">
+                                                            {currency}{(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Orders Pagination */}
+                        {totalOrdersPages > 1 && (
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                                <div className="text-sm text-gray-600">
+                                    Showing {ordersStartIndex + 1} to {Math.min(ordersEndIndex, orderedItems.length)} of {orderedItems.length} orders
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setOrdersPage(prev => Math.max(1, prev - 1))}
+                                        disabled={ordersPage === 1}
+                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="text-sm text-gray-700">
+                                        Page {ordersPage} of {totalOrdersPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setOrdersPage(prev => Math.min(totalOrdersPages, prev + 1))}
+                                        disabled={ordersPage === totalOrdersPages}
+                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

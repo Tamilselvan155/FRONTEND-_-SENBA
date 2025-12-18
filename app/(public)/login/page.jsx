@@ -300,8 +300,8 @@
 // export default Login;
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -318,11 +318,27 @@ import toast from 'react-hot-toast';
 export default function LoginPage() {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLoading: reduxLoading, error: reduxError } = useSelector((state) => state.auth);
   
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  // Get email from query params if available (from signup redirect)
+  const emailFromParams = searchParams.get('email');
+  
+  const [formData, setFormData] = useState({ 
+    email: emailFromParams || '', 
+    password: '' 
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+
+  // Update email if it comes from query params
+  useEffect(() => {
+    if (emailFromParams) {
+      setFormData(prev => ({ ...prev, email: emailFromParams }));
+      // Show success message if coming from signup
+      toast.success('Account created! Please enter your password to login.');
+    }
+  }, [emailFromParams]);
 
   const isLoading = reduxLoading;
   const error = reduxError;

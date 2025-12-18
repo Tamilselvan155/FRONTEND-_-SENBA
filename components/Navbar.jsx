@@ -20,7 +20,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { signOut } from "@/lib/features/login/authSlice";
+import { clearAuthData } from "@/lib/utils/authUtils";
+import toast from "react-hot-toast";
 import WVlogo from "../assets/YUCHII LOGO.png";
 import { categories, pumpSubCategories } from "@/assets/assets";
 
@@ -48,8 +51,11 @@ const Navbar = memo(() => {
   const pumpSubmenuRef = useRef(null);
   const searchInputRef = useRef(null);
 
+  const dispatch = useDispatch();
   const cartCount = useSelector((state) => state.cart.total);
   const { email } = useSelector((state) => state.auth);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Memoize toggle function
   const toggleMenu = useCallback(() => {
@@ -140,6 +146,50 @@ const Navbar = memo(() => {
     }
   }, [searchQuery, router]);
 
+  // Handle logout
+  const handleLogout = useCallback(async () => {
+    setIsLoggingOut(true);
+    try {
+      // Call logout API endpoint
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (apiError) {
+          // Ignore API errors - still proceed with client-side logout
+          console.log('Logout API call failed, proceeding with client-side logout');
+        }
+      }
+
+      // Clear Redux state
+      dispatch(signOut());
+      
+      // Clear all authentication data
+      clearAuthData();
+      
+      // Show success message
+      toast.success('Logged out successfully');
+      
+      // Close modal
+      setShowLogoutModal(false);
+      
+      // Redirect to home page
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('An error occurred during logout');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [dispatch, router]);
+
   // Focus search input when mobile search is shown
   useEffect(() => {
     if (showSearchMobile && searchInputRef.current) {
@@ -229,20 +279,38 @@ const Navbar = memo(() => {
               </div>
 
               {/* Account Section */}
-              <div className="flex flex-col items-end flex-shrink-0 border-r border-gray-300 pr-4 mr-4">
-                <Link
-                  href={email ? "/signout" : "/login"}
-                  prefetch={true}
-                  onMouseEnter={() => handleLinkHover(email ? "/signout" : "/login")}
-                  className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  {email ? "Sign Out" : "Login / Signup"}
-                </Link>
+              <div className="flex flex-col items-end flex-shrink-0 border-r border-gray-300 pr-4 mr-4 gap-1">
+                {email ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLogoutModal(true);
+                    }}
+                    className="text-xs text-gray-600 hover:text-gray-900 transition-colors cursor-pointer relative z-10 block py-1 text-left"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    prefetch={true}
+                    onMouseEnter={() => handleLinkHover("/login")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    className="text-xs text-gray-600 hover:text-gray-900 transition-colors cursor-pointer relative z-10 block py-1"
+                  >
+                    Login / Signup
+                  </Link>
+                )}
                 <Link
                   href={email ? "/account" : "/login"}
                   prefetch={true}
                   onMouseEnter={() => handleLinkHover(email ? "/account" : "/login")}
-                  className="text-sm font-semibold text-gray-900 hover:text-[#7C2A47] transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="text-sm font-semibold text-gray-900 hover:text-[#7C2A47] transition-colors cursor-pointer relative z-10 block py-1"
                 >
                   My account
                 </Link>
@@ -288,14 +356,27 @@ const Navbar = memo(() => {
                   </span>
                 )}
               </Link>
-              <Link
-                href={email ? "/signout" : "/login"}
-                prefetch={true}
-                className="p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 active:bg-[#7C2A47]/20"
-                aria-label={email ? "Sign out" : "Sign in"}
-              >
-                <UserCircle size={20} className="text-gray-700" />
-              </Link>
+              {email ? (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowLogoutModal(true);
+                  }}
+                  className="p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 active:bg-[#7C2A47]/20"
+                  aria-label="Sign out"
+                >
+                  <UserCircle size={20} className="text-gray-700" />
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  prefetch={true}
+                  className="p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 active:bg-[#7C2A47]/20"
+                  aria-label="Sign in"
+                >
+                  <UserCircle size={20} className="text-gray-700" />
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -468,6 +549,43 @@ const Navbar = memo(() => {
           </>
         )}
       </nav>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to logout? You will need to login again to access your account.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                disabled={isLoggingOut}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#7C2A47] hover:bg-[#6a2340] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoggingOut ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Logging out...
+                  </>
+                ) : (
+                  'Yes, Logout'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 });

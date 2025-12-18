@@ -1,106 +1,102 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, ShoppingCart } from 'lucide-react';
-import { fetchUserCart } from '@/lib/actions/userActions';
+import { X, Package, CheckCircle } from 'lucide-react';
+import { fetchUserOrders } from '@/lib/actions/userActions';
 import { getImageUrl } from '@/lib/utils/imageUtils';
 
 const ViewUserCartModal = ({ isOpen, onClose, userId, userName }) => {
-  const [cartItems, setCartItems] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
     if (isOpen && userId) {
-      fetchCartData();
+      fetchOrdersData();
     } else {
-      setCartItems([]);
+      setOrders([]);
       setError(null);
     }
   }, [isOpen, userId]);
+  
+  // Reset pagination when orders change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [orders.length]);
 
-  const fetchCartData = async () => {
+  const fetchOrdersData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetchUserCart(userId);
-      if (response.success && response.data) {
-        // Convert items array to display format
-        const items = response.data.items || [];
-        setCartItems(items);
+      console.log('=== ADMIN FETCHING USER ORDERS ===');
+      console.log('userId received:', userId);
+      console.log('userId type:', typeof userId);
+      console.log('userName:', userName);
+      
+      if (!userId) {
+        console.error('No userId provided!');
+        setError('User ID is missing');
+        setOrders([]);
+        return;
+      }
+
+      // Ensure userId is a string
+      const userIdString = String(userId);
+      console.log('Calling API with userId:', userIdString);
+      
+      const response = await fetchUserOrders(userIdString);
+      console.log('API Response:', response);
+      console.log('Response success:', response.success);
+      console.log('Response data:', response.data);
+      console.log('Response count:', response.count);
+      
+      if (response.success) {
+        // Orders are already in the correct format
+        const ordersData = response.data || [];
+        console.log('Orders data type:', Array.isArray(ordersData) ? 'array' : typeof ordersData);
+        console.log('Orders data length:', Array.isArray(ordersData) ? ordersData.length : 'not an array');
+        
+        setOrders(Array.isArray(ordersData) ? ordersData : []);
+        console.log('Orders loaded into state:', ordersData.length, 'orders');
+        
+        if (ordersData.length === 0) {
+          console.warn('⚠️ No orders found for userId:', userIdString);
+          console.warn('This could mean:');
+          console.warn('1. User has not placed any orders');
+          console.warn('2. userId format mismatch between order creation and fetch');
+          console.warn('3. Orders were saved with different userId format');
+        }
       } else {
-        setCartItems([]);
+        console.error('❌ Fetch orders response not successful:', response);
+        setOrders([]);
+        setError(response.message || 'Failed to fetch orders');
       }
     } catch (err) {
-      console.error('Error fetching user cart:', err);
-      setError(err.message || 'Failed to fetch cart items');
-      setCartItems([]);
+      console.error('❌ Error fetching user orders:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
+      const errorMessage = err.message || err.response?.data?.message || err.response?.data?.error || 'Failed to fetch orders';
+      setError(errorMessage);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Calculate paginated orders
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedOrders = orders.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(orders.length / pageSize);
+
   if (!isOpen) return null;
-
-  // Clean product object to remove MongoDB IDs
-  const cleanProductObject = (obj) => {
-    if (!obj || typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) {
-      return obj.map(cleanProductObject);
-    }
-    const cleaned = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (key === '_id' || key === '__v' || key === 'productId' || key === 'categoryId' || key === 'subcategory' || key === 'brandIds') {
-        continue;
-      }
-      if (typeof value === 'string' && /^[0-9a-fA-F]{24}$/.test(value)) {
-        continue; // Skip MongoDB ID strings
-      }
-      if (typeof value === 'object' && value !== null) {
-        cleaned[key] = cleanProductObject(value);
-      } else {
-        cleaned[key] = value;
-      }
-    }
-    return cleaned;
-  };
-
-  const getProductName = (item) => {
-    if (item.productId) {
-      if (typeof item.productId === 'object') {
-        return item.productId.title || item.productId.name || 'Unknown Product';
-      }
-    }
-    return 'Unknown Product';
-  };
-
-  const getProductImage = (item) => {
-    if (item.productId && typeof item.productId === 'object') {
-      const images = item.productId.images || [];
-      if (images.length > 0) {
-        return getImageUrl(images[0]);
-      }
-    }
-    return null;
-  };
-
-  const getProductPrice = (item) => {
-    if (item.price && item.price > 0) {
-      return item.price;
-    }
-    if (item.productId && typeof item.productId === 'object' && item.productId.price) {
-      return item.productId.price;
-    }
-    return 0;
-  };
-
-  const calculateTotal = () => {
-    return cartItems.reduce((sum, item) => {
-      const price = getProductPrice(item);
-      const quantity = item.quantity || 1;
-      return sum + (price * quantity);
-    }, 0);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black bg-opacity-50">
@@ -108,9 +104,9 @@ const ViewUserCartModal = ({ isOpen, onClose, userId, userName }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <ShoppingCart className="w-6 h-6 text-indigo-600" />
+            <Package className="w-6 h-6 text-indigo-600" />
             <h2 className="text-xl font-semibold text-gray-900">
-              Cart Items - {userName || 'User'}
+              Ordered Items - {userName || 'User'}
             </h2>
           </div>
           <button
@@ -131,81 +127,128 @@ const ViewUserCartModal = ({ isOpen, onClose, userId, userName }) => {
             <div className="text-center py-12">
               <p className="text-red-600">{error}</p>
             </div>
-          ) : cartItems.length === 0 ? (
+          ) : orders.length === 0 ? (
             <div className="text-center py-12">
-              <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No items in cart</p>
+              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No orders found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Product</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Quantity</th>
-                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Price</th>
-                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cartItems.map((item, index) => {
-                    const product = cleanProductObject(item.productId || {});
-                    const productName = getProductName(item);
-                    const productImage = getProductImage(item);
-                    const price = getProductPrice(item);
-                    const quantity = item.quantity || 1;
-                    const total = price * quantity;
-
-                    return (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            {productImage ? (
-                              <img
-                                src={productImage}
-                                alt={productName}
-                                className="w-16 h-16 object-cover rounded"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                                <ShoppingCart className="w-6 h-6 text-gray-400" />
+            <div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300 bg-gray-50">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Order Placed</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Items</th>
+                      <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Quantity</th>
+                      <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedOrders.map((order, orderIndex) => {
+                      const orderDate = new Date(order.createdAt);
+                      const formattedDate = orderDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      });
+                      const formattedTime = orderDate.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      });
+                      
+                      const statusColors = {
+                        pending: 'bg-yellow-100 text-yellow-800',
+                        confirmed: 'bg-blue-100 text-blue-800',
+                        shipped: 'bg-purple-100 text-purple-800',
+                        delivered: 'bg-green-100 text-green-800',
+                        cancelled: 'bg-red-100 text-red-800',
+                      };
+                      
+                      const statusColor = statusColors[order.status] || 'bg-gray-100 text-gray-800';
+                      
+                      return (
+                        <tr key={order._id || orderIndex} className="border-b border-gray-200 hover:bg-gray-50">
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{formattedDate}</p>
+                                <p className="text-xs text-gray-500">{formattedTime}</p>
                               </div>
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900">{productName}</p>
-                              {product.sku && (
-                                <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${statusColor}`}>
+                              {order.status || 'pending'}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="space-y-2">
+                              {order.items && order.items.length > 0 ? (
+                                order.items.slice(0, 3).map((item, itemIndex) => {
+                                  const productName = item.name || (item.productId && typeof item.productId === 'object' 
+                                    ? (item.productId.title || item.productId.name) 
+                                    : 'Unknown Product');
+                                  const quantity = Number(item.quantity || 1);
+                                  
+                                  return (
+                                    <div key={itemIndex} className="flex items-center gap-2 text-sm text-gray-700">
+                                      <span className="font-medium">{productName}</span>
+                                      <span className="text-gray-500">× {quantity}</span>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <span className="text-sm text-gray-500">No items</span>
+                              )}
+                              {order.items && order.items.length > 3 && (
+                                <p className="text-xs text-gray-500">+{order.items.length - 3} more item(s)</p>
                               )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="text-gray-700">{quantity}</span>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <span className="text-gray-700">₹{Number(price).toLocaleString()}</span>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <span className="font-medium text-gray-900">₹{Number(total).toLocaleString()}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-300">
-                    <td colSpan="3" className="py-4 px-4 text-right font-semibold text-gray-900">
-                      Grand Total:
-                    </td>
-                    <td className="py-4 px-4 text-right font-bold text-lg text-indigo-600">
-                      ₹{Number(calculateTotal()).toLocaleString()}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <span className="text-sm font-medium text-gray-900">{order.totalQuantity || 0}</span>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <span className="text-sm font-semibold text-indigo-600">₹{Number(order.totalPrice || 0).toLocaleString()}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Showing {startIndex + 1} to {Math.min(endIndex, orders.length)} of {orders.length} orders
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
