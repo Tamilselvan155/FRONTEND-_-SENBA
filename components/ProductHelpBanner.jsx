@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 export default function ProductHelpBanner() {
   return (
-    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-6 sm:py-8 md:py-10">
+    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

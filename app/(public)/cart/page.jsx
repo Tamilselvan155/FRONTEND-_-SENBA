@@ -5,6 +5,7 @@ import PageTitle from "@/components/PageTitle";
 import { useCart } from "@/lib/hooks/useCart";
 import { Trash2Icon, CheckCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProductsAsync } from "@/lib/features/product/productSlice";
@@ -22,26 +23,16 @@ export default function Cart() {
 
     const [cartArray, setCartArray] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
-    const [orderedItems, setOrderedItems] = useState([]);
     const hasFetchedCart = useRef(false);
     
     // Pagination for cart items
     const [cartPage, setCartPage] = useState(1);
     const cartItemsPerPage = 5;
     
-    // Pagination for ordered items
-    const [ordersPage, setOrdersPage] = useState(1);
-    const ordersPerPage = 5;
-    
     // Reset pagination when cart items change
     useEffect(() => {
         setCartPage(1);
     }, [cartArray.length]);
-    
-    // Reset pagination when orders change
-    useEffect(() => {
-        setOrdersPage(1);
-    }, [orderedItems.length]);
 
     // Fetch cart for logged-in users when page loads or when user logs in
     useEffect(() => {
@@ -63,160 +54,6 @@ export default function Cart() {
         }
     }, [isLoggedIn, products, dispatch]);
 
-    // Fetch orders from backend for logged-in users
-    useEffect(() => {
-        const fetchOrders = async () => {
-            if (isLoggedIn) {
-                try {
-                    const token = localStorage.getItem('token');
-                    if (token) {
-                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/my-orders`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json',
-                            },
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success && data.data) {
-                                console.log('✅ Fetched orders from backend:', data.data.length);
-                                // Convert backend orders to display format
-                                const formattedOrders = data.data.map(order => ({
-                                    items: order.items.map(item => {
-                                        // Handle productId - can be ObjectId or populated object
-                                        const product = item.productId && typeof item.productId === 'object' 
-                                            ? item.productId 
-                                            : null;
-                                        
-                                        return {
-                                            id: product?._id?.toString() || item.productId?.toString() || item.productId,
-                                            name: item.name || product?.title || product?.name || 'Product',
-                                            price: Number(item.price || product?.price || 0),
-                                            quantity: Number(item.quantity || 1),
-                                            images: Array.isArray(item.images) && item.images.length > 0
-                                                ? item.images
-                                                : (Array.isArray(product?.images) && product.images.length > 0
-                                                    ? product.images
-                                                    : []),
-                                            sku: item.sku || product?.sku || null,
-                                        };
-                                    }),
-                                    totalPrice: Number(order.totalPrice || 0),
-                                    totalQuantity: Number(order.totalQuantity || 0),
-                                    orderedAt: order.createdAt || order.orderedAt,
-                                }));
-                                setOrderedItems(formattedOrders);
-                                return; // Don't load from localStorage if backend has orders
-                            }
-                        } else {
-                            console.warn('Failed to fetch orders from backend:', response.status);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching orders from backend:', error);
-                }
-            }
-            
-            // Fallback to localStorage for guest users or if backend fetch fails
-            if (typeof window !== 'undefined') {
-                try {
-                    const savedOrders = localStorage.getItem('orderedItems');
-                    if (savedOrders) {
-                        const orders = JSON.parse(savedOrders);
-                        setOrderedItems(orders);
-                    }
-                } catch (error) {
-                    console.error('Error loading ordered items from localStorage:', error);
-                }
-            }
-        };
-
-        fetchOrders();
-    }, [isLoggedIn]);
-
-    // Listen for storage changes and order placed events to refresh
-    useEffect(() => {
-        const handleStorageChange = (e) => {
-            if (e.key === 'orderedItems' && !isLoggedIn) {
-                try {
-                    const orders = JSON.parse(e.newValue || '[]');
-                    setOrderedItems(orders);
-                } catch (error) {
-                    console.error('Error parsing ordered items:', error);
-                }
-            }
-        };
-
-        const handleOrderPlaced = async () => {
-            // Refresh orders from backend if logged in
-            if (isLoggedIn) {
-                try {
-                    const token = localStorage.getItem('token');
-                    if (token) {
-                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/my-orders`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json',
-                            },
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.success && data.data) {
-                                const formattedOrders = data.data.map(order => ({
-                                    items: order.items.map(item => {
-                                        const product = item.productId && typeof item.productId === 'object' 
-                                            ? item.productId 
-                                            : null;
-                                        
-                                        return {
-                                            id: product?._id?.toString() || item.productId?.toString() || item.productId,
-                                            name: item.name || product?.title || product?.name || 'Product',
-                                            price: Number(item.price || product?.price || 0),
-                                            quantity: Number(item.quantity || 1),
-                                            images: Array.isArray(item.images) && item.images.length > 0
-                                                ? item.images
-                                                : (Array.isArray(product?.images) && product.images.length > 0
-                                                    ? product.images
-                                                    : []),
-                                            sku: item.sku || product?.sku || null,
-                                        };
-                                    }),
-                                    totalPrice: Number(order.totalPrice || 0),
-                                    totalQuantity: Number(order.totalQuantity || 0),
-                                    orderedAt: order.createdAt || order.orderedAt,
-                                }));
-                                setOrderedItems(formattedOrders);
-                                return;
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error refreshing orders:', error);
-                }
-            } else {
-                // For guest users, load from localStorage
-                try {
-                    const savedOrders = localStorage.getItem('orderedItems');
-                    if (savedOrders) {
-                        const orders = JSON.parse(savedOrders);
-                        setOrderedItems(orders);
-                    }
-                } catch (error) {
-                    console.error('Error loading ordered items:', error);
-                }
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('orderPlaced', handleOrderPlaced);
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('orderPlaced', handleOrderPlaced);
-        };
-    }, [isLoggedIn]);
 
     // Helper function to clean product object and remove all MongoDB IDs
     const cleanProductObject = useCallback((product) => {
@@ -287,16 +124,33 @@ export default function Cart() {
                 if (item.productId) {
                     const product = typeof item.productId === 'object' ? item.productId : null;
                     if (product) {
-                        // Use item.price if set and > 0, otherwise use product.price, fallback to 0
-                        const itemPrice = Number(item.price) || 0;
-                        const productPriceValue = Number(product.price) || 0;
-                        // Prioritize item.price, then product.price, but don't use 0 if product has a valid price
+                        // Use item.price if set and > 0, otherwise extract from product
                         let productPrice = 0;
+                        const itemPrice = Number(item.price) || 0;
+                        
                         if (itemPrice > 0) {
                             productPrice = itemPrice;
-                        } else if (productPriceValue > 0) {
-                            productPrice = productPriceValue;
+                        } else {
+                            // Extract price from multiple sources
+                            // Check direct price field
+                            if (product.price !== undefined && product.price !== null) {
+                                productPrice = Number(product.price);
+                            }
+                            
+                            // If price is 0, check MRP
+                            if (productPrice === 0 && product.mrp !== undefined && product.mrp !== null) {
+                                productPrice = Number(product.mrp);
+                            }
+                            
+                            // If still 0, check brandVariants (for products with variants)
+                            if (productPrice === 0 && product.brandVariants && Array.isArray(product.brandVariants) && product.brandVariants.length > 0) {
+                                const firstVariant = product.brandVariants[0];
+                                if (firstVariant.price !== undefined && firstVariant.price !== null) {
+                                    productPrice = Number(firstVariant.price);
+                                }
+                            }
                         }
+                        
                         const quantity = Number(item.quantity) || 0;
                         
                         // Clean product object to remove all MongoDB IDs
@@ -321,7 +175,45 @@ export default function Cart() {
                     return productId && productId.toString() === key.toString();
                 });
             if (product) {
-                    const productPrice = Number(product.price) || 0;
+                    // Extract price from multiple sources
+                    let productPrice = 0;
+                    
+                    // Check direct price field
+                    if (product.price !== undefined && product.price !== null) {
+                        productPrice = Number(product.price);
+                    }
+                    
+                    // If price is 0, check MRP
+                    if (productPrice === 0 && product.mrp !== undefined && product.mrp !== null) {
+                        productPrice = Number(product.mrp);
+                    }
+                    
+                    // If still 0, check originalProduct (for transformed products)
+                    if (productPrice === 0 && product.originalProduct) {
+                        const original = product.originalProduct;
+                        if (original.price !== undefined && original.price !== null) {
+                            productPrice = Number(original.price);
+                        } else if (productPrice === 0 && original.mrp !== undefined && original.mrp !== null) {
+                            productPrice = Number(original.mrp);
+                        }
+                    }
+                    
+                    // If still 0, check brandVariants (for products with variants)
+                    if (productPrice === 0 && product.brandVariants && Array.isArray(product.brandVariants) && product.brandVariants.length > 0) {
+                        const firstVariant = product.brandVariants[0];
+                        if (firstVariant.price !== undefined && firstVariant.price !== null) {
+                            productPrice = Number(firstVariant.price);
+                        }
+                    }
+                    
+                    // If still 0, check originalProduct.brandVariants
+                    if (productPrice === 0 && product.originalProduct?.brandVariants && Array.isArray(product.originalProduct.brandVariants) && product.originalProduct.brandVariants.length > 0) {
+                        const firstVariant = product.originalProduct.brandVariants[0];
+                        if (firstVariant.price !== undefined && firstVariant.price !== null) {
+                            productPrice = Number(firstVariant.price);
+                        }
+                    }
+                    
                     const quantity = Number(value) || 0;
                     
                     // Clean product object to remove all MongoDB IDs
@@ -384,355 +276,202 @@ export default function Cart() {
     const totalCartPages = Math.ceil(cartArray.length / cartItemsPerPage);
 
     // Calculate paginated ordered items
-    const ordersStartIndex = (ordersPage - 1) * ordersPerPage;
-    const ordersEndIndex = ordersStartIndex + ordersPerPage;
-    const paginatedOrders = orderedItems.slice(ordersStartIndex, ordersEndIndex);
-    const totalOrdersPages = Math.ceil(orderedItems.length / ordersPerPage);
+
+    // Calculate total savings (if MRP is higher than price)
+    const calculateSavings = () => {
+        let totalSavings = 0;
+        cartArray.forEach(item => {
+            const itemPrice = Number(item.price || 0);
+            const itemMrp = Number(item.mrp || item.price || 0);
+            if (itemMrp > itemPrice) {
+                totalSavings += (itemMrp - itemPrice) * (item.quantity || 1);
+            }
+        });
+        return totalSavings;
+    };
+
+    const totalSavings = calculateSavings();
 
     return cartArray.length > 0 ? (
-        <div className="min-h-screen mx-6 text-slate-800">
+        <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">My basket</h1>
+                    <p className="text-sm text-[#7C2A47] font-medium">
+                        You are eligible for free delivery!
+                    </p>
+                </div>
 
-            <div className="max-w-7xl mx-auto ">
-                {/* Title */}
-                <PageTitle heading="My Cart" text="items in your cart" linkText="Add more" />
-
-                <div className="flex items-start justify-between gap-5 max-lg:flex-col">
-
-                    <div className="w-full max-w-4xl">
-                        <table className="w-full text-slate-600 table-auto">
-                        <thead>
-                            <tr className="max-sm:text-sm">
-                                <th className="text-left">Product</th>
-                                <th>Quantity</th>
-                                <th>Total Price</th>
-                                <th className="max-md:hidden">Remove</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {
-                                cartArray.map((item, index) => {
+                <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                    {/* Product List - Left Side */}
+                    <div className="flex-1 lg:max-w-3xl">
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="divide-y divide-gray-200">
+                                {cartArray.map((item, index) => {
                                     // Safely handle images
                                     const itemImages = item.images && Array.isArray(item.images) && item.images.length > 0 
                                         ? item.images 
                                         : [];
                                     const itemImage = itemImages[0] || '/placeholder-image.jpg';
                                     
-                                    // Handle category - can be string or object
-                                    let categoryName = '';
-                                    if (item.category) {
+                                    // Handle category/brand - can be string or object
+                                    let brandName = '';
+                                    if (item.brand) {
+                                        brandName = typeof item.brand === 'string' ? item.brand : (item.brand.name || item.brand.title || '');
+                                    } else if (item.category) {
                                         if (typeof item.category === 'object') {
-                                            categoryName = item.category.title || item.category.name || item.category.englishName || '';
+                                            brandName = item.category.title || item.category.name || item.category.englishName || '';
                                         } else {
-                                            // Don't display if it's a MongoDB ID
                                             const catStr = String(item.category);
                                             if (!/^[0-9a-f]{24}$/i.test(catStr)) {
-                                                categoryName = catStr;
-                                            }
-                                        }
-                                    } else if (item.categoryId) {
-                                        if (typeof item.categoryId === 'object') {
-                                            categoryName = item.categoryId.title || item.categoryId.name || item.categoryId.englishName || '';
-                                        } else {
-                                            // Don't display if it's a MongoDB ID
-                                            const catIdStr = String(item.categoryId);
-                                            if (!/^[0-9a-f]{24}$/i.test(catIdStr)) {
-                                                categoryName = catIdStr;
+                                                brandName = catStr;
                                             }
                                         }
                                     }
                                     
-                                    // Filter out any MongoDB ID-like values from item before rendering
-                                    const safeItem = { ...item };
-                                    for (const [key, value] of Object.entries(safeItem)) {
-                                        // Remove any field that contains a MongoDB ID as a string
-                                        if (typeof value === 'string' && /^[0-9a-f]{24}$/i.test(value)) {
-                                            delete safeItem[key];
-                                        }
-                                    }
+                                    const itemPrice = Number(item.price || 0);
+                                    const itemMrp = Number(item.mrp || item.price || 0);
+                                    const itemTotal = itemPrice * (item.quantity || 1);
+                                    const hasDiscount = itemMrp > itemPrice;
                                     
                                     return (
-                                        <tr key={item.id || item._id || index} className="space-x-2">
-                                            <td className="flex gap-3 my-4">
-                                                <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
-                                                    <Image 
-                                                        src={itemImage} 
-                                                        className="h-14 w-auto" 
-                                                        alt={item.name || item.title || 'Product'} 
-                                                        width={45} 
-                                                        height={45}
-                                                        unoptimized
-                                                    />
+                                        <div key={item.id || item._id || index} className="p-4 sm:p-6">
+                                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                                {/* Product Image */}
+                                                <div className="flex-shrink-0">
+                                                    <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                                        <Image 
+                                                            src={itemImage} 
+                                                            className="w-full h-full object-contain" 
+                                                            alt={item.name || item.title || 'Product'} 
+                                                            width={128} 
+                                                            height={128}
+                                                            unoptimized
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="max-sm:text-sm font-medium">{item.name || item.title || 'Product'}</p>
-                                                    {categoryName && <p className="text-xs text-slate-500">{categoryName}</p>}
-                                                    {/* Only show SKU if it exists and is not a MongoDB ID */}
-                                                    {item.sku && typeof item.sku === 'string' && item.sku.length > 0 && !/^[0-9a-f]{24}$/i.test(item.sku) && (
-                                                        <p className="text-xs text-slate-400">{item.sku}</p>
+                                                
+                                                {/* Product Details */}
+                                                <div className="flex-1 min-w-0">
+                                                    {/* Brand */}
+                                                    {brandName && (
+                                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                            {brandName}
+                                                        </p>
                                                     )}
-                                                    {/* Display price - ensure it's a valid number */}
-                                                    <p className="font-semibold text-slate-700">
-                                                        {currency}{Number(item.price || 0) > 0 ? Number(item.price).toLocaleString() : '0'}
+                                                    
+                                                    {/* Product Name */}
+                                                    <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+                                                        {item.name || item.title || 'Product'}
+                                                    </h3>
+                                                    
+                                                    {/* Estimated Delivery */}
+                                                    <p className="text-xs text-gray-500 mb-3">
+                                                        Estimated Delivery: Monday 22nd December and Wednesday 24th December.
+                                                    </p>
+                                                    
+                                                    {/* Price */}
+                                                    <div className="flex items-baseline gap-2 mb-4">
+                                                        <span className={`text-lg font-bold ${hasDiscount ? 'text-red-600' : 'text-[#7C2A47]'}`}>
+                                                            {currency}{itemPrice.toLocaleString()}
+                                                        </span>
+                                                        {hasDiscount && (
+                                                            <span className="text-sm text-gray-400 line-through">
+                                                                {currency}{itemMrp.toLocaleString()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {/* Quantity and Remove */}
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                                        <div className="flex items-center">
+                                                            <Counter 
+                                                                productId={item.id || item._id} 
+                                                                initialQuantity={item.quantity}
+                                                                productPrice={item.price}
+                                                            />
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => handleDeleteItemFromCart(item.id || item._id)} 
+                                                            className="text-sm text-[#7C2A47] hover:text-[#6a243d] font-medium underline self-start sm:self-auto transition-colors"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Individual Total */}
+                                                <div className="flex-shrink-0 sm:text-right">
+                                                    <p className="text-lg font-bold text-gray-900">
+                                                        {currency}{itemTotal.toLocaleString()}
                                                     </p>
                                                 </div>
-                                            </td>
-                                            <td className="text-center">
-                                                <Counter 
-                                                    productId={item.id || item._id} 
-                                                    initialQuantity={item.quantity}
-                                                    productPrice={item.price}
-                                                />
-                                            </td>
-                                            <td className="text-center font-semibold">{currency}{(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}</td>
-                                            <td className="text-center max-md:hidden">
-                                                <button onClick={() => handleDeleteItemFromCart(item.id || item._id)} className=" text-red-500 hover:bg-red-50 p-2.5 rounded-full active:scale-95 transition-all">
-                                                    <Trash2Icon size={18} />
-                                                </button>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     );
-                                })
-                            }
-                            </tbody>
-                        </table>
+                                })}
+                            </div>
+                        </div>
                         
                         {/* Cart Items Pagination */}
                         {totalCartPages > 1 && (
-                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                                <div className="text-sm text-gray-600">
-                                    Showing {cartStartIndex + 1} to {Math.min(cartEndIndex, cartArray.length)} of {cartArray.length} items
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setCartPage(prev => Math.max(1, prev - 1))}
-                                        disabled={cartPage === 1}
-                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Previous
-                                    </button>
-                                    <span className="text-sm text-gray-700">
-                                        Page {cartPage} of {totalCartPages}
-                                    </span>
-                                    <button
-                                        onClick={() => setCartPage(prev => Math.min(totalCartPages, prev + 1))}
-                                        disabled={cartPage === totalCartPages}
-                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <OrderSummary totalPrice={totalPrice} items={cartArray} />
-                </div>
-
-                {/* Ordered Items Section */}
-                {orderedItems.length > 0 && (
-                    <div className="mt-12 pt-8 border-t border-slate-200">
-                        <div className="flex items-center gap-2 mb-6">
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                            <h2 className="text-xl font-semibold text-slate-800">Ordered Items</h2>
-                        </div>
-                        
-                        <div className="space-y-6">
-                            {paginatedOrders.map((order, orderIndex) => (
-                                <div key={orderIndex} className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div>
-                                            <p className="text-sm font-medium text-green-900">
-                                                Order placed on {new Date(order.orderedAt).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </p>
-                                            <p className="text-xs text-green-700 mt-1">
-                                                Total: {currency}{order.totalPrice.toLocaleString()} • {order.totalQuantity} item{order.totalQuantity !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                        <span className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-full">
-                                            Ordered
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="text-xs text-gray-600">
+                                        Showing {cartStartIndex + 1} to {Math.min(cartEndIndex, cartArray.length)} of {cartArray.length} items
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setCartPage(prev => Math.max(1, prev - 1))}
+                                            disabled={cartPage === 1}
+                                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Previous
+                                        </button>
+                                        <span className="text-xs text-gray-700 px-2">
+                                            Page {cartPage} of {totalCartPages}
                                         </span>
+                                        <button
+                                            onClick={() => setCartPage(prev => Math.min(totalCartPages, prev + 1))}
+                                            disabled={cartPage === totalCartPages}
+                                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Next
+                                        </button>
                                     </div>
-                                    
-                                    <div className="space-y-3">
-                                        {order.items.map((item, itemIndex) => {
-                                            // Handle images - can be from item.images
-                                            const itemImages = item.images && Array.isArray(item.images) && item.images.length > 0 
-                                                ? item.images 
-                                                : [];
-                                            const itemImage = itemImages.length > 0 
-                                                ? (getImageUrl(itemImages[0]) || '/placeholder-image.jpg')
-                                                : '/placeholder-image.jpg';
-                                            
-                                            return (
-                                                <div key={itemIndex} className="flex items-center gap-4 bg-white rounded-lg p-3">
-                                                    <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
-                                                        <Image 
-                                                            src={itemImage} 
-                                                            className="h-14 w-auto" 
-                                                            alt={item.name || item.title || 'Product'} 
-                                                            width={45} 
-                                                            height={45}
-                                                            unoptimized
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-medium text-slate-800">{item.name || item.title || 'Product'}</p>
-                                                        <p className="text-xs text-slate-500">Quantity: {item.quantity}</p>
-                                                        <p className="text-sm font-semibold text-slate-700 mt-1">
-                                                            {currency}{(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        {/* Orders Pagination */}
-                        {totalOrdersPages > 1 && (
-                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                                <div className="text-sm text-gray-600">
-                                    Showing {ordersStartIndex + 1} to {Math.min(ordersEndIndex, orderedItems.length)} of {orderedItems.length} orders
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setOrdersPage(prev => Math.max(1, prev - 1))}
-                                        disabled={ordersPage === 1}
-                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Previous
-                                    </button>
-                                    <span className="text-sm text-gray-700">
-                                        Page {ordersPage} of {totalOrdersPages}
-                                    </span>
-                                    <button
-                                        onClick={() => setOrdersPage(prev => Math.min(totalOrdersPages, prev + 1))}
-                                        disabled={ordersPage === totalOrdersPages}
-                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Next
-                                    </button>
                                 </div>
                             </div>
                         )}
                     </div>
-                )}
+                    
+                    {/* Order Summary - Right Sidebar */}
+                    <div className="w-full lg:w-96 lg:flex-shrink-0">
+                        <OrderSummary totalPrice={totalPrice} items={cartArray} totalSavings={totalSavings} />
+                    </div>
+                </div>
             </div>
         </div>
     ) : (
-        <div className="min-h-screen mx-6">
-            <div className="max-w-7xl mx-auto">
-                {/* Title */}
-                <PageTitle heading="My Cart" text="items in your cart" linkText="Add more" />
-                
-                <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
-                    <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
+        <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">My basket</h1>
                 </div>
-
-                {/* Ordered Items Section - Show even when cart is empty */}
-                {orderedItems.length > 0 && (
-                    <div className="mt-12 pt-8 border-t border-slate-200">
-                        <div className="flex items-center gap-2 mb-6">
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                            <h2 className="text-xl font-semibold text-slate-800">Ordered Items</h2>
-                        </div>
-                        
-                        <div className="space-y-6">
-                            {paginatedOrders.map((order, orderIndex) => (
-                                <div key={orderIndex} className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div>
-                                            <p className="text-sm font-medium text-green-900">
-                                                Order placed on {new Date(order.orderedAt).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </p>
-                                            <p className="text-xs text-green-700 mt-1">
-                                                Total: {currency}{order.totalPrice.toLocaleString()} • {order.totalQuantity} item{order.totalQuantity !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                        <span className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded-full">
-                                            Ordered
-                                        </span>
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                        {order.items.map((item, itemIndex) => {
-                                            // Handle images - can be from item.images
-                                            const itemImages = item.images && Array.isArray(item.images) && item.images.length > 0 
-                                                ? item.images 
-                                                : [];
-                                            const itemImage = itemImages.length > 0 
-                                                ? (getImageUrl(itemImages[0]) || '/placeholder-image.jpg')
-                                                : '/placeholder-image.jpg';
-                                            
-                                            return (
-                                                <div key={itemIndex} className="flex items-center gap-4 bg-white rounded-lg p-3">
-                                                    <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
-                                                        <Image 
-                                                            src={itemImage} 
-                                                            className="h-14 w-auto" 
-                                                            alt={item.name || item.title || 'Product'} 
-                                                            width={45} 
-                                                            height={45}
-                                                            unoptimized
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-medium text-slate-800">{item.name || item.title || 'Product'}</p>
-                                                        <p className="text-xs text-slate-500">Quantity: {item.quantity}</p>
-                                                        <p className="text-sm font-semibold text-slate-700 mt-1">
-                                                            {currency}{(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        {/* Orders Pagination */}
-                        {totalOrdersPages > 1 && (
-                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                                <div className="text-sm text-gray-600">
-                                    Showing {ordersStartIndex + 1} to {Math.min(ordersEndIndex, orderedItems.length)} of {orderedItems.length} orders
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setOrdersPage(prev => Math.max(1, prev - 1))}
-                                        disabled={ordersPage === 1}
-                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Previous
-                                    </button>
-                                    <span className="text-sm text-gray-700">
-                                        Page {ordersPage} of {totalOrdersPages}
-                                    </span>
-                                    <button
-                                        onClick={() => setOrdersPage(prev => Math.min(totalOrdersPages, prev + 1))}
-                                        disabled={ordersPage === totalOrdersPages}
-                                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="text-center">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
+                        <p className="text-sm text-gray-600 mb-6">Add items to your cart to get started</p>
+                        <Link 
+                            href="/category/products"
+                            className="inline-block px-6 py-3 bg-[#7C2A47] text-sm text-white font-semibold rounded-lg hover:bg-[#6a243d] active:scale-95 transition-all"
+                        >
+                            Continue Shopping
+                        </Link>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     )

@@ -186,18 +186,18 @@ Hi, I'm interested in booking an enquiry for the following product:
       <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full rounded-lg transition-shadow hover:shadow-lg">
   {/* Image */}
   <Link href={`/product/${productId || '#'}`} className="block">
-    <div className="relative w-full aspect-[4/3] bg-white">
+    <div className="relative w-full aspect-[3/2] bg-white">
       <Image
         src={isCentrifugalMonobloc ? assets.CenMono : productImage}
         alt={productName}
         fill
-        className="object-contain p-3 sm:p-4"
+        className="object-contain p-2 sm:p-3"
         sizes="(max-width: 640px) 90vw, (max-width: 1024px) 40vw, 260px"
         unoptimized
       />
 
       {discount > 0 && (
-        <div className="absolute top-2 left-2 bg-[#7C2A47] text-white text-[10px] sm:text-[11px] font-semibold px-2 py-1 rounded">
+        <div className="absolute top-1.5 left-1.5 bg-[#7C2A47] text-white text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
           Save {discount}%
         </div>
       )}
@@ -205,16 +205,23 @@ Hi, I'm interested in booking an enquiry for the following product:
   </Link>
 
   {/* Content */}
-  <div className="px-3 sm:px-4 pt-3 pb-4 flex flex-col flex-1">
+  <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 flex flex-col flex-1">
+    {/* Category (At Top) */}
+    <div className="mb-1.5">
+      <span className="bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-full text-xs text-gray-500 uppercase tracking-wide">
+        {category || "Pumps"}
+      </span>
+    </div>
+
     {/* Product Name */}
     <Link href={`/product/${productId || '#'}`}>
-      <h3 className="text-sm sm:text-[15px] font-semibold text-gray-900 leading-snug line-clamp-2 sm:line-clamp-3">
+      <h3 className="text-sm sm:text-base font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2rem]">
         {productName}
       </h3>
     </Link>
 
     {/* Price */}
-    <div className="mt-2">
+    <div className="mt-1.5">
       <div className="flex items-baseline gap-2 flex-wrap">
         <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
           {currency}{Number(finalPrice || 0).toLocaleString()}
@@ -228,19 +235,17 @@ Hi, I'm interested in booking an enquiry for the following product:
       </div>
     </div>
 
-    {/* Category + Brand (Below Price) */}
-    <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] sm:text-[11px] text-gray-500 uppercase tracking-wide">
-      <span className="bg-gray-100 px-2 py-0.5 rounded-full">
-        {category || "Pumps"}
-      </span>
-
-      {brand && brand.toLowerCase() !== category?.toLowerCase() && (
-        <span className="text-gray-400">{brand}</span>
-      )}
-    </div>
+    {/* Brand (Below Price) */}
+    {brand && brand.toLowerCase() !== category?.toLowerCase() && (
+      <div className="mt-1">
+        <span className="text-xs text-gray-400 uppercase tracking-wide">
+          {brand}
+        </span>
+      </div>
+    )}
 
     {/* Rating */}
-    <div className="mt-2 flex items-center gap-2 text-xs">
+    <div className="mt-1.5 flex items-center gap-1.5 text-xs">
       {ratingValue ? (
         <>
           <span className="text-[#7C2A47]">★★★★★</span>
@@ -257,7 +262,7 @@ Hi, I'm interested in booking an enquiry for the following product:
     </div>
 
     {/* Stock */}
-    <div className="mt-2 flex items-center gap-2 text-xs">
+    <div className="mt-1.5 flex items-center gap-1.5 text-xs">
       {(() => {
         // Determine stock status: check inStock first, then stock number from both product and productData
         const stock = product.stock !== undefined ? product.stock : (productData.stock !== undefined ? productData.stock : undefined);
@@ -287,38 +292,38 @@ Hi, I'm interested in booking an enquiry for the following product:
     </div>
 
     {/* Actions */}
-    <div className="mt-auto pt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+    <div className="mt-auto pt-2 sm:pt-3 flex flex-col sm:flex-row gap-1.5 sm:gap-2">
       <button
         onClick={(e) => handleAddToCart(e, product)}
         className="
-          flex-1 flex items-center justify-center gap-2
+          flex-1 flex items-center justify-center gap-1.5
           bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A]
-          text-white font-semibold text-sm
-          py-2.5 sm:py-3 rounded-lg
+          text-white font-semibold text-xs sm:text-sm
+          py-2 sm:py-2.5 rounded-lg
           shadow-md
           transition-all duration-300
           hover:shadow-lg hover:-translate-y-[1px]
           active:scale-[0.98]
         "
       >
-        <ShoppingCart size={16} />
-        Add to Cart
+        <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+        <span className="whitespace-nowrap">Add to Cart</span>
       </button>
 
       <button
         onClick={(e) => handleEnquiry(e)}
         className="
-          flex-1 flex items-center justify-center gap-2
+          flex-1 flex items-center justify-center gap-1.5
           border border-[#7C2A47]/30
-          text-[#7C2A47] font-medium text-sm
-          py-2.5 sm:py-3 rounded-lg
+          text-[#7C2A47] font-medium text-xs sm:text-sm
+          py-2 sm:py-2.5 rounded-lg
           transition-all duration-300
           hover:bg-[#7C2A47]/5
           active:scale-[0.98]
         "
       >
-        <Send size={16} />
-        Enquiry
+        <Send size={14} className="sm:w-4 sm:h-4" />
+        <span className="whitespace-nowrap">Enquiry</span>
       </button>
     </div>
   </div>

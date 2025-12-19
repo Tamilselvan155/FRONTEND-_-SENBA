@@ -637,35 +637,35 @@ Hi, I'm interested in booking an enquiry for the following product:
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-4 lg:px-8">
       {/* ✅ Breadcrumbs */}
-        <div className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6 space-x-1">
+        <nav className="text-gray-600 text-xs sm:text-sm lg:text-base mb-3 sm:mb-5 lg:mb-6 flex items-center gap-1.5 sm:gap-2">
         <Link
           href="/"
             className="hover:text-[#7C2A47] transition-colors duration-200"
         >
           Home
         </Link>
-        <span>&gt;</span>
+        <span className="text-gray-400">/</span>
         <Link
           href={`/category/products`}
             className="hover:text-[#7C2A47] transition-colors duration-200"
         >
           Products
         </Link>
-        <span>&gt;</span>
-          <span className="text-gray-900 font-medium">
+        <span className="text-gray-400">/</span>
+          <span className="text-gray-900 font-semibold">
           {subCategoryName 
             ? subCategoryName 
             : categoryName === "products" || !categoryName 
               ? "All Products" 
               : categoryName}
         </span>
-      </div>
+      </nav>
 
-        <div className="relative flex flex-col lg:flex-row gap-4 sm:gap-6 items-start">
+        <div className="relative flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 items-start overflow-x-hidden">
           {/* Filters Sidebar - Fixed on desktop */}
-          <aside className="w-full lg:w-80 lg:flex-shrink-0">
+          <aside className="w-full lg:w-56 xl:w-60 lg:flex-shrink-0">
             <div className="lg:sticky lg:top-20">
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <ProductFilters products={products} onFilterChange={setFilters} />
@@ -674,40 +674,78 @@ Hi, I'm interested in booking an enquiry for the following product:
           </aside>
 
           {/* Products List - Scrollable area */}
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 w-full overflow-x-hidden">
             {/* Header Section - Aligned above product list */}
-            <div className="mb-4 sm:mb-6 bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
-              {/* Title */}
-              <h1 className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                {subCategoryName 
-                  ? subCategoryName 
-                  : categoryName === "products" || !categoryName 
-                    ? "All Products" 
-                    : categoryName}
-              </h1>
-              
-              {/* Product Count and Controls */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                {/* Product Count */}
-                <p className="text-xs sm:text-sm text-gray-600">
-                  {loading ? (
-                    "Loading products..."
-                  ) : filteredProducts.length > 0 ? (
-                    `Showing 1 - ${Math.min(itemsPerPage, filteredProducts.length)} of ${filteredProducts.length} products`
-                  ) : (
-                    "No products found"
-                  )}
-                </p>
+            <div className="mb-3 sm:mb-6 bg-white rounded-lg p-3 sm:p-3 lg:p-4 border border-gray-200 shadow-sm overflow-hidden">
+              {/* Mobile: Title and View on same row */}
+              <div className="flex flex-col sm:flex-row sm:items-center lg:items-start gap-3 sm:gap-4 lg:gap-4">
+                {/* Left Side: Title and Product Count */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 lg:gap-6 flex-1 min-w-0">
+                  {/* Title Row - Mobile: Title and View together */}
+                  <div className="flex items-center justify-between sm:justify-start gap-3 flex-1">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+                      {subCategoryName 
+                        ? subCategoryName 
+                        : categoryName === "products" || !categoryName 
+                          ? "All Products" 
+                          : categoryName}
+                    </h1>
+                    
+                    {/* View Mode Toggle - Next to title on mobile */}
+                    <div className="flex items-center gap-1.5 sm:hidden flex-shrink-0">
+                      <span className="text-xs text-gray-700 font-semibold whitespace-nowrap">View:</span>
+                      <div className="flex items-center gap-0.5 border border-gray-300 rounded-lg p-0.5 bg-white shadow-sm">
+                        <button
+                          onClick={() => setViewMode('grid')}
+                          className={`p-2 rounded-md transition-all ${
+                            viewMode === 'grid'
+                              ? 'bg-[#7C2A47] text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                          aria-label="Grid view"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setViewMode('list')}
+                          className={`p-2 rounded-md transition-all ${
+                            viewMode === 'list'
+                              ? 'bg-[#7C2A47] text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                          aria-label="List view"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Product Count */}
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">
+                    {loading ? (
+                      "Loading products..."
+                    ) : filteredProducts.length > 0 ? (
+                      `Showing 1 - ${Math.min(itemsPerPage, filteredProducts.length)} of ${filteredProducts.length} products`
+                    ) : (
+                      "No products found"
+                    )}
+                  </p>
+                </div>
 
-                {/* Display Options */}
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Right Side: Display Options - Desktop and Tablet */}
+                <div className="hidden sm:flex sm:items-center gap-2 lg:gap-3 flex-shrink-0">
                   {/* Items Per Page */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Display:</label>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">Display:</label>
                     <select
                       value={itemsPerPage}
                       onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                      className="px-2 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer"
+                      className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 min-w-[100px]"
                     >
                       <option value={12}>12 per page</option>
                       <option value={24}>24 per page</option>
@@ -717,12 +755,12 @@ Hi, I'm interested in booking an enquiry for the following product:
                   </div>
 
                   {/* Sort By */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Sort by:</label>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">Sort by:</label>
                     <select
                       value={filters.sortBy}
                       onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-                      className="px-2 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer"
+                      className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 min-w-[110px]"
                     >
                       <option value="default">Best selling</option>
                       <option value="priceLowToHigh">Price: Low to High</option>
@@ -732,38 +770,72 @@ Hi, I'm interested in booking an enquiry for the following product:
                     </select>
                   </div>
 
-                  {/* View Mode Toggle */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">View:</span>
-                    <div className="flex items-center gap-0.5 border border-gray-300 rounded-lg p-0.5 bg-white">
+                  {/* View Mode Toggle - Desktop */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-700 font-semibold whitespace-nowrap">View:</span>
+                    <div className="flex items-center gap-0.5 border border-gray-300 rounded-lg p-0.5 bg-white shadow-sm">
                       <button
                         onClick={() => setViewMode('grid')}
-                        className={`p-1.5 sm:p-2 rounded transition-colors ${
+                        className={`p-1.5 rounded-md transition-all ${
                           viewMode === 'grid'
-                            ? 'bg-[#7C2A47] text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
+                            ? 'bg-[#7C2A47] text-white shadow-sm'
+                            : 'text-gray-600 hover:bg-gray-50'
                         }`}
                         aria-label="Grid view"
                       >
-                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
                       </button>
                       <button
                         onClick={() => setViewMode('list')}
-                        className={`p-1.5 sm:p-2 rounded transition-colors ${
+                        className={`p-1.5 rounded-md transition-all ${
                           viewMode === 'list'
-                            ? 'bg-[#7C2A47] text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
+                            ? 'bg-[#7C2A47] text-white shadow-sm'
+                            : 'text-gray-600 hover:bg-gray-50'
                         }`}
                         aria-label="List view"
                       >
-                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                         </svg>
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Mobile: Display and Sort By Controls - Below title */}
+              <div className="mt-3 sm:hidden grid grid-cols-2 gap-2.5">
+                {/* Items Per Page */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">Display:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="px-2.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 w-full"
+                  >
+                    <option value={12}>12 per page</option>
+                    <option value={24}>24 per page</option>
+                    <option value={48}>48 per page</option>
+                    <option value={96}>96 per page</option>
+                  </select>
+                </div>
+
+                {/* Sort By */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">Sort by:</label>
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                    className="px-2.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 w-full"
+                  >
+                    <option value="default">Best selling</option>
+                    <option value="priceLowToHigh">Price: Low to High</option>
+                    <option value="priceHighToLow">Price: High to Low</option>
+                    <option value="newest">Newest First</option>
+                    <option value="rating">Highest Rated</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -784,7 +856,7 @@ Hi, I'm interested in booking an enquiry for the following product:
               </button>
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5' : 'space-y-4 sm:space-y-5'}>
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 w-full overflow-x-hidden' : 'space-y-3 sm:space-y-4 lg:space-y-5 w-full overflow-x-hidden'}>
               {filteredProducts.slice(0, itemsPerPage).map((product, index) => {
                 const displayPrice = getDisplayPrice(product);
                 
@@ -813,15 +885,15 @@ Hi, I'm interested in booking an enquiry for the following product:
                   <Link 
                     href={`/product/${product.id}`}
                     key={index}
-                      className="block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 group"
+                      className="block w-full max-w-full bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl hover:border-[#7C2A47]/30 transition-all duration-300 group flex-shrink-0"
                     >
                       {/* Product Image */}
-                      <div className="relative w-full aspect-square bg-white p-3 sm:p-4 flex items-center justify-center">
+                      <div className="relative w-full aspect-[3/2] sm:aspect-[4/3] bg-gray-50 p-2 sm:p-3 md:p-4 flex items-center justify-center border-b border-gray-100">
                         {product.images && product.images.length > 0 && product.images[0] ? (
                           <img
                             src={product.images[0]?.src || product.images[0]}
                             alt={product.name || 'Product image'}
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                             onError={(e) => {
                               e.target.onerror = null;
                               e.target.src = assets.product_img0 || '/placeholder-image.png';
@@ -837,22 +909,22 @@ Hi, I'm interested in booking an enquiry for the following product:
                       </div>
                       
                       {/* Product Info */}
-                      <div className="p-3 sm:p-4">
+                      <div className="p-2 sm:p-3 md:p-4 w-full overflow-hidden">
                         {/* Brand */}
-                        <div className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+                        <div className="text-xs font-bold text-[#7C2A47] uppercase tracking-wider mb-1 truncate">
                           {brand}
                         </div>
                         
                         {/* Product Name */}
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-[#7C2A47] transition-colors">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1.5 sm:mb-2 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] group-hover:text-[#7C2A47] transition-colors leading-snug break-words">
                           {product.name || 'Untitled Product'}
                         </h3>
                         
                         {/* Price */}
-                        <div className="flex items-baseline gap-2 mb-2">
+                        <div className="flex items-baseline gap-2 mb-1.5 sm:mb-2">
                           {displayPrice !== undefined && displayPrice !== null ? (
                             <>
-                              <span className="text-lg font-bold text-[#7C2A47]">
+                              <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
                                 {currency}{displayPrice.toLocaleString()}
                               </span>
                               {product.mrp && product.mrp > displayPrice && (
@@ -862,46 +934,49 @@ Hi, I'm interested in booking an enquiry for the following product:
                               )}
                             </>
                           ) : (
-                            <span className="text-sm text-gray-500">Price on enquiry</span>
+                            <span className="text-xs text-gray-500">Price on enquiry</span>
                           )}
                         </div>
                         
-                        {/* Reviews */}
-                        <div className="flex items-center gap-2 mb-2">
-                          {ratingValue > 0 ? (
-                            <>
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <span 
-                                    key={i} 
-                                    className={`text-xs ${i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'}`}
-                                  >
-                                    ★
-                                  </span>
-                                ))}
-                              </div>
-                              <span className="text-xs text-gray-600">
-                                {reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews'}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <span key={i} className="text-xs text-gray-300">★</span>
-                                ))}
-                              </div>
-                              <span className="text-xs text-gray-500">No reviews</span>
-                            </>
-                          )}
-                        </div>
-                        
-                        {/* Stock Status */}
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-block w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <span className={`text-xs font-medium ${product.inStock ? 'text-green-600' : 'text-gray-500'}`}>
-                            {product.inStock ? 'In stock' : 'Sold out'}
-                          </span>
+                        {/* Reviews and Stock Status Row */}
+                        <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-gray-100">
+                          {/* Reviews */}
+                          <div className="flex items-center gap-1">
+                            {ratingValue > 0 ? (
+                              <>
+                                <div className="flex items-center gap-0.5">
+                                  {[...Array(5)].map((_, i) => (
+                                    <span 
+                                      key={i} 
+                                      className={`text-[10px] sm:text-xs ${i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                                <span className="text-[10px] sm:text-xs text-gray-600">
+                                  {reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews'}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-0.5">
+                                  {[...Array(5)].map((_, i) => (
+                                    <span key={i} className="text-[10px] sm:text-xs text-gray-300">★</span>
+                                  ))}
+                                </div>
+                                <span className="text-[10px] sm:text-xs text-gray-500">No reviews</span>
+                              </>
+                            )}
+                          </div>
+                          
+                          {/* Stock Status */}
+                          <div className="flex items-center gap-1">
+                            <span className={`inline-block w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-gray-400'}`} />
+                            <span className={`text-xs font-semibold ${product.inStock ? 'text-green-600' : 'text-gray-500'}`}>
+                              {product.inStock ? 'In stock' : 'Sold out'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </Link>
@@ -950,7 +1025,7 @@ Hi, I'm interested in booking an enquiry for the following product:
                             </div>
                             
                             {/* Product Name */}
-                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-[#7C2A47] transition-colors">
+                            <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-[#7C2A47] transition-colors">
                               {product.name || 'Untitled Product'}
                             </h3>
                             
@@ -958,7 +1033,7 @@ Hi, I'm interested in booking an enquiry for the following product:
                             <div className="flex items-baseline gap-2 mb-2">
                               {displayPrice !== undefined && displayPrice !== null ? (
                                 <>
-                                  <span className="text-lg sm:text-xl font-bold text-[#7C2A47]">
+                                  <span className="text-lg font-bold text-[#7C2A47]">
                                     {currency}{displayPrice.toLocaleString()}
                                   </span>
                                   {product.mrp && product.mrp > displayPrice && (

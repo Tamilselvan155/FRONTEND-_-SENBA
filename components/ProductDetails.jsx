@@ -2,7 +2,7 @@
 'use client'
 
 import { useCart } from "@/lib/hooks/useCart";
-import { StarIcon, TagIcon } from "lucide-react";
+import { StarIcon, TagIcon, Truck, Shield, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
@@ -398,10 +398,10 @@ const ProductDetails = ({ product }) => {
 
   return (
     <>
-     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-6 sm:pb-8 overflow-x-hidden">
+     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-6 sm:pb-8 overflow-x-hidden items-start">
  
  {/* Column 1: Images Section */}
- <div className="w-full lg:col-span-1 flex flex-col gap-3 sm:gap-4 min-w-0">
+ <div className="w-full lg:col-span-1 flex flex-col gap-3 sm:gap-4 min-w-0 lg:h-full">
 
   {/* Thumbnails */}
   {productImages.length > 1 && (
@@ -432,14 +432,14 @@ const ProductDetails = ({ product }) => {
   )}
 
    {/* Main Image */}
-   <div className="flex justify-center items-center bg-white rounded-lg border border-gray-200 p-2 sm:p-3 md:p-4">
+   <div className="flex justify-center items-center bg-white rounded-lg border border-gray-200 p-2 sm:p-3 md:p-4 flex-1 min-h-[400px] lg:min-h-[500px]">
      {mainImage ? (
        <Image
          src={mainImage}
          alt={product.name || 'Product'}
          width={420}
          height={420}
-         className="object-contain w-full h-full"
+         className="object-contain w-full h-full max-h-full"
          unoptimized
        />
      ) : (
@@ -452,7 +452,7 @@ const ProductDetails = ({ product }) => {
 </div>
 
  {/* Column 2: Product Details (Price, Stock, Quantity, HP Options, Buttons) */}
- <div className="w-full lg:col-span-1 flex flex-col min-w-0">
+ <div className="w-full lg:col-span-1 flex flex-col min-w-0 justify-between lg:h-full">
  
    {/* Product Title */}
    <h1 className="text-base sm:text-lg md:text-xl lg:text-xl font-bold text-gray-900 mb-1.5 sm:mb-2 leading-tight">
@@ -461,11 +461,11 @@ const ProductDetails = ({ product }) => {
 
    {/* Brand and Model */}
    <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
-     <span className="text-[#7C2A47] font-semibold text-[10px] sm:text-xs md:text-sm uppercase">
+     <span className="text-[#7C2A47] font-semibold text-xs uppercase">
        {brandName}
      </span>
      {variantDetails.model && (
-       <span className="text-gray-600 text-[10px] sm:text-[11px] md:text-xs break-words">
+       <span className="text-gray-600 text-xs break-words">
          Model: <span className="text-gray-800 font-medium">{variantDetails.model}</span>
        </span>
      )}
@@ -487,7 +487,7 @@ const ProductDetails = ({ product }) => {
            />
          ))}
        </div>
-       <p className="text-[10px] sm:text-[11px] text-gray-600 ml-0.5 sm:ml-1">
+       <p className="text-xs text-gray-600 ml-0.5 sm:ml-1">
          {ratings.length} {ratings.length === 1 ? 'review' : 'reviews'}
        </p>
      </div>
@@ -495,9 +495,9 @@ const ProductDetails = ({ product }) => {
 
    {/* Price */}
    <div className="mb-3 sm:mb-4">
-     <p className="text-[10px] sm:text-[11px] text-gray-600 mb-0.5 sm:mb-1">Price:</p>
+     <p className="text-xs text-gray-600 mb-0.5 sm:mb-1">Price:</p>
      <div className="flex items-baseline gap-2 flex-wrap">
-       <span className="text-lg sm:text-xl md:text-2xl font-bold text-[#7C2A47]">
+       <span className="text-lg font-bold text-[#7C2A47]">
          {currency}{currentPrice.toLocaleString()}
        </span>
        {currentMrp > currentPrice && (
@@ -518,7 +518,7 @@ const ProductDetails = ({ product }) => {
          }`}
        ></span>
        <span
-         className={`text-[10px] sm:text-xs font-medium ${
+         className={`text-xs font-medium ${
            inStock ? 'text-green-600' : 'text-gray-500'
          }`}
        >
@@ -529,7 +529,7 @@ const ProductDetails = ({ product }) => {
 
    {/* Quantity Selector */}
    <div className="mb-3 sm:mb-4">
-     <p className="text-[10px] sm:text-[11px] text-gray-600 mb-1 sm:mb-1.5">
+     <p className="text-xs text-gray-600 mb-1 sm:mb-1.5">
        Quantity:
      </p>
  
@@ -569,7 +569,7 @@ const ProductDetails = ({ product }) => {
    {/* HP Options */}
    {hpOptions.length > 0 && (
      <div className="mb-3 sm:mb-4">
-       <p className="text-[10px] sm:text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
+       <p className="text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
          Available Options:
        </p>
        <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -577,7 +577,7 @@ const ProductDetails = ({ product }) => {
            <button
              key={hp}
              onClick={() => handleHPChange(hp)}
-             className={`px-2 sm:px-2.5 py-1 sm:py-1.5 border-2 rounded-md text-[10px] sm:text-[11px] font-semibold transition-all
+             className={`px-2 sm:px-2.5 py-1 sm:py-1.5 border-2 rounded-md text-xs font-semibold transition-all
                ${
                  selectedHP === hp
                    ? 'bg-[#7C2A47] text-white border-[#7C2A47]'
@@ -593,7 +593,7 @@ const ProductDetails = ({ product }) => {
 
    {/* Discount Info */}
    {currentMrp > currentPrice && (
-     <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-600 mb-3 sm:mb-4">
+     <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-600 mb-3 sm:mb-4">
        <TagIcon size={10} className="text-[#7C2A47]" />
        <p className="text-[#7C2A47] font-medium">
          Save {(((currentMrp - currentPrice) / currentMrp) * 100).toFixed(0)}%
@@ -602,53 +602,68 @@ const ProductDetails = ({ product }) => {
      </div>
    )}
 
-   {/* Action Buttons */}
- <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-auto">
-   <button
-     onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')}
-     disabled={!inStock}
-     className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all active:scale-95
-       ${
-         inStock
-           ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-       }`}
-   >
-     {!inStock ? 'Sold out' : (!cart[productId] ? 'Add to Basket' : 'View Cart')}
-   </button>
+   {/* Benefits */}
+   <div className="mb-4 sm:mb-5">
+     <p className="text-[10px] sm:text-xs font-semibold text-gray-900 mb-2 sm:mb-3">Benefits</p>
+     <div className="space-y-2 sm:space-y-2.5">
+       <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-700">
+         <Truck size={14} className="text-[#7C2A47] flex-shrink-0" />
+         <span>Free shipping worldwide</span>
+       </div>
+       <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-700">
+         <Shield size={14} className="text-[#7C2A47] flex-shrink-0" />
+         <span>100% Secured Payment</span>
+       </div>
+       <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-700">
+         <Award size={14} className="text-[#7C2A47] flex-shrink-0" />
+         <span>Trusted by top brands</span>
+       </div>
+     </div>
+   </div>
 
-   <button
-     onClick={() => setIsModalOpen(true)}
-     className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
-   >
-     Book Enquiry
-   </button>
- </div>
+   {/* Action Buttons - Fixed at bottom */}
+   <div className="mt-auto pt-4 sm:pt-6">
+     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+       <button
+         onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')}
+         className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] shadow-md hover:shadow-lg transition-all active:scale-95"
+       >
+         {!cart[productId] ? 'Add to Cart' : 'View Cart'}
+       </button>
+
+       <button
+         onClick={() => setIsModalOpen(true)}
+         className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
+       >
+         Book Enquiry
+       </button>
+     </div>
+   </div>
 </div>
 
  {/* Column 3: Specifications Section */}
- <div className="w-full lg:col-span-1 flex flex-col min-w-0">
+ <div className="w-full lg:col-span-1 flex flex-col min-w-0 lg:sticky lg:top-6 lg:self-start lg:h-fit">
    {(variantDetails.pipeSize || variantDetails.head || variantDetails.discharge) && (
-     <div className="p-3 sm:p-4 rounded-lg border border-gray-200">
-       <p className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
-         Specifications for {selectedHP}:
-       </p>
-       <div className="space-y-3 sm:space-y-4">
+     <div className="p-3 sm:p-4 rounded-lg border border-gray-200 bg-white shadow-sm w-full">
+       <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+         Specifications for {selectedHP}
+       </h3>
+       <div className="space-y-3 sm:space-y-3">
          {/* Pipe Size */}
          {variantDetails.pipeSize && (
-           <div>
-             <p className="text-xs sm:text-sm text-gray-600 mb-1">Pipe Size:</p>
-             <p className="text-sm sm:text-base font-medium text-gray-900">{variantDetails.pipeSize}</p>
+           <div className="pb-2 border-b border-gray-100 last:border-b-0">
+             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Pipe Size</p>
+             <p className="text-xs sm:text-sm font-semibold text-gray-900">{variantDetails.pipeSize}</p>
            </div>
          )}
          
          {/* Head & Discharge as paired values */}
          {(variantDetails.head || variantDetails.discharge) && (
            <div>
-             <p className="text-xs sm:text-sm text-gray-600 mb-2">
-               Head (meters) & Discharge (LPM):
+             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+               Head (meters) & Discharge (LPM)
              </p>
-             <div className="space-y-1.5 sm:space-y-2">
+             <div className="space-y-1.5 sm:space-y-1.5">
                {(() => {
                  // Parse Head values (could be comma-separated string or array)
                  let headValues = [];
@@ -686,17 +701,17 @@ const ProductDetails = ({ product }) => {
                  // If no pairs could be created, show original format
                  if (pairs.length === 0) {
                    return (
-                     <div className="grid grid-cols-2 gap-3">
+                     <div className="grid grid-cols-2 gap-2">
                        {variantDetails.head && (
                          <div>
-                           <p className="text-xs sm:text-sm text-gray-600 mb-1">Head:</p>
-                           <p className="text-sm sm:text-base font-medium text-gray-900">{variantDetails.head}</p>
+                           <p className="text-xs text-gray-600 mb-1">Head:</p>
+                           <p className="text-xs sm:text-sm font-medium text-gray-900">{variantDetails.head}</p>
                          </div>
                        )}
                        {variantDetails.discharge && (
                          <div>
-                           <p className="text-xs sm:text-sm text-gray-600 mb-1">Discharge:</p>
-                           <p className="text-sm sm:text-base font-medium text-gray-900">{variantDetails.discharge}</p>
+                           <p className="text-[10px] sm:text-xs text-gray-600 mb-1">Discharge:</p>
+                           <p className="text-xs sm:text-sm font-medium text-gray-900">{variantDetails.discharge}</p>
                          </div>
                        )}
                      </div>
@@ -705,14 +720,16 @@ const ProductDetails = ({ product }) => {
                  
                  // Display pairs
                  return pairs.map((pair, index) => (
-                   <div key={index} className="text-sm sm:text-base font-medium text-gray-900">
-                     {pair.head && pair.discharge ? (
-                       <span>{pair.head}H & {pair.discharge}D</span>
-                     ) : pair.head ? (
-                       <span>{pair.head}H</span>
-                     ) : pair.discharge ? (
-                       <span>{pair.discharge}D</span>
-                     ) : null}
+                   <div key={index} className="flex items-center py-1.5 px-2.5 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors">
+                     <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                       {pair.head && pair.discharge ? (
+                         <span>{pair.head}H & {pair.discharge}D</span>
+                       ) : pair.head ? (
+                         <span>{pair.head}H</span>
+                       ) : pair.discharge ? (
+                         <span>{pair.discharge}D</span>
+                       ) : null}
+                     </span>
                    </div>
                  ));
                })()}

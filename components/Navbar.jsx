@@ -57,24 +57,10 @@ const Navbar = memo(() => {
   const cartCount = useSelector((state) => {
     // ALWAYS calculate from actual items, never use state.cart.total
     
-    // For logged-in users, check the items array first (populated items from backend)
-    const items = state.cart.items || [];
-    if (Array.isArray(items) && items.length > 0) {
-      let totalFromItems = 0;
-      for (const item of items) {
-        const qty = Number(item?.quantity) || 0;
-        if (qty > 0 && !isNaN(qty) && isFinite(qty)) {
-          totalFromItems += qty;
-        }
-      }
-      // Return calculated total (will be 0 if no valid items)
-      return totalFromItems;
-    }
-    
-    // For guest users or when items array is empty, check cartItems object
+    // First check cartItems object - this is the source of truth
     const cartItems = state.cart.cartItems || {};
     
-    // If cartItems is empty or invalid, return 0 immediately
+    // If cartItems is empty or invalid, return 0 immediately (don't check items array)
     if (!cartItems || typeof cartItems !== 'object' || Object.keys(cartItems).length === 0) {
       return 0;
     }
@@ -97,12 +83,21 @@ const Navbar = memo(() => {
       return 0;
     }
     
+    // For logged-in users, also verify against items array if it exists
+    // If items array exists but doesn't match cartItems, trust cartItems (it's the source of truth)
+    const items = state.cart.items || [];
+    if (Array.isArray(items) && items.length > 0) {
+      // Double-check: if items array has data but cartItems is empty, return 0
+      // This handles the case where items array has stale data
+      if (validKeysCount === 0) {
+        return 0;
+      }
+    }
+    
     // ALWAYS return calculated total - NEVER use state.cart.total
     return calculatedTotal;
   });
   
-  // Force cleanup on every render if cartCount seems wrong
-  const [hasCleaned, setHasCleaned] = useState(false);
   const { email } = useSelector((state) => state.auth);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -128,50 +123,47 @@ const Navbar = memo(() => {
     }, 100);
   }, []);
 
+  // Run cleanup immediately on mount, before setting mounted state
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Recalculate cart total on mount to fix any mismatches
-  useEffect(() => {
-    if (mounted && !hasCleaned) {
-      // Directly check and clear localStorage if cart is actually empty
-      if (typeof window !== 'undefined') {
-        try {
-          const savedCart = localStorage.getItem('cart');
-          if (savedCart) {
-            const parsed = JSON.parse(savedCart);
-            const cartItems = parsed.cartItems || {};
-            let hasValidItems = false;
-            
-            for (const value of Object.values(cartItems)) {
-              const num = Number(value);
-              if (!isNaN(num) && num > 0 && isFinite(num) && num % 1 === 0) {
-                hasValidItems = true;
-                break;
-              }
+    // Directly check and clear localStorage if cart is actually empty
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCart = localStorage.getItem('cart');
+        if (savedCart) {
+          const parsed = JSON.parse(savedCart);
+          const cartItems = parsed.cartItems || {};
+          let hasValidItems = false;
+          
+          for (const value of Object.values(cartItems)) {
+            const num = Number(value);
+            if (!isNaN(num) && num > 0 && isFinite(num) && num % 1 === 0) {
+              hasValidItems = true;
+              break;
             }
-            
-            // If no valid items, clear localStorage completely
-            if (!hasValidItems || Object.keys(cartItems).length === 0) {
-              localStorage.removeItem('cart');
-            }
-          } else {
-            // No cart in localStorage, ensure Redux is clean
+          }
+          
+          // If no valid items, clear localStorage completely
+          if (!hasValidItems || Object.keys(cartItems).length === 0) {
+            localStorage.removeItem('cart');
+            // Also dispatch cleanup to ensure Redux state is clean
             dispatch(forceClearInvalidCart());
           }
-        } catch (e) {
-          // If error parsing, clear it
-          localStorage.removeItem('cart');
+        } else {
+          // No cart in localStorage, ensure Redux is clean
+          dispatch(forceClearInvalidCart());
         }
+      } catch (e) {
+        // If error parsing, clear it
+        localStorage.removeItem('cart');
+        dispatch(forceClearInvalidCart());
       }
-      
-      // Force clear any invalid cart data, then recalculate
-      dispatch(forceClearInvalidCart());
-      dispatch(recalculateTotal());
-      setHasCleaned(true);
     }
-  }, [mounted, dispatch, hasCleaned]);
+    
+    // Force clear any invalid cart data, then recalculate
+    dispatch(forceClearInvalidCart());
+    dispatch(recalculateTotal());
+    setMounted(true);
+  }, [dispatch]);
 
   // Handle scroll effect for navbar
   useEffect(() => {

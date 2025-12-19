@@ -9,7 +9,7 @@ import { clearCartAsync } from '@/lib/features/cart/cartSlice';
 import { clearCart } from '@/lib/features/cart/cartSlice';
 import { createOrder } from '@/lib/actions/orderActions';
 
-const OrderSummary = ({ totalPrice, items }) => {
+const OrderSummary = ({ totalPrice, items, totalSavings = 0 }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   const router = useRouter();
   const dispatch = useDispatch();
@@ -186,36 +186,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         console.warn('⚠️ User not logged in, skipping backend order save');
       }
 
-      // Also save to localStorage for cart page display
-      const orderedItems = {
-        items: items.map(item => ({
-          ...item,
-          orderedAt: new Date().toISOString(),
-        })),
-        totalPrice,
-        totalQuantity,
-        orderedAt: new Date().toISOString(),
-      };
-
-      // Get existing ordered items from localStorage
-      const existingOrders = typeof window !== 'undefined' 
-        ? JSON.parse(localStorage.getItem('orderedItems') || '[]')
-        : [];
-      
-      // Add new order to the beginning of the array
-      existingOrders.unshift(orderedItems);
-      
-      // Keep only the last 10 orders to avoid localStorage bloat
-      const recentOrders = existingOrders.slice(0, 10);
-      
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('orderedItems', JSON.stringify(recentOrders));
-        // Dispatch custom event to update cart page
-        window.dispatchEvent(new Event('orderPlaced'));
-      }
-
-      // Clear cart
+      // Clear cart (this will also clear localStorage)
       if (isLoggedIn) {
         // For logged-in users, clear from backend
         try {
@@ -228,11 +199,6 @@ const OrderSummary = ({ totalPrice, items }) => {
       } else {
         // For guest users, clear from local state
         dispatch(clearCart());
-      }
-
-      // Clear localStorage cart
-      if (typeof window !== 'undefined') {
-         localStorage.removeItem('cart');
       }
       
       setOrderPlaced(true);
@@ -247,26 +213,78 @@ const OrderSummary = ({ totalPrice, items }) => {
   };
 
 
+  const [orderInstructions, setOrderInstructions] = useState('');
+
   return (
-    <div className='w-full max-w-lg lg:max-w-[340px] bg-slate-50/30 border border-slate-200 text-slate-500 text-sm rounded-xl p-7'>
-      <h2 className='text-xl font-medium text-slate-600 mb-4'>Order Summary</h2>
+    <div className='w-full bg-white border border-gray-200 rounded-lg shadow-sm p-6 sticky top-6'>
+      <h2 className='text-lg font-bold text-gray-900 mb-6'>Order Summary</h2>
 
-      <div className='flex justify-between mb-2'>
-        <p className='text-lg'>Total:</p>
-        <p className='font-medium text-xl'>{currency}{totalPrice.toLocaleString()}</p>
+      {/* Total */}
+      <div className='mb-4 pb-4 border-b border-gray-200'>
+        <div className='flex justify-between items-baseline'>
+          <span className='text-sm font-semibold text-gray-700'>Total:</span>
+          <span className='text-xl font-bold text-gray-900'>{currency}{totalPrice.toLocaleString()} {process.env.NEXT_PUBLIC_CURRENCY_CODE || 'GBP'}</span>
+        </div>
       </div>
 
-      <div className='flex justify-between mb-4'>
-        <p className='text-lg'>Total Quantity:</p>
-        <p className='font-medium text-xl'>{totalQuantity}</p>
+      {/* Savings */}
+      {totalSavings > 0 && (
+        <div className='mb-4 pb-4 border-b border-gray-200'>
+          <p className='text-sm font-semibold text-[#7C2A47]'>
+            You saved {currency}{totalSavings.toLocaleString()}!
+          </p>
+        </div>
+      )}
+
+      {/* Order Instructions */}
+      <div className='mb-4'>
+        <label className='block text-xs font-medium text-gray-700 mb-2'>
+          Order instructions
+        </label>
+        <select
+          value={orderInstructions}
+          onChange={(e) => setOrderInstructions(e.target.value)}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all'
+        >
+          <option value="">Select instructions (optional)</option>
+          <option value="leave-at-door">Leave at door</option>
+          <option value="call-on-arrival">Call on arrival</option>
+          <option value="ring-bell">Ring bell</option>
+        </select>
       </div>
 
+      {/* VAT and Delivery Info */}
+      <div className='mb-6'>
+        <p className='text-xs text-gray-500'>VAT included. Delivery calculated at checkout.</p>
+      </div>
+
+      {/* Checkout Button */}
       <button
         onClick={handleOrderNow}
-        className='w-full bg-[#7C2A47] text-white py-2.5 text-lg rounded hover:bg-[#6a243d] active:scale-95 transition-all'
+        className='w-full bg-[#7C2A47] hover:bg-[#6a243d] text-sm text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 active:scale-95 mb-6'
       >
-        Order Now
+        Checkout
       </button>
+
+      {/* Secure Payments */}
+      <div className='pt-6 border-t border-gray-200'>
+        <div className='flex items-center gap-2 mb-3'>
+          <svg className="w-4 h-4 text-[#7C2A47]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span className='text-xs font-semibold text-[#7C2A47]'>100% Secure Payments</span>
+        </div>
+        <div className='flex flex-wrap items-center gap-2'>
+          <span className='text-xs text-gray-500'>We accept:</span>
+          <div className='flex items-center gap-1'>
+            <span className='text-xs font-medium text-gray-600'>Visa</span>
+            <span className='text-xs text-gray-400'>•</span>
+            <span className='text-xs font-medium text-gray-600'>Mastercard</span>
+            <span className='text-xs text-gray-400'>•</span>
+            <span className='text-xs font-medium text-gray-600'>PayPal</span>
+          </div>
+        </div>
+      </div>
 
       {/* Order Confirmation Modal */}
       {isModalOpen && (

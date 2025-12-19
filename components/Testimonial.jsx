@@ -57,14 +57,14 @@ const Testimonial = () => {
   }
 
   return (
-    <section className="w-full py-12 sm:py-16 md:py-20 bg-white">
+    <section className="w-full pt-4 sm:pt-6 pb-12 sm:pb-16 md:pb-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10 sm:mb-12 md:mb-14">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 leading-tight tracking-tight">
             What Our Customers Say
           </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm text-gray-600 max-w-2xl mx-auto leading-relaxed">
             We value every piece of feedback — here's what our happy customers have to say!
           </p>
         </div>
@@ -121,7 +121,7 @@ const Testimonial = () => {
                   </div>
 
                   {/* User Name */}
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 text-center flex-shrink-0">
+                  <h3 className="text-base font-bold text-gray-900 mb-2 text-center flex-shrink-0">
                     {item.user.name}
                   </h3>
 
@@ -130,20 +130,20 @@ const Testimonial = () => {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                        className={`w-4 h-4 ${
                           i < Math.round(item.rating)
                             ? "text-yellow-400 fill-yellow-400"
                             : "text-gray-300"
                         }`}
                       />
                     ))}
-                    <span className="ml-2 text-sm text-gray-600 font-semibold">
+                    <span className="ml-2 text-xs text-gray-600 font-semibold">
                       {item.rating.toFixed(1)}
                     </span>
                   </div>
 
                   {/* Review Text */}
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center line-clamp-4 flex-grow">
+                  <p className="text-sm text-gray-600 leading-relaxed text-center line-clamp-4 flex-grow">
                     "{item.review}"
                   </p>
                 </div>
@@ -185,7 +185,7 @@ const Testimonial = () => {
         </div>
 
         {/* Progress Indicator */}
-        <div className="text-center mt-4 text-sm text-gray-500">
+        <div className="text-center mt-4 text-xs text-gray-500">
           {current + 1} / {maxStart + 1}
         </div>
       </div>

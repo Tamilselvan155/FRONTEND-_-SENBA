@@ -232,30 +232,7 @@ const ProductDescription = ({ product }) => {
                       </tbody>
                     </table>
                     
-                    {/* Benefits Section */}
-                    <div className="border-t border-slate-200 pt-6">
-                      <h4 className="text-base font-semibold text-slate-900 mb-4">Benefits</h4>
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3 text-gray-700 text-sm">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
-                            <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
-                          </svg>
-                          <span>Free shipping worldwide</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-gray-700 text-sm">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
-                            <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
-                          </svg>
-                          <span>100% Secured Payment</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-gray-700 text-sm">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-500 flex-shrink-0">
-                            <path d="M8 0L10.163 5.382L16 6.182L12 10.118L12.944 16L8 13.382L3.056 16L4 10.118L0 6.182L5.837 5.382L8 0Z" fill="currentColor"/>
-                          </svg>
-                          <span>Trusted by top brands</span>
-                        </div>
-                      </div>
-                    </div>
+                    
                   </>
                 ) : (
                   <p className="text-slate-500 italic">No technical specifications information available</p>

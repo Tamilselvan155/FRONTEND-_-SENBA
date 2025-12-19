@@ -205,10 +205,10 @@ export default function Hero() {
       <div className="absolute inset-0 flex items-center" style={{ zIndex: 20 }}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-2xl leading-tight">
+            <h1 className="text-2xl font-bold text-white mb-4 drop-shadow-2xl leading-tight">
               {currentSlide.title}
             </h1>
-            <p className="text-lg sm:text-xl text-white/95 mb-8 drop-shadow-lg">
+            <p className="text-sm text-white/95 mb-8 drop-shadow-lg">
               {currentSlide.description}
             </p>
             <Link href="/category/products">

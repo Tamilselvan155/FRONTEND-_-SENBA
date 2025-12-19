@@ -101,7 +101,7 @@ export default function Home() {
              
 
                {/* Product Help Banner */}
-            <div className="bg-white py-8 sm:py-10 lg:py-12">
+            <div className="bg-white pt-8 sm:pt-10 lg:pt-12 pb-4 sm:pb-6">
                 <ProductHelpBanner/>
             </div>
 
@@ -111,7 +111,7 @@ export default function Home() {
             </div> */}
             
             {/* Testimonial Section */}
-            <div className="bg-white pt-4 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-20">
+            <div className="bg-white pt-4 sm:pt-6 lg:pt-8 pb-12 sm:pb-16 lg:pb-20">
                 <Testimonial />
             </div>
             

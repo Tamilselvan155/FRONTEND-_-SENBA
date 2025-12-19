@@ -96,10 +96,10 @@ export default function ProductFilters({ products, onFilterChange }) {
   return (
     <>
       {/* Mobile Filter Button */}
-      <div className="md:hidden mb-4 w-full">
+      <div className="lg:hidden mb-3 sm:mb-4 w-full">
         <button
           onClick={() => setIsFilterOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#7C2A47] text-white hover:bg-[#6a243d] transition-all duration-200 rounded-lg shadow-sm font-medium text-sm"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#7C2A47] text-white hover:bg-[#6a243d] transition-all duration-200 rounded-lg shadow-sm font-medium text-sm w-full"
         >
           <Filter size={18} />
           <span>Filters</span>
@@ -111,26 +111,35 @@ export default function ProductFilters({ products, onFilterChange }) {
         </button>
       </div>
 
+      {/* Mobile Backdrop Overlay */}
+      {isFilterOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+          onClick={() => setIsFilterOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Unified Filter Container */}
       <div
         className={`
           ${isFilterOpen ? "block" : "hidden"} 
-          lg:block fixed lg:static inset-y-0 left-0 lg:inset-auto bg-transparent
-          z-50 lg:z-10 w-4/5 lg:w-full max-w-full shadow-2xl lg:shadow-none 
+          lg:block fixed lg:static inset-y-0 left-0 lg:inset-auto
+          z-50 lg:z-10 w-72 sm:w-80 lg:w-full max-w-sm lg:max-w-full
+          bg-white lg:bg-transparent shadow-2xl lg:shadow-none 
           transition-transform duration-300 ease-in-out lg:translate-x-0 
           ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} 
-          lg:rounded-none overflow-visible border-0 lg:border-0
-          h-full lg:h-auto
+          h-full lg:h-auto overflow-y-auto lg:overflow-visible
         `}
       >
-        {/* Inner Section - No scrolling */}
-        <div className="flex flex-col">
+        {/* Inner Section - Scrollable on mobile */}
+        <div className="flex flex-col h-full">
           {/* Header + Filters Together */}
-          <div className="flex flex-col bg-white border-b border-gray-200 p-4 sm:p-5">
+          <div className="flex flex-col bg-white border-b border-gray-200 p-3 sm:p-4 lg:p-5 flex-shrink-0">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2.5">
-                <Filter size={18} className="text-[#7C2A47]" />
-                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+              <div className="flex items-center gap-2 sm:gap-2.5">
+                <Filter size={16} className="text-[#7C2A47] sm:w-[18px] sm:h-[18px]" />
+                <h2 className="text-base sm:text-lg font-bold text-gray-900">Filters</h2>
                 {activeFilterCount > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 text-xs font-semibold text-white bg-[#7C2A47] rounded-full">
                     {activeFilterCount}
@@ -157,8 +166,8 @@ export default function ProductFilters({ products, onFilterChange }) {
             </div>
           </div>
 
-          {/* Filter Content - No scrolling */}
-          <div className="px-4 sm:px-5 pb-4 sm:pb-6 space-y-4 sm:space-y-5">
+          {/* Filter Content - Scrollable on mobile */}
+          <div className="px-3 sm:px-4 lg:px-5 pb-4 sm:pb-5 lg:pb-6 space-y-3 sm:space-y-4 lg:space-y-5 flex-1 overflow-y-auto">
             {/* Category */}
             {categories.length > 0 && (
               <div className="border-b border-gray-200 pb-4 pt-2">

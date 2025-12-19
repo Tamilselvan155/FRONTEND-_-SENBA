@@ -68,9 +68,9 @@ const CategoryNavBar = () => {
 
   return (
     <div className="sticky top-16 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 relative">
         {/* Mobile: Horizontal Scrollable */}
-        <nav className="lg:hidden flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide py-2.5 touch-pan-x">
+        <nav className={`lg:hidden flex items-center gap-2 sm:gap-3 py-2.5 touch-pan-x ${activeCategory ? 'overflow-visible' : 'overflow-x-auto scrollbar-hide'}`}>
           {categories.map((category, index) => {
             const categoryName = formatCategoryName(category).toUpperCase()
             const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
@@ -78,7 +78,7 @@ const CategoryNavBar = () => {
             const isActive = activeCategory === category
 
             return (
-              <div key={index} className="relative flex-shrink-0">
+              <div key={index} className="relative flex-shrink-0 z-[60]">
                 {isPumps ? (
                   <button
                     onClick={() => handleCategoryClick(category)}
@@ -101,6 +101,10 @@ const CategoryNavBar = () => {
                   <Link
                     href={categoryHref}
                     className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
+                    onClick={() => {
+                      setActiveCategory(null)
+                      setShowPumpSubmenu(false)
+                    }}
                   >
                     <span>{categoryName}</span>
                     {/* No down arrow for items without submenus */}
@@ -109,21 +113,31 @@ const CategoryNavBar = () => {
 
                 {/* Mobile Dropdown for Pumps */}
                 {isPumps && isActive && (
-                  <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg w-48 py-2 z-50 border border-gray-200">
-                    {pumpSubCategories.map((subCat, subIndex) => (
-                      <Link
-                        key={subIndex}
-                        href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
-                        className="block px-4 py-2.5 text-xs text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 transition-colors duration-200"
-                        onClick={() => {
-                          setActiveCategory(null)
-                          setShowPumpSubmenu(false)
-                        }}
-                      >
-                        <span className="font-medium">{subCat}</span>
-                      </Link>
-                    ))}
-                  </div>
+                  <>
+                    {/* Backdrop to close dropdown when clicking outside */}
+                    <div 
+                      className="fixed inset-0 bg-black/20 z-[55] lg:hidden"
+                      onClick={() => {
+                        setActiveCategory(null)
+                        setShowPumpSubmenu(false)
+                      }}
+                    />
+                    <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg w-48 py-2 z-[60] border border-gray-200 min-w-max max-h-[70vh] overflow-y-auto">
+                      {pumpSubCategories.map((subCat, subIndex) => (
+                        <Link
+                          key={subIndex}
+                          href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
+                          className="block px-4 py-2.5 text-xs text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 transition-colors duration-200"
+                          onClick={() => {
+                            setActiveCategory(null)
+                            setShowPumpSubmenu(false)
+                          }}
+                        >
+                          <span className="font-medium">{subCat}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             )
@@ -134,7 +148,7 @@ const CategoryNavBar = () => {
         <nav className="hidden lg:flex items-center justify-between w-full">
           {categories.map((category, index) => {
             const categoryName = formatCategoryName(category).toUpperCase()
-            const categoryHref = `/category/${category}`
+            const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
             const isHovered = hoveredCategory === category
             const isPumps = category === 'Pumps'
 

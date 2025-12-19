@@ -381,83 +381,169 @@ const AccountContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[#7C2A47] flex items-center justify-center text-white text-2xl font-semibold">
-              {getInitials()}
+        {/* Page Header with Profile */}
+        <div className="bg-white rounded-lg shadow-sm mb-6 p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-[#7C2A47] flex items-center justify-center text-white text-2xl sm:text-3xl font-semibold flex-shrink-0">
+                {getInitials()}
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {userData.name || userData.email || 'User'}
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">{userData.email}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {userData.createdAt 
+                    ? `Member Since ${userData.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+                    : 'Member'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {userData.name || userData.email || 'User Name'}
-              </h1>
-              <p className="text-gray-600 mt-1">{userData.email}</p>
-              <p className="text-sm text-gray-500 mt-1">
-                {userData.createdAt 
-                  ? `Member Since ${userData.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-                  : 'Member'}
-              </p>
-            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors self-start sm:self-auto"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </button>
           </div>
         </div>
 
-        {/* Main Content - Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Column - Navigation Menu */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <nav className="space-y-2">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
-                        isActive
-                          ? 'bg-[#7C2A47] text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="font-medium">{item.label}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg text-red-600 hover:bg-red-50 transition-all mt-4"
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span className="font-medium">Sign Out</span>
-                </button>
-              </nav>
-            </div>
+        {/* Tabs Navigation */}
+        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+          <div className="border-b border-gray-200">
+            <nav className="flex overflow-x-auto scrollbar-hide -mb-px">
+              <button
+                onClick={() => setActiveSection('dashboard')}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeSection === 'dashboard'
+                    ? 'border-[#7C2A47] text-[#7C2A47]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveSection('orders')}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeSection === 'orders'
+                    ? 'border-[#7C2A47] text-[#7C2A47]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Orders
+              </button>
+              <button
+                onClick={() => setActiveSection('account')}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeSection === 'account'
+                    ? 'border-[#7C2A47] text-[#7C2A47]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <User className="h-4 w-4" />
+                Profile
+              </button>
+              <button
+                onClick={() => setActiveSection('addresses')}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeSection === 'addresses'
+                    ? 'border-[#7C2A47] text-[#7C2A47]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <Home className="h-4 w-4" />
+                Addresses
+              </button>
+            </nav>
           </div>
+        </div>
 
-          {/* Right Column - Content Area */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+        {/* Main Content Area */}
+        <div className="bg-white rounded-lg shadow-sm p-5 sm:p-6">
               {activeSection === 'dashboard' && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Dashboard</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <User className="h-5 w-5 text-[#7C2A47]" />
-                        <h3 className="font-medium text-gray-900">Account Status</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {/* Orders Card */}
+                    <button
+                      onClick={() => setActiveSection('orders')}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 text-left group"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-[#7C2A47]/10 transition-colors">
+                          <ShoppingBag className="h-8 w-8 text-gray-600 group-hover:text-[#7C2A47] transition-colors" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Orders</h3>
+                        <p className="text-xs text-gray-600">Check your order status</p>
                       </div>
-                      <p className="text-sm text-gray-600 capitalize">{userData.status || 'Active'}</p>
+                    </button>
+
+                    {/* Collections & Wishlist Card */}
+                    <button
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 text-left group"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-[#7C2A47]/10 transition-colors">
+                          <LayoutGrid className="h-8 w-8 text-gray-600 group-hover:text-[#7C2A47] transition-colors" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Collections & Wishlist</h3>
+                        <p className="text-xs text-gray-600">All your curated product collections</p>
+                      </div>
+                    </button>
+
+                    {/* Account Details Card */}
+                    <button
+                      onClick={() => setActiveSection('account')}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 text-left group"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-[#7C2A47]/10 transition-colors">
+                          <User className="h-8 w-8 text-gray-600 group-hover:text-[#7C2A47] transition-colors" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Account Details</h3>
+                        <p className="text-xs text-gray-600">Manage your profile information</p>
+                      </div>
+                    </button>
+
+                    {/* Addresses Card */}
+                    <button
+                      onClick={() => setActiveSection('addresses')}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 text-left group"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-[#7C2A47]/10 transition-colors">
+                          <Home className="h-8 w-8 text-gray-600 group-hover:text-[#7C2A47] transition-colors" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Addresses</h3>
+                        <p className="text-xs text-gray-600">Manage your delivery addresses</p>
+                      </div>
+                    </button>
+
+                    {/* Account Status Card */}
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4">
+                          <Shield className="h-8 w-8 text-gray-600" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Account Status</h3>
+                        <p className="text-xs text-gray-600 capitalize">{userData.status || 'Active'}</p>
+                      </div>
                     </div>
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Shield className="h-5 w-5 text-[#7C2A47]" />
-                        <h3 className="font-medium text-gray-900">Account Type</h3>
+
+                    {/* Account Type Card */}
+                    <div className="border border-gray-200 rounded-lg p-6">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4">
+                          <User className="h-8 w-8 text-gray-600" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Account Type</h3>
+                        <p className="text-xs text-gray-600 capitalize">{userData.role || 'User'}</p>
                       </div>
-                      <p className="text-sm text-gray-600 capitalize">{userData.role || 'User'}</p>
                     </div>
                   </div>
                 </div>
@@ -465,52 +551,52 @@ const AccountContent = () => {
 
               {activeSection === 'account' && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Account Details</h2>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Account Details</h2>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                       {/* Basic Info - Left Side */}
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                      <div className="space-y-5">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Basic Information</h3>
                         
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Username
                           </label>
                           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">
+                            <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900 truncate">
                               {userData.name ? userData.name.toLowerCase().replace(/\s+/g, '') : userData.email?.split('@')[0] || 'N/A'}
                             </span>
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Full Name
                           </label>
                           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">{userData.name || 'Not set'}</span>
+                            <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900">{userData.name || 'Not set'}</span>
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Email Address
                           </label>
                           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">{userData.email || 'N/A'}</span>
+                            <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900 truncate">{userData.email || 'N/A'}</span>
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Member Since
                           </label>
                           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <Calendar className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900">
+                            <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900">
                               {userData.createdAt 
                                 ? userData.createdAt.toLocaleDateString('en-US', { 
                                     year: 'numeric', 
@@ -524,25 +610,25 @@ const AccountContent = () => {
                       </div>
 
                       {/* Other Details - Right Side */}
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
+                      <div className="space-y-5">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Account Information</h3>
                         
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Account Role
                           </label>
                           <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <Shield className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900 capitalize">{userData.role || 'User'}</span>
+                            <Shield className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900 capitalize">{userData.role || 'User'}</span>
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Account Status
                           </label>
                           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                               userData.status === 'active' 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-gray-100 text-gray-800'
@@ -553,11 +639,11 @@ const AccountContent = () => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Last Login
                           </label>
                           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <span className="text-gray-900 text-sm">
+                            <span className="text-sm text-gray-900">
                               {userData.lastLoginAt 
                                 ? new Date(userData.lastLoginAt).toLocaleString('en-US')
                                 : 'Not available'}
@@ -572,7 +658,7 @@ const AccountContent = () => {
 
               {activeSection === 'orders' && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Orders</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Orders</h2>
                   
                   {loadingOrders ? (
                     <div className="text-center py-12">
@@ -596,15 +682,14 @@ const AccountContent = () => {
                         
                         return (
                           <>
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto -mx-5 sm:mx-0">
                               <table className="w-full border-collapse">
                                 <thead>
-                                  <tr className="border-b-2 border-gray-300 bg-gray-50">
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Order Placed</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Items</th>
-                                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Quantity</th>
-                                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Price</th>
+                                  <tr className="border-b-2 border-gray-200 bg-gray-50">
+                                    <th className="text-left py-3 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-700">Order Placed</th>
+                                    <th className="text-left py-3 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-700">Items</th>
+                                    <th className="text-right py-3 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-700">Total Quantity</th>
+                                    <th className="text-right py-3 px-4 sm:px-6 text-xs sm:text-sm font-semibold text-gray-700">Total Price</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -621,34 +706,19 @@ const AccountContent = () => {
                                       hour12: true,
                                     });
                                     
-                                    const statusColors = {
-                                      pending: 'bg-yellow-100 text-yellow-800',
-                                      confirmed: 'bg-blue-100 text-blue-800',
-                                      shipped: 'bg-purple-100 text-purple-800',
-                                      delivered: 'bg-green-100 text-green-800',
-                                      cancelled: 'bg-red-100 text-red-800',
-                                    };
-                                    
-                                    const statusColor = statusColors[order.status] || 'bg-gray-100 text-gray-800';
-                                    
                                     return (
-                                      <tr key={order._id || orderIndex} className="border-b border-gray-200 hover:bg-gray-50">
-                                        <td className="py-4 px-4">
+                                      <tr key={order._id || orderIndex} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                                        <td className="py-4 px-4 sm:px-6">
                                           <div className="flex items-center gap-2">
                                             <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                                             <div>
-                                              <p className="text-sm font-medium text-gray-900">{formattedDate}</p>
+                                              <p className="text-xs sm:text-sm font-medium text-gray-900">{formattedDate}</p>
                                               <p className="text-xs text-gray-500">{formattedTime}</p>
                                             </div>
                                           </div>
                                         </td>
-                                        <td className="py-4 px-4">
-                                          <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${statusColor}`}>
-                                            {order.status || 'pending'}
-                                          </span>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                          <div className="space-y-2">
+                                        <td className="py-4 px-4 sm:px-6">
+                                          <div className="space-y-1.5">
                                             {order.items && order.items.length > 0 ? (
                                               order.items.slice(0, 3).map((item, itemIndex) => {
                                                 const productName = item.name || (item.productId && typeof item.productId === 'object' 
@@ -657,25 +727,25 @@ const AccountContent = () => {
                                                 const quantity = Number(item.quantity || 1);
                                                 
                                                 return (
-                                                  <div key={itemIndex} className="flex items-center gap-2 text-sm text-gray-700">
-                                                    <span className="font-medium">{productName}</span>
-                                                    <span className="text-gray-500">× {quantity}</span>
+                                                  <div key={itemIndex} className="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+                                                    <span className="font-medium truncate">{productName}</span>
+                                                    <span className="text-gray-500 whitespace-nowrap">× {quantity}</span>
                                                   </div>
                                                 );
                                               })
                                             ) : (
-                                              <span className="text-sm text-gray-500">No items</span>
+                                              <span className="text-xs sm:text-sm text-gray-500">No items</span>
                                             )}
                                             {order.items && order.items.length > 3 && (
                                               <p className="text-xs text-gray-500">+{order.items.length - 3} more item(s)</p>
                                             )}
                                           </div>
                                         </td>
-                                        <td className="py-4 px-4 text-right">
-                                          <span className="text-sm font-medium text-gray-900">{order.totalQuantity || 0}</span>
+                                        <td className="py-4 px-4 sm:px-6 text-right">
+                                          <span className="text-xs sm:text-sm font-medium text-gray-900">{order.totalQuantity || 0}</span>
                                         </td>
-                                        <td className="py-4 px-4 text-right">
-                                          <span className="text-sm font-semibold text-[#7C2A47]">₹{Number(order.totalPrice || 0).toLocaleString()}</span>
+                                        <td className="py-4 px-4 sm:px-6 text-right">
+                                          <span className="text-xs sm:text-sm font-semibold text-[#7C2A47]">₹{Number(order.totalPrice || 0).toLocaleString()}</span>
                                         </td>
                                       </tr>
                                     );
@@ -721,11 +791,11 @@ const AccountContent = () => {
 
               {activeSection === 'addresses' && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Addresses</h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Addresses</h2>
                     <button
                       onClick={handleAddAddress}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#7C2A47] text-white rounded-lg hover:bg-[#6a2340] transition-colors"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-[#7C2A47] text-white text-sm font-medium rounded-lg hover:bg-[#6a2340] transition-colors shadow-sm"
                     >
                       <Plus className="h-4 w-4" />
                       Add Address
@@ -804,8 +874,6 @@ const AccountContent = () => {
                   )}
                 </div>
               )}
-            </div>
-          </div>
         </div>
       </div>
 
