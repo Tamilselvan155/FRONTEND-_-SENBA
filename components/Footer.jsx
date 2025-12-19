@@ -90,7 +90,7 @@ const Footer = () => {
     ];
 
     return (
-        <footer className="w-full bg-slate-50 border-t border-gray-100">
+        <footer className="w-full bg-[#7C2A47] border-t border-[#6a243d]">
             {/* Main Footer Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -98,31 +98,31 @@ const Footer = () => {
                     {/* About Section */}
                     <div className="lg:col-span-1">
                         
-                        <h3 className="text-slate-800 text-base sm:text-lg font-bold mb-4 uppercase tracking-wide">
+                        <h3 className="text-white text-base sm:text-lg font-bold mb-4 uppercase tracking-wide">
                             {aboutSection.title}
                         </h3>
-                        <p className="text-slate-600 text-sm leading-relaxed mb-6">
+                        <p className="text-white/90 text-sm leading-relaxed mb-6">
                             {aboutSection.description}
                         </p>
                         
                         <div className="space-y-3">
-                            <h4 className="text-slate-800 text-sm font-bold uppercase tracking-wide">
+                            <h4 className="text-white text-sm font-bold uppercase tracking-wide">
                                 {aboutSection.contact.title}
                             </h4>
                             <div className="space-y-2">
-                                <p className="text-slate-600 text-sm">
-                                    Expert Advice: <span className="text-slate-800">{aboutSection.contact.phone}</span>
+                                <p className="text-white/90 text-sm">
+                                    Expert Advice: <span className="text-white font-medium">{aboutSection.contact.phone}</span>
                                 </p>
-                                <div className="text-slate-600 text-sm">
+                                <div className="text-white/90 text-sm">
                                     Email: {aboutSection.contact.emails.map((email, index) => (
                                         <span key={index}>
                                             <Link 
                                                 href={`mailto:${email}`}
-                                                className="text-blue-600 hover:text-blue-700 transition-colors"
+                                                className="text-white hover:text-white/80 transition-colors font-medium underline"
                                             >
                                                 {email}
                                             </Link>
-                                            {index < aboutSection.contact.emails.length - 1 && <span className="text-slate-600"> | </span>}
+                                            {index < aboutSection.contact.emails.length - 1 && <span className="text-white/90"> | </span>}
                                         </span>
                                     ))}
                                 </div>
@@ -131,8 +131,8 @@ const Footer = () => {
                     </div>
 
                    {/* Key Information Links */}
-<div className="lg:col-span-1 lg:pl-10">  {/* Added lg:pl-10 to shift it right */}
-    <h3 className="text-slate-800 text-base sm:text-lg font-bold mb-4 uppercase tracking-wide">
+<div className="lg:col-span-1 lg:pl-10">
+    <h3 className="text-white text-base sm:text-lg font-bold mb-4 uppercase tracking-wide">
         KEY INFORMATION
     </h3>
     <ul className="space-y-2.5">
@@ -140,7 +140,7 @@ const Footer = () => {
             <li key={index}>
                 <Link 
                     href={link.path}
-                    className="text-slate-600 hover:text-slate-800 hover:underline text-sm transition-colors duration-200"
+                    className="text-white/90 hover:text-white hover:underline text-sm transition-colors duration-200"
                 >
                     {link.text}
                 </Link>
@@ -152,10 +152,10 @@ const Footer = () => {
 
                     {/* Newsletter Section */}
                     <div className="lg:col-span-1">
-                        <h3 className="text-slate-800 text-base sm:text-lg font-bold mb-4 uppercase tracking-wide">
+                        <h3 className="text-white text-base sm:text-lg font-bold mb-4 uppercase tracking-wide">
                             GET EXCLUSIVE DISCOUNTS
                         </h3>
-                        <p className="text-slate-600 text-sm leading-relaxed mb-5">
+                        <p className="text-white/90 text-sm leading-relaxed mb-5">
                             Subscribe and get exclusive discounts and offers sent direct to your inbox.
                         </p>
                         
@@ -163,12 +163,12 @@ const Footer = () => {
                             <input
                                 type="email"
                                 placeholder="Your email"
-                                className="w-full px-4 py-3 bg-white border border-gray-300 text-slate-900 text-sm rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-3 bg-white border border-white/20 text-gray-900 placeholder:text-gray-500 text-sm rounded focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
                                 required
                             />
                             <button
                                 type="submit"
-                                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white text-sm font-semibold rounded transition-colors duration-200"
+                                className="w-full sm:w-auto px-8 py-3 bg-white text-[#7C2A47] hover:bg-white/90 text-sm font-semibold rounded transition-colors duration-200"
                             >
                                 Subscribe
                             </button>
@@ -178,18 +178,18 @@ const Footer = () => {
             </div>
 
             {/* Bottom Section */}
-            <div className="border-t border-slate-200">
+            <div className="border-t border-white/20 bg-[#6a243d]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
                         
                         {/* Copyright */}
-                        <div className="text-slate-500 text-sm text-center lg:text-left">
+                        <div className="text-white/80 text-sm text-center lg:text-left">
                             © 2025 Semba pumps & motors
                         </div>
 
                         {/* Social Icons */}
                         <div className="order-first lg:order-none">
-                            <p className="text-slate-600 text-sm mb-3 text-center">Follow Us</p>
+                            <p className="text-white text-sm mb-3 text-center font-medium">Follow Us</p>
                             <div className="flex items-center justify-center gap-3">
                                 {socialIcons.map((item, i) => (
                                     <Link 
@@ -197,7 +197,7 @@ const Footer = () => {
                                         key={i} 
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 transition-all duration-200 rounded-full"
+                                        className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white border border-white/20 hover:border-white text-white hover:text-white transition-all duration-200 rounded-full"
                                         aria-label={item.label}
                                     >
                                         <item.icon />
@@ -208,12 +208,12 @@ const Footer = () => {
 
                         {/* Payment Methods */}
                         <div>
-    <p className="text-slate-600 text-sm mb-3 text-left">We Accept</p>
+    <p className="text-white text-sm mb-3 text-left font-medium">We Accept</p>
     <div className="flex flex-wrap items-center justify-start gap-2">
         {paymentMethods.map((method, i) => (
             <div 
                 key={i}
-                className="w-12 h-7 bg-white border border-slate-200 rounded flex items-center justify-center p-1 hover:shadow-sm transition-shadow"
+                className="w-12 h-7 bg-white border border-white/20 rounded flex items-center justify-center p-1 hover:border-white hover:shadow-md transition-all"
                 title={method.name}
             >
                 <Image

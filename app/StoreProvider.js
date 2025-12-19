@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react'
 import { Provider, useDispatch } from 'react-redux'
 import { makeStore } from '../lib/store'
 import { loginSuccess } from '../lib/features/login/authSlice'
+import { forceClearInvalidCart, recalculateTotal } from '../lib/features/cart/cartSlice'
 
 // Component to restore auth state from localStorage
 // This must be inside the Provider to use useDispatch
@@ -32,6 +33,23 @@ function AuthRestorer() {
   return null
 }
 
+// Component to clean up invalid cart data on app initialization
+// This must be inside the Provider to use useDispatch
+function CartCleaner() {
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    // Clean up cart immediately on app load
+    if (typeof window !== 'undefined') {
+      // Force clear any invalid cart data and recalculate
+      dispatch(forceClearInvalidCart())
+      dispatch(recalculateTotal())
+    }
+  }, [dispatch])
+
+  return null
+}
+
 export default function StoreProvider({ children }) {
   const storeRef = useRef(undefined)
   if (!storeRef.current) {
@@ -42,6 +60,7 @@ export default function StoreProvider({ children }) {
   return (
     <Provider store={storeRef.current}>
       <AuthRestorer />
+      <CartCleaner />
       {children}
     </Provider>
   )

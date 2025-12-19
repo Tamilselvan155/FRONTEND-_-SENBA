@@ -232,7 +232,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       // Clear localStorage cart
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('cart');
+         localStorage.removeItem('cart');
       }
       
       setOrderPlaced(true);
@@ -263,7 +263,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       <button
         onClick={handleOrderNow}
-        className='w-full bg-green-600 text-white py-2.5 text-lg rounded hover:bg-green-700 active:scale-95 transition-all'
+        className='w-full bg-[#7C2A47] text-white py-2.5 text-lg rounded hover:bg-[#6a243d] active:scale-95 transition-all'
       >
         Order Now
       </button>

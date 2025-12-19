@@ -159,6 +159,182 @@ const ProductDetails = ({ product }) => {
     return getPriceAndMrpForHP(selectedHP);
   }, [product, product?.hasVariants, product?.brandVariants, product?.price, product?.discount, product?.mrp, selectedHP]);
 
+  // Get variant-specific details (Model, Pipe size, Head, Discharge) based on selected HP
+  const getVariantDetails = (hpValue) => {
+    if (!product || !product.hasVariants || !product.brandVariants || !Array.isArray(product.brandVariants)) {
+      return { model: null, pipeSize: null, head: null, discharge: null };
+    }
+
+    const hpNum = hpValue.replace(' HP', '').trim();
+    
+    // Find variant matching the selected HP
+    const matchingVariant = product.brandVariants.find(variant => {
+      if (variant.attributes && Array.isArray(variant.attributes)) {
+        return variant.attributes.some(attr => {
+          const attrValue = String(attr.attributeValue || attr.value || '').toLowerCase().trim();
+          const attrName = String(attr.attributeName || attr.name || '').toLowerCase().trim();
+          
+          const isHPAttribute = attrName.includes('hp') || attrName.includes('horsepower') || 
+                               attrName.includes('power') || attrName === '';
+          
+          if (isHPAttribute || attrName === '') {
+            return attrValue === hpNum.toLowerCase() ||
+                   attrValue === hpValue.toLowerCase() ||
+                   attrValue === hpValue.toLowerCase().replace(' ', '') ||
+                   attrValue.includes(hpNum) ||
+                   attrValue === `0.5` && hpNum === '0.5' ||
+                   attrValue === `1` && hpNum === '1' ||
+                   attrValue === `1.5` && hpNum === '1.5' ||
+                   attrValue === `2` && hpNum === '2.0' ||
+                   attrValue === `2.0` && hpNum === '2.0';
+          }
+          return false;
+        });
+      }
+      return false;
+    });
+
+    if (!matchingVariant || !matchingVariant.attributes || !Array.isArray(matchingVariant.attributes)) {
+      return { model: null, pipeSize: null, head: null, discharge: null };
+    }
+
+    // Helper function to safely convert value to string
+    const getValueAsString = (value) => {
+      if (value === null || value === undefined) return '';
+      
+      // If it's already a string, return it
+      if (typeof value === 'string') return value.trim();
+      
+      // If it's a number, convert to string
+      if (typeof value === 'number') return String(value);
+      
+      // If it's an object, try to extract meaningful value
+      if (typeof value === 'object') {
+        // Check if it has a 'value' property
+        if (value.value !== undefined) {
+          return getValueAsString(value.value);
+        }
+        // Check if it has a 'title' property
+        if (value.title !== undefined) {
+          return getValueAsString(value.title);
+        }
+        // Check if it has a 'name' property
+        if (value.name !== undefined) {
+          return getValueAsString(value.name);
+        }
+        // If it's an array, join the values
+        if (Array.isArray(value)) {
+          return value.map(v => getValueAsString(v)).filter(v => v).join(', ');
+        }
+        // Try to stringify if it's a simple object
+        try {
+          const str = JSON.stringify(value);
+          // If the stringified version is too long or looks like an object, try to extract values
+          if (str.length > 100 || str.startsWith('{')) {
+            const values = Object.values(value).filter(v => v !== null && v !== undefined);
+            if (values.length > 0) {
+              return values.map(v => getValueAsString(v)).filter(v => v).join(', ');
+            }
+          }
+          return str;
+        } catch (e) {
+          return '';
+        }
+      }
+      
+      return String(value).trim();
+    };
+
+    // Extract Model, Pipe size, Head, and Discharge from variant attributes
+    let model = null;
+    let pipeSize = null;
+    let head = null;
+    let discharge = null;
+
+    matchingVariant.attributes.forEach(attr => {
+      const attrName = String(attr.attributeName || attr.name || '').toLowerCase().trim();
+      
+      // Try multiple sources for the value, including populated objects
+      let rawValue = attr.attributeValue || attr.value;
+      
+      // If attributeValueId is populated (object), extract its value
+      if (!rawValue && attr.attributeValueId) {
+        if (typeof attr.attributeValueId === 'object' && attr.attributeValueId !== null) {
+          rawValue = attr.attributeValueId.value || attr.attributeValueId.title || attr.attributeValueId.name || attr.attributeValueId;
+        } else {
+          rawValue = attr.attributeValueId;
+        }
+      }
+      
+      // Fallback to valueId
+      if (!rawValue && attr.valueId) {
+        rawValue = attr.valueId;
+      }
+      
+      const attrValue = getValueAsString(rawValue);
+
+      if (!attrValue || attrValue === '') return;
+
+      // Check for Model
+      if (attrName.includes('model') && !model) {
+        model = attrValue;
+      }
+      // Check for Pipe size
+      else if ((attrName.includes('pipe') && attrName.includes('size')) || attrName.includes('pipesize') || attrName === 'pipe size') {
+        pipeSize = attrValue;
+      }
+      // Check for Head
+      else if (attrName.includes('head') && !attrName.includes('discharge')) {
+        head = attrValue;
+      }
+      // Check for Discharge
+      else if (attrName.includes('discharge') || attrName.includes('flow')) {
+        discharge = attrValue;
+      }
+    });
+
+    // Also check variant specifications if attributes don't have the values
+    if (matchingVariant.specifications) {
+      const specs = matchingVariant.specifications;
+      let specsObj = {};
+
+      if (Array.isArray(specs)) {
+        specs.forEach(spec => {
+          if (typeof spec === 'object') {
+            Object.assign(specsObj, spec);
+          }
+        });
+      } else if (typeof specs === 'object') {
+        specsObj = specs;
+      }
+
+      // Extract from specifications if not found in attributes
+      Object.entries(specsObj).forEach(([key, value]) => {
+        const keyLower = key.toLowerCase();
+        const valueStr = getValueAsString(value);
+        
+        if (!valueStr || valueStr === '') return;
+
+        if (keyLower.includes('model') && !model) {
+          model = valueStr;
+        } else if ((keyLower.includes('pipe') && keyLower.includes('size')) || keyLower.includes('pipesize')) {
+          pipeSize = valueStr;
+        } else if (keyLower.includes('head') && !keyLower.includes('discharge')) {
+          head = valueStr;
+        } else if (keyLower.includes('discharge') || keyLower.includes('flow')) {
+          discharge = valueStr;
+        }
+      });
+    }
+
+    return { model, pipeSize, head, discharge };
+  };
+
+  // Get variant details for selected HP - memoized
+  const variantDetails = useMemo(() => {
+    return getVariantDetails(selectedHP);
+  }, [product, product?.hasVariants, product?.brandVariants, selectedHP]);
+
   // Handle HP selection change
   const handleHPChange = (hp) => {
     setSelectedHP(hp);
@@ -222,10 +398,10 @@ const ProductDetails = ({ product }) => {
 
   return (
     <>
-     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 pb-6 sm:pb-8 overflow-x-hidden">
+     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-6 sm:pb-8 overflow-x-hidden">
  
- {/* Images Section - Left Side */}
- <div className="w-full lg:w-[55%] flex flex-col gap-3 sm:gap-4 min-w-0 lg:h-fit">
+ {/* Column 1: Images Section */}
+ <div className="w-full lg:col-span-1 flex flex-col gap-3 sm:gap-4 min-w-0">
 
   {/* Thumbnails */}
   {productImages.length > 1 && (
@@ -256,24 +432,18 @@ const ProductDetails = ({ product }) => {
   )}
 
    {/* Main Image */}
-   <div className="flex justify-center items-center bg-white rounded-lg border border-gray-200 p-2 sm:p-3 md:p-4 lg:h-[460px]">
+   <div className="flex justify-center items-center bg-white rounded-lg border border-gray-200 p-2 sm:p-3 md:p-4">
      {mainImage ? (
        <Image
          src={mainImage}
          alt={product.name || 'Product'}
          width={420}
          height={420}
-         className="
-           object-contain w-full h-full
-           max-h-[340px]
-           sm:max-h-[380px]
-           md:max-h-[420px]
-           lg:max-h-full
-         "
+         className="object-contain w-full h-full"
          unoptimized
        />
      ) : (
-       <div className="flex justify-center items-center w-full h-full">
+       <div className="flex justify-center items-center w-full h-full min-h-[300px]">
          <p className="text-gray-400 text-sm">No image available</p>
        </div>
      )}
@@ -281,22 +451,24 @@ const ProductDetails = ({ product }) => {
 
 </div>
 
- {/* Product Details - Right Side */}
- <div className="w-full lg:w-[45%] flex flex-col min-w-0 lg:h-[460px] lg:overflow-y-auto">
+ {/* Column 2: Product Details (Price, Stock, Quantity, HP Options, Buttons) */}
+ <div className="w-full lg:col-span-1 flex flex-col min-w-0">
  
    {/* Product Title */}
    <h1 className="text-base sm:text-lg md:text-xl lg:text-xl font-bold text-gray-900 mb-1.5 sm:mb-2 leading-tight">
      {product.name || product.title || 'Product'}
    </h1>
 
-   {/* Brand and Item Code */}
+   {/* Brand and Model */}
    <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
      <span className="text-[#7C2A47] font-semibold text-[10px] sm:text-xs md:text-sm uppercase">
        {brandName}
      </span>
-     <span className="text-gray-600 text-[10px] sm:text-[11px] md:text-xs break-words">
-       Item Code: <span className="text-gray-800 font-medium">{itemCode}</span>
-     </span>
+     {variantDetails.model && (
+       <span className="text-gray-600 text-[10px] sm:text-[11px] md:text-xs break-words">
+         Model: <span className="text-gray-800 font-medium">{variantDetails.model}</span>
+       </span>
+     )}
    </div>
 
    {/* Reviews */}
@@ -452,9 +624,105 @@ const ProductDetails = ({ product }) => {
      Book Enquiry
    </button>
  </div>
-
-
 </div>
+
+ {/* Column 3: Specifications Section */}
+ <div className="w-full lg:col-span-1 flex flex-col min-w-0">
+   {(variantDetails.pipeSize || variantDetails.head || variantDetails.discharge) && (
+     <div className="p-3 sm:p-4 rounded-lg border border-gray-200">
+       <p className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
+         Specifications for {selectedHP}:
+       </p>
+       <div className="space-y-3 sm:space-y-4">
+         {/* Pipe Size */}
+         {variantDetails.pipeSize && (
+           <div>
+             <p className="text-xs sm:text-sm text-gray-600 mb-1">Pipe Size:</p>
+             <p className="text-sm sm:text-base font-medium text-gray-900">{variantDetails.pipeSize}</p>
+           </div>
+         )}
+         
+         {/* Head & Discharge as paired values */}
+         {(variantDetails.head || variantDetails.discharge) && (
+           <div>
+             <p className="text-xs sm:text-sm text-gray-600 mb-2">
+               Head (meters) & Discharge (LPM):
+             </p>
+             <div className="space-y-1.5 sm:space-y-2">
+               {(() => {
+                 // Parse Head values (could be comma-separated string or array)
+                 let headValues = [];
+                 if (variantDetails.head) {
+                   if (Array.isArray(variantDetails.head)) {
+                     headValues = variantDetails.head.map(v => String(v).trim()).filter(v => v);
+                   } else {
+                     headValues = String(variantDetails.head).split(',').map(v => v.trim()).filter(v => v);
+                   }
+                 }
+                 
+                 // Parse Discharge values (could be comma-separated string or array)
+                 let dischargeValues = [];
+                 if (variantDetails.discharge) {
+                   if (Array.isArray(variantDetails.discharge)) {
+                     dischargeValues = variantDetails.discharge.map(v => String(v).trim()).filter(v => v);
+                   } else {
+                     dischargeValues = String(variantDetails.discharge).split(',').map(v => v.trim()).filter(v => v);
+                   }
+                 }
+                 
+                 // Pair them up by index
+                 const maxLength = Math.max(headValues.length, dischargeValues.length);
+                 const pairs = [];
+                 
+                 for (let i = 0; i < maxLength; i++) {
+                   const head = headValues[i] || '';
+                   const discharge = dischargeValues[i] || '';
+                   
+                   if (head || discharge) {
+                     pairs.push({ head, discharge });
+                   }
+                 }
+                 
+                 // If no pairs could be created, show original format
+                 if (pairs.length === 0) {
+                   return (
+                     <div className="grid grid-cols-2 gap-3">
+                       {variantDetails.head && (
+                         <div>
+                           <p className="text-xs sm:text-sm text-gray-600 mb-1">Head:</p>
+                           <p className="text-sm sm:text-base font-medium text-gray-900">{variantDetails.head}</p>
+                         </div>
+                       )}
+                       {variantDetails.discharge && (
+                         <div>
+                           <p className="text-xs sm:text-sm text-gray-600 mb-1">Discharge:</p>
+                           <p className="text-sm sm:text-base font-medium text-gray-900">{variantDetails.discharge}</p>
+                         </div>
+                       )}
+                     </div>
+                   );
+                 }
+                 
+                 // Display pairs
+                 return pairs.map((pair, index) => (
+                   <div key={index} className="text-sm sm:text-base font-medium text-gray-900">
+                     {pair.head && pair.discharge ? (
+                       <span>{pair.head}H & {pair.discharge}D</span>
+                     ) : pair.head ? (
+                       <span>{pair.head}H</span>
+                     ) : pair.discharge ? (
+                       <span>{pair.discharge}D</span>
+                     ) : null}
+                   </div>
+                 ));
+               })()}
+             </div>
+           </div>
+         )}
+       </div>
+     </div>
+   )}
+ </div>
 </div>
 
 
