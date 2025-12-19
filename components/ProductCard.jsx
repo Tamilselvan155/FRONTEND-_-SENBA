@@ -4,14 +4,14 @@ import { ArrowRight, ShoppingCart, Send } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
-import ModalPopup from './PopupModel';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/hooks/useCart';
 import toast from 'react-hot-toast';
 import { assets } from '@/assets/assets';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   
   // Handle product data - check originalProduct if available (from transformed products)
@@ -135,34 +135,10 @@ const ProductCard = ({ product }) => {
 
   const handleEnquiry = (e) => {
     e.preventDefault();
-    setIsModalOpen(true);
-  };
-
-  const handleSendWhatsApp = ({ userName, userMobile }) => {
-    const quantity = 1;
-    const productLink = typeof window !== 'undefined' && productId 
-      ? `${window.location.origin}/product/${productId}` 
-      : typeof window !== 'undefined' ? window.location.href : '';
-
-    let message = `
-Hi, I'm interested in booking an enquiry for the following product:
- *Product:* ${productName}
- *Price:* ${currency}${finalPrice}
- *Quantity:* ${quantity}
- *Product Link:* ${productLink}
-`;
-
-    if (userName && userMobile) {
-      message += `🙋 *Name:* ${userName}\n📱 *Mobile:* ${userMobile}\n`;
-    }
-
-    message += `Please let me know the next steps.`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const phoneNumber = '9345795629';
-
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-    setIsModalOpen(false);
+    const productImages = product.images || productData.images || [];
+    const productImageUrl = productImages.length > 0 ? productImages[0] : '';
+    const enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId || '')}&productName=${encodeURIComponent(productName)}&price=${encodeURIComponent(finalPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    router.push(enquiryUrl);
   };
 
   // Get product images with fallbacks
@@ -330,21 +306,6 @@ Hi, I'm interested in booking an enquiry for the following product:
 </div>
 
   
-      <ModalPopup
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        items={[
-          {
-            name: productName,
-            price: finalPrice,
-            quantity: 1,
-          },
-        ]}
-        totalPrice={finalPrice}
-        totalQuantity={1}
-        currency={currency}
-        onSendWhatsApp={handleSendWhatsApp}
-      />
     </>
   );
   

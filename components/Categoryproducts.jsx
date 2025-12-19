@@ -6,17 +6,16 @@ import { useSelector } from "react-redux";
 import { useCart } from "@/lib/hooks/useCart";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, ArrowRight, Send } from "lucide-react";
-import ModalPopup from "./PopupModel";
 import ProductFilters from "./ProductFilters";
 import Loading from "./Loading";
 import { assets } from "@/assets/assets";
 
 export default function CategoryProducts({ categoryName, subCategoryName }) {
   const { cartItems, addToCart } = useCart();
+  const router = useRouter();
 
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsWithVariants, setProductsWithVariants] = useState([]); // Store original API data with variants
   const [selectedHpOptions, setSelectedHpOptions] = useState({}); // Track selected HP for each product
@@ -559,36 +558,11 @@ export default function CategoryProducts({ categoryName, subCategoryName }) {
 
   function handleEnquiry(e, product) {
     e.preventDefault();
-    setSelectedProduct(product);
-    setIsModalOpen(true);
+    const productImageUrl = product.images && product.images.length > 0 ? product.images[0] : '';
+    const displayPrice = getDisplayPrice(product);
+    const enquiryUrl = `/enquiry?productId=${encodeURIComponent(product.id || '')}&productName=${encodeURIComponent(product.name || 'Product')}&price=${encodeURIComponent(displayPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    router.push(enquiryUrl);
   }
-
-  const handleSendWhatsApp = ({ userName, userMobile }) => {
-    if (!selectedProduct) return;
-
-    const quantity = 1;
-    const productLink = typeof window !== 'undefined' ? window.location.href : '';
-
-    let message = `
-Hi, I'm interested in booking an enquiry for the following product:
-🛍️ *Product:* ${selectedProduct.name}
-💰 *Price:* ${currency}${selectedProduct.price}
-📦 *Quantity:* ${quantity}
-🖼️ *Product Link:* ${productLink}
-`;
-
-    if (userName && userMobile) {
-      message += `🙋 *Name:* ${userName}\n📱 *Mobile:* ${userMobile}\n`;
-    }
-
-    message += `Please let me know the next steps.`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const phoneNumber = "9345795629";
-
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
-    setIsModalOpen(false);
-  };
 
   return (
     <div className="max-w-7xl mx-auto py-4 px-3 sm:px-6">
@@ -813,24 +787,6 @@ Hi, I'm interested in booking an enquiry for the following product:
         </div>
       )}
 
-      {/* WhatsApp Modal */}
-      {selectedProduct && (
-        <ModalPopup
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          items={[
-            {
-              name: selectedProduct.name,
-              price: selectedProduct.price,
-              quantity: 1,
-            },
-          ]}
-          totalPrice={selectedProduct.price}
-          totalQuantity={1}
-          currency={currency}
-          onSendWhatsApp={handleSendWhatsApp}
-        />
-      )}
     </div>
   );
 }

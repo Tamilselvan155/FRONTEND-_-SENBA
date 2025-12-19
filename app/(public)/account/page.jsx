@@ -381,7 +381,7 @@ const AccountContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Page Header with Profile */}
         <div className="bg-white rounded-lg shadow-sm mb-6 p-5 sm:p-6">

@@ -8,7 +8,6 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
 import { useSelector } from "react-redux";
-import ModalPopup from './PopupModel';
 import { assets } from '@/assets/assets';
 
 const ProductDetails = ({ product }) => {
@@ -30,7 +29,6 @@ const ProductDetails = ({ product }) => {
     : [assets.product_img0]; // Use placeholder if no images
   
   const [mainImage, setMainImage] = useState(productImages[0] || assets.product_img0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
   // Update mainImage when product images change
@@ -364,30 +362,6 @@ const ProductDetails = ({ product }) => {
     });
   };
 
-  const handleSendWhatsApp = ({ userName, userMobile }) => {
-    const quantity = cart[productId] || 1;
-    const productLink = typeof window !== 'undefined' ? window.location.href : '';
-
-    const { price: selectedPrice } = getPriceAndMrpForHP(selectedHP);
-    let message = `Hi, I'm interested in booking an enquiry for the following product:
-🛍️ *Product:* ${product.name || product.title || 'Product'}
-⚙️ *HP Option:* ${selectedHP}
-💰 *Price:* ${currency}${selectedPrice}
-📦 *Quantity:* ${quantity}
-🖼️ *Product Link:* ${productLink}`;
-
-    if (userName && userMobile) {
-      message += `\n🙋 *Name:* ${userName}\n📱 *Mobile:* ${userMobile}`;
-    }
-
-    message += `\nPlease let me know the next steps.`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const phoneNumber = "9345795629";
-
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
-    setIsModalOpen(false);
-  };
 
   // Get brand name
   const brandName = product.brand || product.category || 'BRAND';
@@ -631,12 +605,17 @@ const ProductDetails = ({ product }) => {
          {!cart[productId] ? 'Add to Cart' : 'View Cart'}
        </button>
 
-       <button
-         onClick={() => setIsModalOpen(true)}
-         className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
-       >
-         Book Enquiry
-       </button>
+      <button
+        onClick={() => {
+          const { price: selectedPrice } = getPriceAndMrpForHP(selectedHP);
+          const productImageUrl = productImages[0] || '';
+          const enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId)}&productName=${encodeURIComponent(product.name || product.title || 'Product')}&price=${encodeURIComponent(selectedPrice)}&quantity=${quantity}&image=${encodeURIComponent(productImageUrl)}`;
+          router.push(enquiryUrl);
+        }}
+        className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
+      >
+        Book Enquiry
+      </button>
      </div>
    </div>
 </div>
@@ -743,19 +722,6 @@ const ProductDetails = ({ product }) => {
 </div>
 
 
-      <ModalPopup
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        items={[{
-          name: `${product.name || product.title || 'Product'} (${selectedHP})`,
-          price: currentPrice,
-          quantity: cart[productId] || quantity
-        }]}
-        totalPrice={currentPrice * (cart[productId] || quantity)}
-        totalQuantity={cart[productId] || quantity}
-        currency={currency}
-        onSendWhatsApp={handleSendWhatsApp}
-      />
     </>
   );
 };

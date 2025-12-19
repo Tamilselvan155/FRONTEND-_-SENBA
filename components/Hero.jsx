@@ -17,6 +17,8 @@ export default function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [slides, setSlides] = useState([])
   const [failedImages, setFailedImages] = useState(new Set())
+  const [loadedImages, setLoadedImages] = useState(new Set())
+  const isInitialized = useRef(false)
 
   useEffect(() => {
     dispatch(fetchBannersAsync())
@@ -31,7 +33,12 @@ export default function Hero() {
         
         // Handle image URL construction - similar to product images
         let imageUrl = ''
-        const photo = b.photo || ''
+        let photo = b.photo || ''
+        
+        // Remove /api/ prefix if present (legacy issue)
+        if (photo.includes('/api/uploads/')) {
+          photo = photo.replace('/api/uploads/', '/uploads/')
+        }
         
         if (photo.startsWith('http://') || photo.startsWith('https://')) {
           // Already a full URL, use as is
@@ -62,33 +69,57 @@ export default function Hero() {
 
     if (activeBanners.length > 0) {
       console.log('✅ Loading', activeBanners.length, 'backend banners')
-      setSlides(activeBanners)
+      // Only reset if slides actually changed (different IDs)
+      setSlides(prevSlides => {
+        const prevIds = new Set(prevSlides.map(s => s.id))
+        const newIds = new Set(activeBanners.map(s => s.id))
+        const idsChanged = prevIds.size !== newIds.size || 
+          !Array.from(prevIds).every(id => newIds.has(id))
+        
+        if (idsChanged && isInitialized.current) {
+          // Only reset loaded images if slides actually changed AND we're not initializing
+          setLoadedImages(new Set())
+          setFailedImages(new Set())
+        }
+        isInitialized.current = true
+        return activeBanners
+      })
     } else {
       // Fallback to local images if no backend banners
-      console.log('⚠️ No active backend banners, using fallback images')
-      setSlides([
-        {
-          id: '1',
-          image: banner1,
-          title: 'Premium Quality Pumps',
-          description: 'Reliable solutions for industrial use',
-          isBackend: false,
-        },
-        {
-          id: '2',
-          image: banner2,
-          title: 'Advanced Technology',
-          description: 'Engineered for excellence',
-          isBackend: false,
-        },
-        {
-          id: '3',
-          image: banner3,
-          title: 'Best Service',
-          description: 'We are here to help you',
-          isBackend: false,
-        },
-      ])
+      setSlides(prevSlides => {
+        // Only set fallback if we don't have any slides yet
+        if (prevSlides.length === 0) {
+          console.log('⚠️ No active backend banners, using fallback images')
+          const fallbackSlides = [
+            {
+              id: '1',
+              image: banner1,
+              title: 'Premium Quality Pumps',
+              description: 'Reliable solutions for industrial use',
+              isBackend: false,
+            },
+            {
+              id: '2',
+              image: banner2,
+              title: 'Advanced Technology',
+              description: 'Engineered for excellence',
+              isBackend: false,
+            },
+            {
+              id: '3',
+              image: banner3,
+              title: 'Best Service',
+              description: 'We are here to help you',
+              isBackend: false,
+            },
+          ]
+          // Mark local images as loaded immediately
+          setLoadedImages(new Set(['1', '2', '3']))
+          isInitialized.current = true
+          return fallbackSlides
+        }
+        return prevSlides
+      })
     }
   }, [banners])
 
@@ -110,10 +141,34 @@ export default function Hero() {
     }
   }, [slides.length, currentIndex])
 
-  if (slides.length === 0) {
+  // Debug log - must be before any conditional returns
+  useEffect(() => {
+    if (slides.length > 0) {
+      const currentSlide = slides[currentIndex]
+      console.log('📊 Hero State:', {
+        slidesCount: slides.length,
+        currentIndex,
+        currentSlide: currentSlide?.title,
+        loadedImages: Array.from(loadedImages),
+        failedImages: Array.from(failedImages),
+      })
+    }
+  }, [slides, currentIndex, loadedImages, failedImages])
+
+  // Show loading state only if we truly have no slides and banners are loading
+  if (slides.length === 0 && loading) {
     return (
       <section className="relative w-full h-[450px] sm:h-[550px] lg:h-[650px] bg-gray-800 flex items-center justify-center">
         <div className="text-white text-xl">Loading banners...</div>
+      </section>
+    )
+  }
+
+  // If no slides after loading, show fallback immediately
+  if (slides.length === 0) {
+    return (
+      <section className="relative w-full h-[450px] sm:h-[550px] lg:h-[650px] bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">No banners available</div>
       </section>
     )
   }
@@ -123,81 +178,97 @@ export default function Hero() {
   return (
     <section className="relative w-full h-[450px] sm:h-[550px] lg:h-[650px] overflow-hidden bg-gray-900">
       {/* Carousel Images Container */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 w-full h-full bg-gray-900">
         {slides.map((slide, index) => {
           const isActive = index === currentIndex
+          const imageFailed = failedImages.has(slide.id)
+          
+          // Determine image source
+          let imageSrc = ''
+          if (slide.isBackend) {
+            if (imageFailed) {
+              // Use fallback image if backend image failed
+              imageSrc = typeof banner1 === 'string' ? banner1 : banner1.src
+            } else {
+              // Use backend image URL
+              imageSrc = slide.image
+            }
+          } else {
+            // Local images
+            imageSrc = typeof slide.image === 'string' ? slide.image : slide.image.src
+          }
           
           return (
-          <div
-            key={`banner-${index}`}
-            className="absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out"
-            style={{
-              opacity: isActive ? 1 : 0,
-              zIndex: isActive ? 10 : 1,
-              pointerEvents: isActive ? 'auto' : 'none',
-            }}
-          >
-          {slide.isBackend ? (
-            // Backend images - use regular img tag
-            failedImages.has(slide.id) ? (
-              // Fallback to local image if backend image failed
-              <img
-                src={typeof banner1 === 'string' ? banner1 : banner1.src}
-                alt={slide.title}
-                className="w-full h-full object-cover"
-                style={{ 
-                  display: 'block',
-                  visibility: 'visible',
-                  opacity: 1,
-                  position: 'absolute',
-                  inset: 0,
-                }}
-              />
-            ) : (
-              <img
-                src={slide.image}
-                alt={slide.title}
-                className="w-full h-full object-cover"
-                style={{ 
-                  display: 'block',
-                  visibility: 'visible',
-                  opacity: 1,
-                  position: 'absolute',
-                  inset: 0,
-                }}
-                loading={isActive ? 'eager' : 'lazy'}
-                onLoad={() => console.log('✅ Backend image loaded:', slide.title, slide.image)}
-                onError={(e) => {
-                  console.error('❌ Backend image failed:', slide.title, slide.image)
-                  console.error('Attempting to load:', e.target.src)
-                  setFailedImages(prev => new Set(prev).add(slide.id))
-                }}
-              />
-            )
-          ) : (
-            // Local images - use regular img tag with .src
-            <img
-              src={typeof slide.image === 'string' ? slide.image : slide.image.src}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-              style={{ 
-                display: 'block',
-                visibility: 'visible',
-                opacity: 1,
-                position: 'absolute',
-                inset: 0,
+            <div
+              key={`banner-${slide.id}-${index}`}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                opacity: isActive ? 1 : 0,
+                zIndex: isActive ? 10 : 1,
+                pointerEvents: isActive ? 'auto' : 'none',
+                transition: 'opacity 0.6s ease-in-out',
               }}
-              onLoad={() => console.log('✅ Local image loaded:', slide.title)}
-              onError={(e) => console.error('❌ Local image failed:', slide.title, e.target.src)}
-            />
-          )}
+            >
+              {imageSrc && (
+                <img
+                  src={imageSrc}
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                  style={{ 
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    minHeight: '100%',
+                    minWidth: '100%',
+                  }}
+                  loading={index === 0 || index === currentIndex ? 'eager' : 'lazy'}
+                  crossOrigin="anonymous"
+                  onLoad={() => {
+                    console.log('✅ Image loaded successfully:', slide.title, imageSrc)
+                    setLoadedImages(prev => {
+                      if (!prev.has(slide.id)) {
+                        return new Set(prev).add(slide.id)
+                      }
+                      return prev
+                    })
+                  }}
+                  onError={(e) => {
+                    console.error('❌ Image failed to load:', slide.title, 'Attempted URL:', imageSrc, 'Current src:', e.target.src)
+                    if (!imageFailed && slide.isBackend) {
+                      console.log('🔄 Setting failed flag and trying fallback')
+                      setFailedImages(prev => new Set(prev).add(slide.id))
+                      // Try fallback image
+                      const fallbackSrc = typeof banner1 === 'string' ? banner1 : banner1.src
+                      if (e.target.src !== fallbackSrc) {
+                        console.log('🔄 Switching to fallback:', fallbackSrc)
+                        e.target.src = fallbackSrc
+                        e.target.onerror = null // Prevent infinite loop
+                      }
+                    } else if (!slide.isBackend) {
+                      console.error('❌ Local image also failed:', slide.title)
+                    }
+                  }}
+                />
+              )}
+              {!imageSrc && isActive && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
+                  <p>No image available</p>
+                </div>
+              )}
 
-          {/* Dark overlay for text contrast */}
-          {isActive && (
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" style={{ zIndex: 15 }} />
-          )}
-          </div>
-        )
+              {/* Dark overlay for text contrast */}
+              {isActive && (
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" 
+                  style={{ zIndex: 1 }} 
+                />
+              )}
+            </div>
+          )
         })}
       </div>
 
@@ -264,3 +335,4 @@ export default function Hero() {
     </section>
   )
 }
+
