@@ -598,14 +598,14 @@ const ProductDetails = ({ product }) => {
    {/* Action Buttons - Fixed at bottom */}
    <div className="mt-auto pt-4 sm:pt-6">
      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-       <button
-         onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')}
+   <button
+     onClick={() => !cart[productId] ? addToCartHandler() : router.push('/cart')}
          className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] shadow-md hover:shadow-lg transition-all active:scale-95"
-       >
+   >
          {!cart[productId] ? 'Add to Cart' : 'View Cart'}
-       </button>
+   </button>
 
-      <button
+   <button
         onClick={() => {
           const { price: selectedPrice } = getPriceAndMrpForHP(selectedHP);
           const productImageUrl = productImages[0] || '';
@@ -613,11 +613,11 @@ const ProductDetails = ({ product }) => {
           router.push(enquiryUrl);
         }}
         className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
-      >
-        Book Enquiry
-      </button>
+   >
+     Book Enquiry
+   </button>
      </div>
-   </div>
+ </div>
 </div>
 
  {/* Column 3: Specifications Section */}
@@ -701,13 +701,13 @@ const ProductDetails = ({ product }) => {
                  return pairs.map((pair, index) => (
                    <div key={index} className="flex items-center py-1.5 px-2.5 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors">
                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                       {pair.head && pair.discharge ? (
-                         <span>{pair.head}H & {pair.discharge}D</span>
-                       ) : pair.head ? (
-                         <span>{pair.head}H</span>
-                       ) : pair.discharge ? (
-                         <span>{pair.discharge}D</span>
-                       ) : null}
+                     {pair.head && pair.discharge ? (
+                       <span>{pair.head}H & {pair.discharge}D</span>
+                     ) : pair.head ? (
+                       <span>{pair.head}H</span>
+                     ) : pair.discharge ? (
+                       <span>{pair.discharge}D</span>
+                     ) : null}
                      </span>
                    </div>
                  ));

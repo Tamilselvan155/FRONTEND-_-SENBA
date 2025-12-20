@@ -21,6 +21,7 @@ import {
   Trash2,
   Phone,
   MapPin,
+  MessageSquare,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -386,20 +387,38 @@ const AccountContent = () => {
         {/* Page Header with Profile */}
         <div className="bg-white rounded-lg shadow-sm mb-6 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-4 sm:gap-6 flex-1">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-[#7C2A47] flex items-center justify-center text-white text-2xl sm:text-3xl font-semibold flex-shrink-0">
                 {getInitials()}
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                   {userData.name || userData.email || 'User'}
                 </h1>
                 <p className="text-sm text-gray-600 mt-1">{userData.email}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {userData.createdAt 
-                    ? `Member Since ${userData.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-                    : 'Member'}
-                </p>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
+                  <p className="text-xs text-gray-500">
+                    {userData.createdAt 
+                      ? `Member Since ${userData.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+                      : 'Member'}
+                  </p>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                      userData.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {userData.status ? userData.status.charAt(0).toUpperCase() + userData.status.slice(1) : 'Active'}
+                    </span>
+                  </div>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Type:</span>
+                    <span className="text-xs text-gray-700 font-medium capitalize">{userData.role || 'User'}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <button
@@ -428,17 +447,6 @@ const AccountContent = () => {
                 Overview
               </button>
               <button
-                onClick={() => setActiveSection('orders')}
-                className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeSection === 'orders'
-                    ? 'border-[#7C2A47] text-[#7C2A47]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Orders
-              </button>
-              <button
                 onClick={() => setActiveSection('account')}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeSection === 'account'
@@ -449,6 +457,18 @@ const AccountContent = () => {
                 <User className="h-4 w-4" />
                 Profile
               </button>
+              <button
+                onClick={() => setActiveSection('orders')}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeSection === 'orders'
+                    ? 'border-[#7C2A47] text-[#7C2A47]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Orders
+              </button>
+             
               <button
                 onClick={() => setActiveSection('addresses')}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
@@ -524,8 +544,36 @@ const AccountContent = () => {
                       </div>
                     </button>
 
-                    {/* Account Status Card */}
-                    <div className="border border-gray-200 rounded-lg p-6">
+                    {/* Enquiry Card */}
+                    <button
+                      onClick={() => setActiveSection('enquiry')}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 text-left group"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-[#7C2A47]/10 transition-colors">
+                          <MessageSquare className="h-8 w-8 text-gray-600 group-hover:text-[#7C2A47] transition-colors" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Enquiry</h3>
+                        <p className="text-xs text-gray-600">Enquiry about our products</p>
+                      </div>
+                    </button> 
+
+                    {/* Contact Us Card */}
+                    <button
+                      onClick={() => setActiveSection('contact')}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 text-left group"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-[#7C2A47]/10 transition-colors">
+                          <MessageSquare className="h-8 w-8 text-gray-600 group-hover:text-[#7C2A47] transition-colors" />
+                        </div>  
+                        <h3 className="text-base font-bold text-gray-900 mb-1">Contact Us</h3>
+                        <p className="text-xs text-gray-600">Contact us for any questions or concerns</p>
+                      </div>
+                    </button> 
+
+                      {/* Account Status Card */}
+                    {/* <div className="border border-gray-200 rounded-lg p-6">
                       <div className="flex flex-col items-center text-center">
                         <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4">
                           <Shield className="h-8 w-8 text-gray-600" />
@@ -533,10 +581,10 @@ const AccountContent = () => {
                         <h3 className="text-base font-bold text-gray-900 mb-1">Account Status</h3>
                         <p className="text-xs text-gray-600 capitalize">{userData.status || 'Active'}</p>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Account Type Card */}
-                    <div className="border border-gray-200 rounded-lg p-6">
+                    {/* <div className="border border-gray-200 rounded-lg p-6">
                       <div className="flex flex-col items-center text-center">
                         <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mb-4">
                           <User className="h-8 w-8 text-gray-600" />
@@ -544,7 +592,7 @@ const AccountContent = () => {
                         <h3 className="text-base font-bold text-gray-900 mb-1">Account Type</h3>
                         <p className="text-xs text-gray-600 capitalize">{userData.role || 'User'}</p>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}
@@ -786,6 +834,23 @@ const AccountContent = () => {
                       })()}
                     </div>
                   )}
+                </div>
+              )}
+
+              {activeSection === 'enquiry' && (
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Enquiries</h2>
+                  <div className="text-center py-12">
+                    <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No enquiries yet</p>
+                    <p className="text-sm text-gray-500 mt-2">Your product enquiries will appear here</p>
+                    <button
+                      onClick={() => router.push('/enquiry')}
+                      className="mt-4 px-4 py-2 bg-[#7C2A47] text-white text-sm font-medium rounded-lg hover:bg-[#6a2340] transition-colors"
+                    >
+                      Create New Enquiry
+                    </button>
+                  </div>
                 </div>
               )}
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 export default function ConfirmModal({ 
@@ -24,7 +25,7 @@ export default function ConfirmModal({
     }
   }, [isOpen])
 
-  if (!isOpen) return null
+  if (!isOpen || typeof window === 'undefined') return null
 
   const handleConfirm = () => {
     onConfirm()
@@ -34,19 +35,21 @@ export default function ConfirmModal({
   const bgColor = type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700'
   const borderColor = type === 'danger' ? 'border-red-200' : 'border-yellow-200'
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className="fixed inset-0 flex items-center justify-center p-4"
       onClick={onClose}
+      style={{ zIndex: 9999 }}
     >
       {/* Backdrop with blur to obscure table */}
-      <div className="fixed inset-0 backdrop-blur-md" />
+      <div className="fixed inset-0 backdrop-blur-md" style={{ zIndex: 9999 }} />
       
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4 relative">
         <div 
           className={`relative bg-white bg-opacity-95 rounded-lg shadow-xl max-w-md w-full`}
           onClick={(e) => e.stopPropagation()}
+          style={{ zIndex: 10000 }}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -85,7 +88,8 @@ export default function ConfirmModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

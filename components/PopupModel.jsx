@@ -79,16 +79,17 @@ const ModalPopup = ({
       });
       
       toast.success('Enquiry submitted successfully!');
+      
+      // Reset form only after successful submission
+      setShowForm(false);
+      setUserName('');
+      setUserMobile('');
+      onClose();
     } catch (error) {
       console.error('Error submitting enquiry:', error);
       toast.error(error.message || 'Failed to submit enquiry. Please try again.');
+      // Don't clear fields or close modal on error
     }
-
-    // Reset form
-    setShowForm(false);
-    setUserName('');
-    setUserMobile('');
-    onClose();
   };
 
   const handleSendWhatsApp = async () => {

@@ -216,9 +216,9 @@ const ProductCard = ({ product }) => {
       <div className="mt-1">
         <span className="text-xs text-gray-400 uppercase tracking-wide">
           {brand}
-        </span>
+      </span>
       </div>
-    )}
+      )}
 
     {/* Rating */}
     <div className="mt-1.5 flex items-center gap-1.5 text-xs">

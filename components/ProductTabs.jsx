@@ -147,16 +147,6 @@ const ProductTabsContent = () => {
       .map(transformProduct)
       .filter(product => product && product.id)
     
-    // Debug: Log first product to help troubleshoot
-    if (transformed.length > 0 && process.env.NODE_ENV === 'development') {
-      console.log('Sample transformed product from ProductTabs:', {
-        name: transformed[0].name,
-        price: transformed[0].price,
-        category: transformed[0].category,
-        originalProduct: transformed[0].originalProduct
-      });
-    }
-    
     return transformed
   }, [activeProducts, transformProduct])
 

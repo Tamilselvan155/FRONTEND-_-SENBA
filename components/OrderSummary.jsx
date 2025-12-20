@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { X, CheckCircle, MapPin, User, Mail } from 'lucide-react';
@@ -32,7 +33,14 @@ const OrderSummary = ({ totalPrice, items, totalSavings = 0 }) => {
   useEffect(() => {
     if (isModalOpen) {
       fetchUserDetails();
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isModalOpen]);
 
   const fetchUserDetails = async () => {
@@ -286,15 +294,21 @@ const OrderSummary = ({ totalPrice, items, totalSavings = 0 }) => {
         </div>
       </div>
 
-      {/* Order Confirmation Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => {
+      {/* Order Confirmation Modal - Rendered via Portal */}
+      {isModalOpen && typeof window !== 'undefined' ? createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => {
             setIsModalOpen(false);
             setOrderPlaced(false);
-          }}></div>
+            }}
+            style={{ zIndex: 9999 }}
+          />
           
-          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 z-50">
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6" style={{ zIndex: 10000 }}>
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7C2A47] mx-auto mb-4"></div>
@@ -467,8 +481,9 @@ const OrderSummary = ({ totalPrice, items, totalSavings = 0 }) => {
               }
             })()}
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 };

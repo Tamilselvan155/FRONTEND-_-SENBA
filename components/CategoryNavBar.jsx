@@ -123,20 +123,20 @@ const CategoryNavBar = () => {
                       }}
                     />
                     <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg w-48 py-2 z-[60] border border-gray-200 min-w-max max-h-[70vh] overflow-y-auto">
-                      {pumpSubCategories.map((subCat, subIndex) => (
-                        <Link
-                          key={subIndex}
-                          href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
+                    {pumpSubCategories.map((subCat, subIndex) => (
+                      <Link
+                        key={subIndex}
+                        href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
                           className="block px-4 py-2.5 text-xs text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 transition-colors duration-200"
-                          onClick={() => {
-                            setActiveCategory(null)
-                            setShowPumpSubmenu(false)
-                          }}
-                        >
-                          <span className="font-medium">{subCat}</span>
-                        </Link>
-                      ))}
-                    </div>
+                        onClick={() => {
+                          setActiveCategory(null)
+                          setShowPumpSubmenu(false)
+                        }}
+                      >
+                        <span className="font-medium">{subCat}</span>
+                      </Link>
+                    ))}
+                  </div>
                   </>
                 )}
               </div>

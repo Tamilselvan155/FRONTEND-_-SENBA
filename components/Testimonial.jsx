@@ -70,10 +70,10 @@ const Testimonial = () => {
         </div>
 
         {/* Testimonials Carousel */}
-        <div className="relative px-0 sm:px-2 md:px-4">
+        <div className="relative px-4 sm:px-12 md:px-16">
           {/* Left Arrow */}
           <button
-            className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 md:-translate-x-6 bg-white rounded-full shadow-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center hover:bg-gray-50 hover:shadow-xl active:scale-95 transition-all duration-200 z-10 border border-gray-200 ${
+            className={`absolute left-0 sm:left-2 md:left-4 top-1/2 -translate-y-1/2 bg-white rounded-full shadow-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center hover:bg-gray-50 hover:shadow-xl active:scale-95 transition-all duration-200 z-10 border border-gray-200 ${
               current === 0 ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
             }`}
             onClick={prev}
@@ -90,17 +90,28 @@ const Testimonial = () => {
           {/* Cards Container */}
           <div className="overflow-hidden pb-4">
             <div 
-              className="flex gap-4 sm:gap-5 md:gap-6 transition-transform duration-500 ease-in-out items-stretch"
+              className="flex transition-transform duration-500 ease-in-out items-stretch"
               style={{
-                transform: `translateX(-${current * (100 / visibleCards)}%)`
+                transform: `translateX(-${current * (100 / visibleCards)}%)`,
+                gap: visibleCards === 1 ? '0px' : visibleCards === 2 ? '1rem' : visibleCards === 3 ? '1.25rem' : '1.5rem'
               }}
             >
-              {dummyRatingsData.map((item) => (
+              {dummyRatingsData.map((item) => {
+                // Calculate width accounting for gaps
+                const gapPx = visibleCards === 1 ? 0 : visibleCards === 2 ? 16 : visibleCards === 3 ? 20 : 24;
+                const totalGaps = (visibleCards - 1) * gapPx;
+                const cardWidth = visibleCards === 1 
+                  ? '100%' 
+                  : `calc(${100 / visibleCards}% - ${totalGaps / visibleCards}px)`;
+                
+                return (
                 <div
                   key={item.id}
-                  className="flex-shrink-0 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200 p-6 sm:p-7 md:p-8 flex flex-col h-full"
+                  className="flex-shrink-0 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gray-200 p-5 sm:p-6 md:p-8 flex flex-col h-full"
                   style={{
-                    width: `calc(${100 / visibleCards}% - ${(visibleCards - 1) * (24 / visibleCards)}px)`
+                    width: cardWidth,
+                    minWidth: cardWidth,
+                    maxWidth: cardWidth
                   }}
                 >
                   {/* User Image */}
@@ -147,13 +158,14 @@ const Testimonial = () => {
                     "{item.review}"
                   </p>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           {/* Right Arrow */}
           <button
-            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 md:translate-x-6 bg-white rounded-full shadow-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center hover:bg-gray-50 hover:shadow-xl active:scale-95 transition-all duration-200 z-10 border border-gray-200 ${
+            className={`absolute right-0 sm:right-2 md:right-4 top-1/2 -translate-y-1/2 bg-white rounded-full shadow-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center hover:bg-gray-50 hover:shadow-xl active:scale-95 transition-all duration-200 z-10 border border-gray-200 ${
               current === maxStart ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
             }`}
             onClick={next}

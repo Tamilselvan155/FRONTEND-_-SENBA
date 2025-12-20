@@ -20,6 +20,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import { createPortal } from "react-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "@/lib/features/login/authSlice";
 import { clearAuthData } from "@/lib/utils/authUtils";
@@ -125,43 +126,43 @@ const Navbar = memo(() => {
 
   // Run cleanup immediately on mount, before setting mounted state
   useEffect(() => {
-    // Directly check and clear localStorage if cart is actually empty
-    if (typeof window !== 'undefined') {
-      try {
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-          const parsed = JSON.parse(savedCart);
-          const cartItems = parsed.cartItems || {};
-          let hasValidItems = false;
-          
-          for (const value of Object.values(cartItems)) {
-            const num = Number(value);
-            if (!isNaN(num) && num > 0 && isFinite(num) && num % 1 === 0) {
-              hasValidItems = true;
-              break;
+      // Directly check and clear localStorage if cart is actually empty
+      if (typeof window !== 'undefined') {
+        try {
+          const savedCart = localStorage.getItem('cart');
+          if (savedCart) {
+            const parsed = JSON.parse(savedCart);
+            const cartItems = parsed.cartItems || {};
+            let hasValidItems = false;
+            
+            for (const value of Object.values(cartItems)) {
+              const num = Number(value);
+              if (!isNaN(num) && num > 0 && isFinite(num) && num % 1 === 0) {
+                hasValidItems = true;
+                break;
+              }
             }
-          }
-          
-          // If no valid items, clear localStorage completely
-          if (!hasValidItems || Object.keys(cartItems).length === 0) {
-            localStorage.removeItem('cart');
+            
+            // If no valid items, clear localStorage completely
+            if (!hasValidItems || Object.keys(cartItems).length === 0) {
+              localStorage.removeItem('cart');
             // Also dispatch cleanup to ensure Redux state is clean
             dispatch(forceClearInvalidCart());
+            }
+          } else {
+            // No cart in localStorage, ensure Redux is clean
+            dispatch(forceClearInvalidCart());
           }
-        } else {
-          // No cart in localStorage, ensure Redux is clean
-          dispatch(forceClearInvalidCart());
-        }
-      } catch (e) {
-        // If error parsing, clear it
-        localStorage.removeItem('cart');
+        } catch (e) {
+          // If error parsing, clear it
+          localStorage.removeItem('cart');
         dispatch(forceClearInvalidCart());
+        }
       }
-    }
-    
-    // Force clear any invalid cart data, then recalculate
-    dispatch(forceClearInvalidCart());
-    dispatch(recalculateTotal());
+      
+      // Force clear any invalid cart data, then recalculate
+      dispatch(forceClearInvalidCart());
+      dispatch(recalculateTotal());
     setMounted(true);
   }, [dispatch]);
 
@@ -333,7 +334,8 @@ const Navbar = memo(() => {
                   <Image 
                     src={WVlogo} 
                     alt="WV logo" 
-                    className="h-12 w-auto object-contain" 
+                    className="h-12 w-auto object-contain"
+                    priority
                   />
                 </Link>
               </div>
@@ -466,7 +468,7 @@ const Navbar = memo(() => {
 
         {/* Mobile Search Bar - Appears below navbar */}
         {showSearchMobile && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-md z-40 px-4 py-3 w-full">
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-md z-[45] px-4 py-3 w-full">
             <form onSubmit={handleSearch} className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
@@ -519,7 +521,7 @@ const Navbar = memo(() => {
         {/* Mobile & Tablet Menu */}
         {menuOpen && (
           <>
-            <div className="lg:hidden fixed top-0 left-0 h-full w-72 sm:w-80 bg-white shadow-xl z-50 border-r border-gray-200">
+            <div className="lg:hidden fixed top-0 left-0 h-full w-72 sm:w-80 bg-white shadow-xl z-[60] border-r border-gray-200">
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 flex-shrink-0">
                   <Link href="/" className="flex items-center" onClick={toggleMenu}>
@@ -626,7 +628,7 @@ const Navbar = memo(() => {
               </div>
             </div>
             <div
-              className="fixed inset-0 bg-black/20 z-40"
+              className="fixed inset-0 bg-black/20 z-[55]"
               onClick={toggleMenu}
             />
           </>
@@ -634,9 +636,14 @@ const Navbar = memo(() => {
       </nav>
 
       {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+      {showLogoutModal && typeof window !== 'undefined' ? createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setShowLogoutModal(false)}
+            style={{ zIndex: 9999 }}
+          />
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative" style={{ zIndex: 10000 }}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Confirm Logout
             </h3>
@@ -667,8 +674,9 @@ const Navbar = memo(() => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
     </header>
   );
 });

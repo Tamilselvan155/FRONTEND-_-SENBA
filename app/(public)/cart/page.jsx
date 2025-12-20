@@ -11,6 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchProductsAsync } from "@/lib/features/product/productSlice";
 import { fetchCartAsync } from "@/lib/features/cart/cartSlice";
 import { getImageUrl } from "@/lib/utils/imageUtils";
+import { assets } from "@/assets/assets";
 
 export default function Cart() {
 
@@ -147,7 +148,7 @@ export default function Cart() {
                                 const firstVariant = product.brandVariants[0];
                                 if (firstVariant.price !== undefined && firstVariant.price !== null) {
                                     productPrice = Number(firstVariant.price);
-                                }
+                        }
                             }
                         }
                         
@@ -296,9 +297,9 @@ export default function Cart() {
         <div className="min-h-screen bg-white py-6 sm:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">My basket</h1>
-                    <p className="text-sm text-[#7C2A47] font-medium">
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">My basket</h1>
+                    <p className="text-sm sm:text-base text-[#7C2A47] font-medium">
                         You are eligible for free delivery!
                     </p>
                 </div>
@@ -313,7 +314,7 @@ export default function Cart() {
                                     const itemImages = item.images && Array.isArray(item.images) && item.images.length > 0 
                                         ? item.images 
                                         : [];
-                                    const itemImage = itemImages[0] || '/placeholder-image.jpg';
+                                    const itemImage = itemImages[0] || assets.product_img0 || '';
                                     
                                     // Handle category/brand - can be string or object
                                     let brandName = '';
@@ -336,76 +337,92 @@ export default function Cart() {
                                     const hasDiscount = itemMrp > itemPrice;
                                     
                                     return (
-                                        <div key={item.id || item._id || index} className="p-4 sm:p-6">
-                                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                        <div key={item.id || item._id || index} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
                                                 {/* Product Image */}
-                                                <div className="flex-shrink-0">
-                                                    <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                                        <Image 
-                                                            src={itemImage} 
-                                                            className="w-full h-full object-contain" 
-                                                            alt={item.name || item.title || 'Product'} 
-                                                            width={128} 
-                                                            height={128}
-                                                            unoptimized
-                                                        />
+                                                <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48">
+                                                    <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
+                                                        {itemImage ? (
+                                                            <Image 
+                                                                src={itemImage} 
+                                                                className="w-full h-full object-contain p-2" 
+                                                                alt={item.name || item.title || 'Product'} 
+                                                                width={192} 
+                                                                height={192}
+                                                                unoptimized
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.src = assets.product_img0 || assets.product_img01 || '';
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                                                No Image
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 
                                                 {/* Product Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    {/* Brand */}
-                                                    {brandName && (
-                                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                                            {brandName}
-                                                        </p>
-                                                    )}
-                                                    
-                                                    {/* Product Name */}
-                                                    <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
-                                                        {item.name || item.title || 'Product'}
-                                                    </h3>
-                                                    
-                                                    {/* Estimated Delivery */}
-                                                    <p className="text-xs text-gray-500 mb-3">
-                                                        Estimated Delivery: Monday 22nd December and Wednesday 24th December.
-                                                    </p>
-                                                    
-                                                    {/* Price */}
-                                                    <div className="flex items-baseline gap-2 mb-4">
-                                                        <span className={`text-lg font-bold ${hasDiscount ? 'text-red-600' : 'text-[#7C2A47]'}`}>
-                                                            {currency}{itemPrice.toLocaleString()}
-                                                        </span>
-                                                        {hasDiscount && (
-                                                            <span className="text-sm text-gray-400 line-through">
-                                                                {currency}{itemMrp.toLocaleString()}
-                                                            </span>
+                                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                                    <div>
+                                                        {/* Brand */}
+                                                        {brandName && (
+                                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                                                                {brandName}
+                                                            </p>
                                                         )}
+                                                        
+                                                        {/* Product Name */}
+                                                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3 line-clamp-2 leading-tight">
+                                                            {item.name || item.title || 'Product'}
+                                                        </h3>
+                                                        
+                                                        {/* Estimated Delivery */}
+                                                        <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 leading-relaxed">
+                                                            Estimated Delivery: Monday 22nd December and Wednesday 24th December.
+                                                        </p>
+                                                        
+                                                        {/* Price */}
+                                                        <div className="flex items-baseline gap-2 mb-4 sm:mb-5">
+                                                            <span className={`text-lg sm:text-xl font-bold ${hasDiscount ? 'text-red-600' : 'text-[#7C2A47]'}`}>
+                                                                {currency}{itemPrice.toLocaleString()}
+                                                            </span>
+                                                            {hasDiscount && (
+                                                                <span className="text-sm text-gray-400 line-through">
+                                                                    {currency}{itemMrp.toLocaleString()}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     
-                                                    {/* Quantity and Remove */}
-                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                                        <div className="flex items-center">
-                                                            <Counter 
-                                                                productId={item.id || item._id} 
-                                                                initialQuantity={item.quantity}
-                                                                productPrice={item.price}
-                                                            />
-                                                        </div>
-                                                        <button 
-                                                            onClick={() => handleDeleteItemFromCart(item.id || item._id)} 
-                                                            className="text-sm text-[#7C2A47] hover:text-[#6a243d] font-medium underline self-start sm:self-auto transition-colors"
-                                                        >
-                                                            Remove
-                                                        </button>
+                                                    {/* Quantity */}
+                                                    <div className="flex items-center">
+                                                        <Counter 
+                                                            productId={item.id || item._id} 
+                                                            initialQuantity={item.quantity}
+                                                            productPrice={item.price}
+                                                        />
                                                     </div>
                                                 </div>
                                                 
-                                                {/* Individual Total */}
-                                                <div className="flex-shrink-0 sm:text-right">
-                                                    <p className="text-lg font-bold text-gray-900">
-                                                        {currency}{itemTotal.toLocaleString()}
-                                                    </p>
+                                                {/* Right Side: Total and Remove Button */}
+                                                <div className="flex-shrink-0 w-full sm:w-auto sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 sm:border-0 flex flex-col sm:flex-col items-end gap-3 sm:gap-4">
+                                                    {/* Individual Total */}
+                                                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 w-full sm:w-auto">
+                                                        <span className="text-xs sm:text-sm text-gray-500 sm:hidden">Item Total:</span>
+                                                        <p className="text-lg sm:text-xl font-bold text-gray-900">
+                                                            {currency}{itemTotal.toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    {/* Remove Button */}
+                                                    <button 
+                                                        onClick={() => handleDeleteItemFromCart(item.id || item._id)} 
+                                                        className="text-sm text-[#7C2A47] hover:text-[#6a243d] font-medium underline transition-colors w-fit self-end sm:self-auto"
+                                                    >
+                                                        Remove
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -419,54 +436,54 @@ export default function Cart() {
                             <div className="mt-4 pt-4 border-t border-gray-200">
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                     <div className="text-xs text-gray-600">
-                                        Showing {cartStartIndex + 1} to {Math.min(cartEndIndex, cartArray.length)} of {cartArray.length} items
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setCartPage(prev => Math.max(1, prev - 1))}
-                                            disabled={cartPage === 1}
+                                    Showing {cartStartIndex + 1} to {Math.min(cartEndIndex, cartArray.length)} of {cartArray.length} items
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCartPage(prev => Math.max(1, prev - 1))}
+                                        disabled={cartPage === 1}
                                             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                        >
-                                            Previous
-                                        </button>
+                                    >
+                                        Previous
+                                    </button>
                                         <span className="text-xs text-gray-700 px-2">
-                                            Page {cartPage} of {totalCartPages}
-                                        </span>
-                                        <button
-                                            onClick={() => setCartPage(prev => Math.min(totalCartPages, prev + 1))}
-                                            disabled={cartPage === totalCartPages}
+                                        Page {cartPage} of {totalCartPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setCartPage(prev => Math.min(totalCartPages, prev + 1))}
+                                        disabled={cartPage === totalCartPages}
                                             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                        >
-                                            Next
-                                        </button>
+                                    >
+                                        Next
+                                    </button>
                                     </div>
                                 </div>
                             </div>
                         )}
-                    </div>
-                    
+                </div>
+
                     {/* Order Summary - Right Sidebar */}
                     <div className="w-full lg:w-96 lg:flex-shrink-0">
                         <OrderSummary totalPrice={totalPrice} items={cartArray} totalSavings={totalSavings} />
-                    </div>
-                </div>
+                                </div>
+                            </div>
             </div>
         </div>
     ) : (
         <div className="min-h-screen bg-white py-6 sm:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">My basket</h1>
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">My basket</h1>
                 </div>
-                
+
                 <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="text-center">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-                        <p className="text-sm text-gray-600 mb-6">Add items to your cart to get started</p>
+                    <div className="text-center max-w-md mx-auto px-4">
+                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">Your cart is empty</h2>
+                        <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">Add items to your cart to get started</p>
                         <Link 
                             href="/category/products"
-                            className="inline-block px-6 py-3 bg-[#7C2A47] text-sm text-white font-semibold rounded-lg hover:bg-[#6a243d] active:scale-95 transition-all"
+                            className="inline-block px-6 sm:px-8 py-3 sm:py-3.5 bg-[#7C2A47] text-sm sm:text-base text-white font-semibold rounded-lg hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
                         >
                             Continue Shopping
                         </Link>

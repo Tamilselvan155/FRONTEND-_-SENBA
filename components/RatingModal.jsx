@@ -2,6 +2,7 @@
 
 import { Star } from 'lucide-react';
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom';
 import { XIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -21,9 +22,11 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
         setRatingModal(null);
     }
 
-    return (
-        <div className='fixed inset-0 z-120 flex items-center justify-center bg-black/10'>
-            <div className='bg-white p-8 rounded-lg shadow-lg w-96 relative'>
+    if (typeof window === 'undefined') return null;
+
+    return createPortal(
+        <div className='fixed inset-0 flex items-center justify-center bg-black/10' style={{ zIndex: 9999 }}>
+            <div className='bg-white p-8 rounded-lg shadow-lg w-96 relative' style={{ zIndex: 10000 }}>
                 <button onClick={() => setRatingModal(null)} className='absolute top-3 right-3 text-gray-500 hover:text-gray-700'>
                     <XIcon size={20} />
                 </button>
@@ -48,7 +51,8 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                     Submit Rating
                 </button>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

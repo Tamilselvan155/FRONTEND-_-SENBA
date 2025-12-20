@@ -242,13 +242,15 @@ const ShopByCategory = () => {
                   )}
                 </div>
 
-                {/* Products Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 items-stretch">
+                {/* Products Scrollable Container */}
+                <div className="flex gap-4 sm:gap-5 md:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3 -mx-3 px-3 sm:mx-0 sm:px-0">
                   {displayProducts.map((product, idx) => (
-                    <ProductCard
+                    <div
                       key={product?.id || product?._id || `${category.slug}-${idx}`}
-                      product={product}
-                    />
+                      className="snap-start flex-shrink-0 w-[240px] sm:w-[260px] md:w-[280px] lg:w-[300px]"
+                    >
+                      <ProductCard product={product} />
+                    </div>
                   ))}
                 </div>
 

@@ -640,7 +640,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
         <div className="relative flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 items-start overflow-x-hidden">
           {/* Filters Sidebar - Fixed on desktop */}
           <aside className="w-full lg:w-56 xl:w-60 lg:flex-shrink-0">
-            <div className="lg:sticky lg:top-20">
+            <div className="lg:sticky lg:top-20 lg:z-30">
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <ProductFilters products={products} onFilterChange={setFilters} />
         </div>

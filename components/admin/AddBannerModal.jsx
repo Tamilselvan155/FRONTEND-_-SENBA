@@ -2,6 +2,7 @@
 
 import { X, ChevronDown } from "lucide-react"
 import { useState } from "react"
+import { createPortal } from "react-dom"
 
 const AddBannerModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = useState({
@@ -48,11 +49,11 @@ const AddBannerModal = ({ isOpen, onClose }) => {
         onClose()
     }
 
-    if (!isOpen) return null
+    if (!isOpen || typeof window === 'undefined') return null
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+    return createPortal(
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style={{ zIndex: 9999 }}>
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ zIndex: 10000 }}>
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 className="text-2xl font-semibold text-gray-800">Add Banner</h2>
@@ -164,7 +165,8 @@ const AddBannerModal = ({ isOpen, onClose }) => {
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

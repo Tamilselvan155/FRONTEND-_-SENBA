@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 
 const Modal = ({
@@ -61,8 +62,10 @@ const Modal = ({
     success: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+  if (!shouldRender || typeof window === 'undefined') return null;
+
+  return createPortal(
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${
@@ -70,10 +73,11 @@ const Modal = ({
         }`}
         onClick={!isLoading ? onClose : undefined}
         aria-hidden="true"
+        style={{ zIndex: 9999 }}
       ></div>
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-4 relative">
         <div
           className={`relative bg-white rounded-lg shadow-2xl max-w-md w-full transform transition-all duration-300 ease-out ${
             isAnimating 
@@ -81,6 +85,7 @@ const Modal = ({
               : 'opacity-0 scale-95 translate-y-4'
           }`}
           onClick={(e) => e.stopPropagation()}
+          style={{ zIndex: 10000 }}
         >
           {/* Header */}
           <div className="px-6 pt-6 pb-4">
@@ -135,7 +140,8 @@ const Modal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
