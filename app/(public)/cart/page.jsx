@@ -8,16 +8,15 @@ import { useCart } from "@/lib/hooks/useCart";
 import { Trash2Icon, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProductsAsync } from "@/lib/features/product/productSlice";
 import { fetchCartAsync } from "@/lib/features/cart/cartSlice";
 import { getImageUrl } from "@/lib/utils/imageUtils";
 import { assets } from "@/assets/assets";
 import { useRouter, useSearchParams } from "next/navigation";
-import Loading from "@/components/Loading";
 
-function CartContent() {
+export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
     const dispatch = useDispatch();
@@ -28,30 +27,33 @@ function CartContent() {
     const cartItemsWithDetails = useSelector(state => state.cart.items || []); // Populated items from backend
     const products = useSelector(state => state.product.list || state.product.products || []);
     
-    // Cart state - declare before useEffects that use it
+    // Cart state - must be declared before useEffects that use it
     const [cartArray, setCartArray] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
     
     // Checkout flow state - check URL parameter
     const [showCheckout, setShowCheckout] = useState(false);
-    const hasProcessedCheckoutParam = useRef(false);
     
-    // Check if checkout parameter is in URL (only once)
+    // Check if checkout parameter is in URL
     useEffect(() => {
-        if (hasProcessedCheckoutParam.current) return;
-        
         const checkoutParam = searchParams.get('checkout');
         if (checkoutParam === 'true' && isLoggedIn && cartArray.length > 0) {
             setShowCheckout(true);
-            hasProcessedCheckoutParam.current = true;
-            // Clean up URL - use window.history to avoid triggering re-render
-            if (typeof window !== 'undefined') {
-                window.history.replaceState({}, '', '/cart');
-            }
-        } else if (checkoutParam !== 'true') {
-            hasProcessedCheckoutParam.current = true;
+            // Clean up URL after a short delay to ensure state is set
+            setTimeout(() => {
+                router.replace('/cart', { scroll: false });
+            }, 100);
         }
-    }, [searchParams, isLoggedIn, cartArray.length]);
+    }, [searchParams, isLoggedIn, cartArray.length, router]);
+    
+    // Redirect to login if trying to checkout but not logged in
+    useEffect(() => {
+        const checkoutParam = searchParams.get('checkout');
+        if (checkoutParam === 'true' && !isLoggedIn) {
+            router.replace('/login?redirect=checkout');
+        }
+    }, [searchParams, isLoggedIn, router]);
+    
     const hasFetchedCart = useRef(false);
     
     // Pagination for cart items
@@ -327,11 +329,17 @@ function CartContent() {
     };
 
     const handleStartCheckout = () => {
+        // If not logged in, redirect to login page
+        if (!isLoggedIn) {
+            router.push('/login?redirect=checkout');
+            return;
+        }
+        // Otherwise, show checkout flow
         setShowCheckout(true);
     };
 
-    // Show checkout flow if triggered
-    if (showCheckout && cartArray.length > 0) {
+    // Show checkout flow if triggered - only if logged in
+    if (showCheckout && cartArray.length > 0 && isLoggedIn) {
         return (
             <div className="min-h-screen bg-white py-6 sm:py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -566,16 +574,4 @@ function CartContent() {
             </div>
         </div>
     )
-}
-
-export default function Cart() {
-    return (
-        <Suspense fallback={
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <Loading />
-            </div>
-        }>
-            <CartContent />
-        </Suspense>
-    );
 }

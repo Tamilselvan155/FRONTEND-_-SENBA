@@ -240,21 +240,21 @@ const ProductCard = ({ product }) => {
   </Link>
 
   {/* Content */}
-  <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 flex flex-col flex-1 text-left">
+  <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 flex flex-col flex-1">
     
-    {/* Category */}
-    <span className="inline-block mb-1.5 bg-gray-100 px-2 py-0.5 rounded-full text-[11px] text-gray-500 uppercase tracking-wide w-fit">
+    {/* Category - Left aligned */}
+    <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[11px] text-gray-500 uppercase tracking-wide w-fit mb-1.5">
       {category || "Pumps"}
     </span>
 
-    {/* Product Name */}
-    <Link href={`/product/${productId || '#'}`}>
+    {/* Product Name - Left aligned */}
+    <Link href={`/product/${productId || '#'}`} className="block">
       <h3 className="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2 mb-0.5">
         {productName}
       </h3>
     </Link>
 
-    {/* Price */}
+    {/* Price - Left aligned */}
     <div className="mt-1.5 flex items-baseline gap-2">
       <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
         {currency}
@@ -269,14 +269,14 @@ const ProductCard = ({ product }) => {
       )}
     </div>
 
-    {/* Brand */}
+    {/* Brand - Left aligned */}
     {brand && brand.toLowerCase() !== category?.toLowerCase() && (
-      <span className="mt-0.5 text-xs text-gray-400 uppercase tracking-wide">
+      <span className="mt-0.5 text-xs text-gray-400 uppercase tracking-wide block">
         {brand}
       </span>
     )}
 
-    {/* Rating */}
+    {/* Rating - Left aligned */}
     <div className="mt-1.5 flex items-center gap-1.5 text-xs leading-none">
       <span className={ratingValue ? "text-[#7C2A47]" : "text-gray-300"}>
         ★★★★★
@@ -286,7 +286,7 @@ const ProductCard = ({ product }) => {
       </span>
     </div>
 
-    {/* Stock */}
+    {/* Stock - Left aligned */}
     <div className="mt-1.5 flex items-center gap-1.5 text-xs leading-none">
       {(() => {
         const stock =

@@ -41,6 +41,8 @@ const AccountContent = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
 
   // Fetch user data from localStorage or backend
@@ -116,8 +118,13 @@ const AccountContent = () => {
 
 
 
-  const handleSignOut = async (e) => {
+  const handleSignOutClick = (e) => {
     e.preventDefault();
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setIsLoggingOut(true);
     try {
       // Call logout API
       const token = localStorage.getItem('token');
@@ -137,11 +144,14 @@ const AccountContent = () => {
 
       dispatch(signOut());
       clearAuthData();
+      setShowLogoutModal(false);
+      setIsLoggingOut(false);
       toast.success('Logged out successfully');
       router.push('/');
       router.refresh();
     } catch (error) {
       console.error('Logout error:', error);
+      setIsLoggingOut(false);
       toast.error('An error occurred during logout');
     }
   };
@@ -224,8 +234,8 @@ const AccountContent = () => {
               </div>
             </div>
             <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors self-start sm:self-auto"
+              onClick={handleSignOutClick}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors self-end sm:self-auto ml-auto sm:ml-0"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
@@ -425,6 +435,47 @@ const AccountContent = () => {
               )}
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => !isLoggingOut && setShowLogoutModal(false)}
+          />
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to logout? You will need to login again to access your account.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                disabled={isLoggingOut}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                disabled={isLoggingOut}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#7C2A47] hover:bg-[#6a2340] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoggingOut ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Logging out...
+                  </>
+                ) : (
+                  'Yes, Logout'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout Success Popup */}
       {showPopup && (

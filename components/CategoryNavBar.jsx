@@ -169,9 +169,15 @@ const CategoryNavBar = () => {
 
   // Helper function to calculate dropdown position
   const calculateDropdownPosition = (rect, categoryId) => {
-    const dropdownWidth = 160 // Professional width for mobile dropdown
-    const padding = 12 // 0.75rem = 12px
+    // Responsive dropdown width based on viewport
     const viewportWidth = window.innerWidth
+    let dropdownWidth = 160 // Default mobile
+    if (viewportWidth >= 768) {
+      dropdownWidth = 200 // Tablet
+    } else if (viewportWidth >= 640) {
+      dropdownWidth = 180 // Small tablet
+    }
+    const padding = 12 // 0.75rem = 12px
     
     // Calculate left position: align dropdown to button's left edge
     // This ensures the dropdown is always directly under the button
@@ -329,17 +335,21 @@ const CategoryNavBar = () => {
   }
 
   return (
-    <div className="sticky top-16 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 relative">
-        {/* Mobile: Horizontal Scrollable */}
+    <div className="sticky top-16 md:top-18 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 relative">
+        {/* Mobile & Tablet: Horizontal Scrollable */}
         <nav 
           ref={navContainerRef}
-          className={`lg:hidden flex items-center gap-1.5 sm:gap-2 py-2 touch-pan-x ${activeCategory ? 'overflow-visible' : 'overflow-x-auto scrollbar-hide'}`}
+          className={`lg:hidden flex items-center gap-1 sm:gap-1.5 md:gap-2 py-2 md:py-2.5 touch-pan-x ${activeCategory ? 'overflow-visible' : 'overflow-x-auto scrollbar-hide'}`}
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}
         >
           {loading ? (
-            <div className="px-3 py-2 text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">Loading categories...</div>
+            <div className="px-2 sm:px-3 md:px-4 py-2 text-[10px] sm:text-[11px] md:text-xs text-gray-500 whitespace-nowrap">Loading categories...</div>
           ) : processedCategories.length === 0 ? (
-            <div className="px-3 py-2 text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">No categories available</div>
+            <div className="px-2 sm:px-3 md:px-4 py-2 text-[10px] sm:text-[11px] md:text-xs text-gray-500 whitespace-nowrap">No categories available</div>
           ) : (
             processedCategories.map((category) => {
               const categoryName = formatCategoryName(category)
@@ -359,16 +369,16 @@ const CategoryNavBar = () => {
                       }}
                       onClick={(e) => handleCategoryClick(e, categoryId)}
                       onMouseDown={(e) => e.stopPropagation()}
-                      className={`flex items-center gap-1 py-1.5 px-2.5 sm:py-2 sm:px-3 text-[11px] sm:text-xs font-semibold uppercase tracking-tight transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation ${
+                      className={`flex items-center gap-0.5 sm:gap-1 md:gap-1.5 min-h-[36px] sm:min-h-[40px] md:min-h-[44px] py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-2.5 md:px-3 lg:px-4 text-[10px] sm:text-[11px] md:text-xs font-semibold uppercase tracking-tight transition-all duration-200 rounded-md sm:rounded-lg whitespace-nowrap touch-manipulation ${
                         isActive
                           ? 'text-[#7C2A47] bg-[#7C2A47]/10'
                           : 'text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5'
                       }`}
                     >
-                      <span className="leading-tight">{categoryName}</span>
+                      <span className="leading-tight max-w-[120px] sm:max-w-[140px] md:max-w-none truncate">{categoryName}</span>
                       <ChevronDown 
-                        size={12} 
-                        className={`flex-shrink-0 transition-transform duration-200 ${
+                        size={10}
+                        className={`sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 flex-shrink-0 transition-transform duration-200 ${
                           isActive ? 'rotate-180' : ''
                         } ${isActive ? 'text-[#7C2A47]' : 'text-gray-500'}`}
                       />
@@ -376,13 +386,13 @@ const CategoryNavBar = () => {
                   ) : (
                     <Link
                       href={categoryHref}
-                      className="flex items-center gap-1 py-1.5 px-2.5 sm:py-2 sm:px-3 text-[11px] sm:text-xs font-semibold uppercase tracking-tight transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
+                      className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5 min-h-[36px] sm:min-h-[40px] md:min-h-[44px] py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-2.5 md:px-3 lg:px-4 text-[10px] sm:text-[11px] md:text-xs font-semibold uppercase tracking-tight transition-all duration-200 rounded-md sm:rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
                       onClick={() => {
                         setActiveCategory(null)
                         setDropdownPosition({ top: 0, left: 0, width: 0 })
                       }}
                     >
-                      <span className="leading-tight">{categoryName}</span>
+                      <span className="leading-tight max-w-[120px] sm:max-w-[140px] md:max-w-none truncate">{categoryName}</span>
                     </Link>
                   )}
 
@@ -399,7 +409,7 @@ const CategoryNavBar = () => {
                       />
                       <div 
                         ref={dropdownRef}
-                        className="fixed bg-white shadow-2xl rounded-lg py-1 z-[60] border border-gray-200/80 max-h-[70vh] overflow-y-auto lg:hidden min-w-[140px] max-w-[180px]"
+                        className="fixed bg-white shadow-2xl rounded-lg sm:rounded-xl py-1 sm:py-1.5 z-[60] border border-gray-200/80 max-h-[70vh] overflow-y-auto lg:hidden min-w-[140px] sm:min-w-[160px] md:min-w-[180px] max-w-[200px] sm:max-w-[220px] md:max-w-[240px]"
                         style={{
                           top: `${dropdownPosition.top}px`,
                           left: `${dropdownPosition.left}px`,
@@ -429,13 +439,13 @@ const CategoryNavBar = () => {
                                   <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
                                     <Link
                                       href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
-                                      className="flex items-center justify-center w-full px-3 py-1.5 text-xs text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 active:text-[#7C2A47] transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
+                                      className="flex items-center justify-center w-full min-h-[40px] sm:min-h-[44px] px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 active:text-[#7C2A47] transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
                                       onClick={() => {
                                         setActiveCategory(null)
                                         setDropdownPosition({ top: 0, left: 0, width: 0 })
                                       }}
                                     >
-                                      <span className="font-normal text-center w-full leading-normal">{subCategoryName}</span>
+                                      <span className="font-normal text-center w-full leading-normal px-1 truncate">{subCategoryName}</span>
                                     </Link>
                                   </li>
                                 )
@@ -443,7 +453,7 @@ const CategoryNavBar = () => {
                               .filter(Boolean)}
                           </ul>
                         ) : (
-                          <div className="px-3 py-2 text-xs text-gray-500 text-center w-full">No subcategories available</div>
+                          <div className="px-3 sm:px-4 py-2 text-[11px] sm:text-xs text-gray-500 text-center w-full">No subcategories available</div>
                         )}
                       </div>
                     </>
@@ -455,11 +465,11 @@ const CategoryNavBar = () => {
         </nav>
 
         {/* Desktop: Evenly Distributed */}
-        <nav className="hidden lg:flex items-center justify-between w-full">
+        <nav className="hidden lg:flex items-center justify-between w-full py-1">
           {loading ? (
-            <div className="px-4 py-2.5 text-xs text-gray-500">Loading categories...</div>
+            <div className="px-4 py-2.5 text-xs lg:text-sm text-gray-500 w-full text-center">Loading categories...</div>
           ) : processedCategories.length === 0 ? (
-            <div className="px-4 py-2.5 text-xs text-gray-500">No categories available</div>
+            <div className="px-4 py-2.5 text-xs lg:text-sm text-gray-500 w-full text-center">No categories available</div>
           ) : (
             processedCategories.map((category) => {
               const categoryName = formatCategoryName(category)
@@ -479,7 +489,7 @@ const CategoryNavBar = () => {
                 >
                   <Link
                     href={categoryHref}
-                    className={`flex items-center gap-1.5 py-2.5 px-2 lg:px-3 text-xs font-semibold uppercase tracking-tight transition-all duration-200 relative group ${
+                    className={`flex items-center gap-1.5 lg:gap-2 py-2.5 lg:py-3 px-2 lg:px-3 xl:px-4 text-xs lg:text-sm font-semibold uppercase tracking-tight transition-all duration-200 relative group ${
                       isHovered || (hasSubcategories && hoveredCategory === categoryId)
                         ? 'text-[#7C2A47]'
                         : 'text-gray-700 hover:text-[#7C2A47]'
@@ -488,8 +498,8 @@ const CategoryNavBar = () => {
                     <span className="leading-tight whitespace-nowrap">{categoryName}</span>
                     {hasSubcategories && (
                       <ChevronDown 
-                        size={12} 
-                        className={`flex-shrink-0 transition-all duration-200 ${
+                        size={12}
+                        className={`lg:w-3.5 lg:h-3.5 flex-shrink-0 transition-all duration-200 ${
                           isHovered || hoveredCategory === categoryId
                             ? 'rotate-180 text-[#7C2A47]' 
                             : 'text-gray-500 group-hover:text-[#7C2A47]'
@@ -504,7 +514,7 @@ const CategoryNavBar = () => {
                       ref={dropdownRef}
                       onMouseEnter={handleDropdownMouseEnter}
                       onMouseLeave={handleDropdownMouseLeave}
-                      className="absolute bg-white shadow-2xl rounded-lg top-full mt-2 left-1/2 -translate-x-1/2 w-64 py-1 z-50 border border-gray-200/80 max-h-[70vh] overflow-y-auto"
+                      className="absolute bg-white shadow-2xl rounded-lg lg:rounded-xl top-full mt-2 left-1/2 -translate-x-1/2 w-64 lg:w-72 xl:w-80 py-1 lg:py-1.5 z-50 border border-gray-200/80 max-h-[70vh] overflow-y-auto"
                     >
                       {subcategories.length > 0 ? (
                         <ul className="list-none m-0 p-0">
@@ -527,7 +537,7 @@ const CategoryNavBar = () => {
                                 <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
                                   <Link
                                     href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
-                                    className="flex items-center justify-center w-full px-3 py-1.5 text-xs text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
+                                    className="flex items-center justify-center w-full min-h-[44px] px-3 lg:px-4 xl:px-5 py-2 lg:py-2.5 text-xs lg:text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
                                     onClick={() => {
                                       setHoveredCategory(null)
                                     }}
@@ -540,7 +550,7 @@ const CategoryNavBar = () => {
                             .filter(Boolean)}
                         </ul>
                       ) : (
-                        <div className="px-3 py-2 text-xs text-gray-500 text-center w-full">No subcategories available</div>
+                        <div className="px-3 lg:px-4 py-2 lg:py-2.5 text-xs lg:text-sm text-gray-500 text-center w-full">No subcategories available</div>
                       )}
                     </div>
                   )}

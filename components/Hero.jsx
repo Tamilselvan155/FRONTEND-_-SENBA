@@ -520,6 +520,7 @@ const Hero = () => {
                                       src={imageSrc}
                                       alt={currentSlide.title}
                                       className="object-cover"
+                                      loading={current === 0 ? "eager" : "lazy"}
                                       style={{ 
                                         position: 'absolute',
                                         top: 0,

@@ -26,6 +26,7 @@ const AddressStep = ({ onAddressSelect, selectedAddress, onBack }) => {
   useEffect(() => {
     fetchUserData();
     fetchAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUserData = async () => {

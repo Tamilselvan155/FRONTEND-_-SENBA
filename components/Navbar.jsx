@@ -390,16 +390,14 @@ const Navbar = memo(() => {
                 )}
               </Link>
               {email ? (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowLogoutModal(true);
-                  }}
+                <Link
+                  href="/account"
+                  prefetch={true}
                   className="p-2 hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 active:bg-[#7C2A47]/20"
-                  aria-label="Sign out"
+                  aria-label="My account"
                 >
                   <UserCircle size={20} className="text-gray-700" />
-                </button>
+                </Link>
               ) : (
                 <Link
                   href="/login"
