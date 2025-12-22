@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/hooks/useCart';
@@ -22,9 +22,11 @@ const CheckoutFlow = ({ cartArray, totalPrice, totalSavings, onComplete, onCance
   const [orderData, setOrderData] = useState(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // Redirect to login if not logged in
+  // Redirect to login if not logged in (only once)
+  const hasRedirected = useRef(false);
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn && !hasRedirected.current) {
+      hasRedirected.current = true;
       router.push('/login?redirect=checkout');
       return;
     }
