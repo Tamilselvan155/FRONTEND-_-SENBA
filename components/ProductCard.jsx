@@ -202,7 +202,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <>
-      <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full rounded-lg transition-shadow hover:shadow-lg">
+     <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full rounded-lg transition-shadow hover:shadow-lg">
   {/* Image */}
   <Link href={`/product/${productId || '#'}`} className="block">
     <div className="relative w-full aspect-[3/2] bg-white">
@@ -220,93 +220,93 @@ const ProductCard = ({ product }) => {
           Save {discount}%
         </div>
       )}
-      
+
       {/* Wishlist Button */}
       <button
         onClick={handleWishlistToggle}
         className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all z-10"
-        title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
       >
         <Heart
           size={16}
-          className={isInWishlist ? 'fill-[#7C2A47] text-[#7C2A47]' : 'text-gray-600 hover:text-[#7C2A47]'}
+          className={
+            isInWishlist
+              ? "fill-[#7C2A47] text-[#7C2A47]"
+              : "text-gray-600 hover:text-[#7C2A47]"
+          }
         />
       </button>
     </div>
   </Link>
 
   {/* Content */}
-  <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 flex flex-col flex-1">
-    {/* Category (At Top) */}
-    <div className="mb-1.5">
-      <span className="bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-full text-xs text-gray-500 uppercase tracking-wide">
-        {category || "Pumps"}
-      </span>
-    </div>
+  <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 flex flex-col flex-1 text-left">
+    
+    {/* Category */}
+    <span className="inline-block mb-1.5 bg-gray-100 px-2 py-0.5 rounded-full text-[11px] text-gray-500 uppercase tracking-wide w-fit">
+      {category || "Pumps"}
+    </span>
 
     {/* Product Name */}
     <Link href={`/product/${productId || '#'}`}>
-      <h3 className="text-sm sm:text-base font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2rem]">
+      <h3 className="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2 mb-0.5">
         {productName}
       </h3>
     </Link>
 
     {/* Price */}
-    <div className="mt-1.5">
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
-          {currency}{Number(finalPrice || 0).toLocaleString()}
-        </span>
+    <div className="mt-1.5 flex items-baseline gap-2">
+      <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
+        {currency}
+        {Number(finalPrice || 0).toLocaleString()}
+      </span>
 
-        {discount > 0 && originalPrice > finalPrice && (
-          <span className="text-xs sm:text-sm text-gray-400 line-through">
-            {currency}{Number(originalPrice || 0).toLocaleString()}
-          </span>
-        )}
-      </div>
+      {discount > 0 && originalPrice > finalPrice && (
+        <span className="text-xs sm:text-sm text-gray-400 line-through">
+          {currency}
+          {Number(originalPrice || 0).toLocaleString()}
+        </span>
+      )}
     </div>
 
-    {/* Brand (Below Price) */}
+    {/* Brand */}
     {brand && brand.toLowerCase() !== category?.toLowerCase() && (
-      <div className="mt-1">
-        <span className="text-xs text-gray-400 uppercase tracking-wide">
-          {brand}
+      <span className="mt-0.5 text-xs text-gray-400 uppercase tracking-wide">
+        {brand}
       </span>
-      </div>
-      )}
+    )}
 
     {/* Rating */}
-    <div className="mt-1.5 flex items-center gap-1.5 text-xs">
-      {ratingValue ? (
-        <>
-          <span className="text-[#7C2A47]">★★★★★</span>
-          <span className="text-gray-500">
-            {reviewCount > 0 ? `${reviewCount} reviews` : "No reviews"}
-          </span>
-        </>
-      ) : (
-        <>
-          <span className="text-gray-300">★★★★★</span>
-          <span className="text-gray-500">No reviews</span>
-        </>
-      )}
+    <div className="mt-1.5 flex items-center gap-1.5 text-xs leading-none">
+      <span className={ratingValue ? "text-[#7C2A47]" : "text-gray-300"}>
+        ★★★★★
+      </span>
+      <span className="text-gray-500">
+        {reviewCount > 0 ? `${reviewCount} reviews` : "No reviews"}
+      </span>
     </div>
 
     {/* Stock */}
-    <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+    <div className="mt-1.5 flex items-center gap-1.5 text-xs leading-none">
       {(() => {
-        // Determine stock status: check inStock first, then stock number from both product and productData
-        const stock = product.stock !== undefined ? product.stock : (productData.stock !== undefined ? productData.stock : undefined);
-        const inStock = product.inStock !== undefined ? product.inStock : (productData.inStock !== undefined ? productData.inStock : undefined);
-        
-        const isInStock = inStock !== false && 
-                         (inStock === true || 
-                          (stock !== undefined && stock !== null && stock > 0));
-        
+        const stock =
+          product.stock !== undefined
+            ? product.stock
+            : productData.stock;
+
+        const inStock =
+          product.inStock !== undefined
+            ? product.inStock
+            : productData.inStock;
+
+        const isInStock =
+          inStock !== false &&
+          (inStock === true || (stock !== undefined && stock > 0));
+
         return (
           <>
             <span
-              className={`inline-block w-2 h-2 rounded-full ${
+              className={`w-2 h-2 rounded-full ${
                 isInStock ? "bg-green-500" : "bg-gray-400"
               }`}
             />
@@ -358,8 +358,7 @@ const ProductCard = ({ product }) => {
           <span className="whitespace-nowrap">Enquiry</span>
         </button>
       </div>
-      
-      {/* View Wishlist Button - Only show if product is in wishlist */}
+
       {isInWishlist && (
         <button
           onClick={handleViewWishlist}
@@ -380,8 +379,6 @@ const ProductCard = ({ product }) => {
     </div>
   </div>
 </div>
-
-  
     </>
   );
   

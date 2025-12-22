@@ -6,14 +6,10 @@ import {
   Menu,
   X,
   UserCircle,
-  ChevronDown,
-  ChevronRight,
-  ChevronLeft,
   Home,
   ShoppingBag,
   Info,
   Phone,
-  LayoutGrid,
   Search,
 } from "lucide-react";
 import Link from "next/link";
@@ -27,12 +23,10 @@ import { clearAuthData } from "@/lib/utils/authUtils";
 import { recalculateTotal, forceClearInvalidCart } from "@/lib/features/cart/cartSlice";
 import toast from "react-hot-toast";
 import WVlogo from "../assets/YUCHII LOGO.png";
-import { categories, pumpSubCategories } from "@/assets/assets";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home },
   { label: "Products", href: "/category/products", icon: ShoppingBag },
-  { label: "Categories", href: "#", icon: LayoutGrid, dropdown: true },
   { label: "About", href: "/about", icon: Info },
   { label: "Contact", href: "/contact", icon: Phone },
 ];
@@ -42,15 +36,10 @@ const Navbar = memo(() => {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showPumpSubmenu, setShowPumpSubmenu] = useState(false);
-  const [showMobilePumpSubmenu, setShowMobilePumpSubmenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchMobile, setShowSearchMobile] = useState(false);
-  const dropdownRef = useRef(null);
   const closeTimeoutRef = useRef(null);
-  const pumpSubmenuRef = useRef(null);
   const searchInputRef = useRef(null);
 
   const dispatch = useDispatch();
@@ -108,21 +97,6 @@ const Navbar = memo(() => {
     setMenuOpen((prev) => !prev);
   }, []);
 
-  // Optimize timeout delays - reduced from 200ms to 100ms
-  const handlePumpMouseEnter = useCallback(() => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    setShowPumpSubmenu(true);
-  }, []);
-
-  const handlePumpMouseLeave = useCallback(() => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setShowPumpSubmenu(false);
-      closeTimeoutRef.current = null;
-    }, 100);
-  }, []);
 
   // Run cleanup immediately on mount, before setting mounted state
   useEffect(() => {
@@ -182,36 +156,10 @@ const Navbar = memo(() => {
     };
   }, [menuOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleMouseEnter = useCallback(() => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    setShowDropdown(true);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setShowDropdown(false);
-      closeTimeoutRef.current = null;
-    }, 100);
-  }, []);
-
   // Memoize active state check
-  const isActive = useCallback((path, label) => {
-    if (label === "Categories") return showDropdown;
+  const isActive = useCallback((path) => {
     return pathname === path;
-  }, [pathname, showDropdown]);
+  }, [pathname]);
 
   // Prefetch routes on hover
   const handleLinkHover = useCallback((href) => {
@@ -553,61 +501,6 @@ const Navbar = memo(() => {
                     </Link>
                   ))}
 
-                  {/* Categories Dropdown */}
-                  <details className="group">
-                    <summary className="flex items-center justify-between cursor-pointer px-4 py-2.5 text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 rounded-lg transition-all duration-200 group-open:bg-[#7C2A47]/10 group-open:text-[#7C2A47]">
-                      <span className="flex items-center gap-3 text-sm font-medium">
-                        <LayoutGrid size={18} className="flex-shrink-0" />
-                        <span>Categories</span>
-                      </span>
-                      <ChevronDown size={18} className="transition-transform group-open:rotate-180 flex-shrink-0" />
-                    </summary>
-                    <div className="ml-8 mt-1 flex flex-col gap-1">
-                      {categories.map((cat) => (
-                        <div key={cat}>
-                          {cat === "Pumps" ? (
-                            <details className="group">
-                              <summary
-                                className="flex items-center justify-between cursor-pointer text-sm text-gray-600 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 px-3 py-2 rounded-lg transition-all duration-200"
-                                onClick={() => setShowMobilePumpSubmenu(!showMobilePumpSubmenu)}
-                              >
-                                <span className="font-medium">{cat}</span>
-                                <ChevronRight
-                                  size={16}
-                                  className={`transition-transform ${showMobilePumpSubmenu ? "rotate-90" : ""} text-gray-400`}
-                                />
-                              </summary>
-                              {showMobilePumpSubmenu && (
-                                <div className="ml-4 mt-1 flex flex-col gap-1">
-                                  {pumpSubCategories.map((subCat) => (
-                                    <Link
-                                      key={subCat}
-                                      href={`/category/Pumps/${subCat}`}
-                                      prefetch={true}
-                                      onClick={toggleMenu}
-                                      className="text-sm text-gray-600 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 px-3 py-2 rounded-lg transition-all duration-200 block font-medium"
-                                    >
-                                      {subCat}
-                                    </Link>
-                                  ))}
-                                </div>
-                              )}
-                            </details>
-                          ) : (
-                            <Link
-                              href={`/category/${cat}`}
-                              prefetch={true}
-                              onClick={toggleMenu}
-                              className="text-sm text-gray-600 hover:text-[#7C2A47] hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors block font-medium"
-                            >
-                              {cat}
-                            </Link>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-
                   {mobileFooterItems.map((item) => (
                     <Link
                       key={item.href}
@@ -624,6 +517,108 @@ const Navbar = memo(() => {
                       <span className="text-sm font-medium">{item.label}</span>
                     </Link>
                   ))}
+                </div>
+
+                {/* Mobile Menu Footer - Banner Content */}
+                <div className="flex-shrink-0 border-t border-gray-200 bg-gradient-to-r from-[#7C2A47] via-[#8B3A5A] to-[#7C2A47] px-4 py-4">
+                  {/* Contact Info */}
+                  <div className="flex flex-col gap-3 mb-4">
+                    {/* Email */}
+                    <a 
+                      href="mailto:contact@example.com"
+                      className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M14.6654 4.66699L8.67136 8.48499C8.46796 8.60313 8.23692 8.66536 8.0017 8.66536C7.76647 8.66536 7.53544 8.60313 7.33203 8.48499L1.33203 4.66699M2.66536 2.66699H13.332C14.0684 2.66699 14.6654 3.26395 14.6654 4.00033V12.0003C14.6654 12.7367 14.0684 13.3337 13.332 13.3337H2.66536C1.92898 13.3337 1.33203 12.7367 1.33203 12.0003V4.00033C1.33203 3.26395 1.92898 2.66699 2.66536 2.66699Z"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span className="text-sm">contact@example.com</span>
+                    </a>
+                    {/* Phone */}
+                    <a 
+                      href="tel:+12124567890"
+                      className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M9.22003 11.045C9.35772 11.1082 9.51283 11.1227 9.65983 11.086C9.80682 11.0493 9.93692 10.9636 10.0287 10.843L10.2654 10.533C10.3896 10.3674 10.5506 10.233 10.7357 10.1404C10.9209 10.0479 11.125 9.99967 11.332 9.99967H13.332C13.6857 9.99967 14.0248 10.1402 14.2748 10.3902C14.5249 10.6402 14.6654 10.9794 14.6654 11.333V13.333C14.6654 13.6866 14.5249 14.0258 14.2748 14.2758C14.0248 14.5259 13.6857 14.6663 13.332 14.6663C10.1494 14.6663 7.09719 13.4021 4.84675 11.1516C2.59631 8.90119 1.33203 5.84894 1.33203 2.66634C1.33203 2.31272 1.47251 1.97358 1.72256 1.72353C1.9726 1.47348 2.31174 1.33301 2.66536 1.33301H4.66536C5.01899 1.33301 5.35812 1.47348 5.60817 1.72353C5.85822 1.97358 5.9987 2.31272 5.9987 2.66634V4.66634C5.9987 4.87333 5.9505 5.07749 5.85793 5.26263C5.76536 5.44777 5.63096 5.60881 5.46536 5.73301L5.15336 5.96701C5.03098 6.06046 4.94471 6.1934 4.90923 6.34324C4.87374 6.49308 4.89122 6.65059 4.9587 6.78901C5.86982 8.63959 7.36831 10.1362 9.22003 11.045Z"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span className="text-sm">+1-212-456-7890</span>
+                    </a>
+                  </div>
+
+                  {/* Social Icons */}
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="https://www.facebook.com"
+                      target="_blank"
+                      className="hover:scale-110 transition-transform"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M14.9987 1.66699H12.4987C11.3936 1.66699 10.3338 2.10598 9.55242 2.88738C8.77102 3.66878 8.33203 4.72859 8.33203 5.83366V8.33366H5.83203V11.667H8.33203V18.3337H11.6654V11.667H14.1654L14.9987 8.33366H11.6654V5.83366C11.6654 5.61265 11.7532 5.40068 11.9094 5.2444C12.0657 5.08812 12.2777 5.00033 12.4987 5.00033H14.9987V1.66699Z"
+                          stroke="#fff"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </Link>
+
+                    <Link
+                      href="https://www.instagram.com"
+                      target="_blank"
+                      className="hover:scale-110 transition-transform"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M14.5846 5.41699H14.593M5.83464 1.66699H14.168C16.4692 1.66699 18.3346 3.53247 18.3346 5.83366V14.167C18.3346 16.4682 16.4692 18.3337 14.168 18.3337H5.83464C3.53345 18.3337 1.66797 16.4682 1.66797 14.167V5.83366C1.66797 3.53247 3.53345 1.66699 5.83464 1.66699ZM13.3346 9.47533C13.4375 10.1689 13.319 10.8772 12.9961 11.4995C12.6732 12.1218 12.1623 12.6265 11.536 12.9417C10.9097 13.2569 10.2 13.3667 9.50779 13.2553C8.81557 13.1439 8.1761 12.8171 7.68033 12.3213C7.18457 11.8255 6.85775 11.1861 6.74636 10.4938C6.63497 9.80162 6.74469 9.0919 7.05991 8.46564C7.37512 7.83937 7.87979 7.32844 8.50212 7.00553C9.12445 6.68261 9.83276 6.56415 10.5263 6.66699C11.2337 6.7719 11.8887 7.10154 12.3944 7.60725C12.9001 8.11295 13.2297 8.76789 13.3346 9.47533Z"
+                          stroke="#fff"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </Link>
+
+                    <Link
+                      href="https://twitter.com"
+                      target="_blank"
+                      className="hover:scale-110 transition-transform"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M18.3346 3.33368C18.3346 3.33368 17.7513 5.08368 16.668 6.16701C18.0013 14.5003 8.83464 20.5837 1.66797 15.8337C3.5013 15.917 5.33464 15.3337 6.66797 14.167C2.5013 12.917 0.417969 8.00034 2.5013 4.16701C4.33464 6.33368 7.16797 7.58368 10.0013 7.50034C9.2513 4.00034 13.3346 2.00034 15.8346 4.33368C16.7513 4.33368 18.3346 3.33368 18.3346 3.33368Z"
+                          stroke="#fff"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </Link>
+
+                    <Link
+                      href="https://www.linkedin.com"
+                      target="_blank"
+                      className="hover:scale-110 transition-transform"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13.3346 6.66699C14.6607 6.66699 15.9325 7.19378 16.8702 8.13146C17.8079 9.06914 18.3346 10.3409 18.3346 11.667V17.5003H15.0013V11.667C15.0013 11.225 14.8257 10.801 14.5131 10.4885C14.2006 10.1759 13.7767 10.0003 13.3346 10.0003C12.8926 10.0003 12.4687 10.1759 12.1561 10.4885C11.8436 10.801 11.668 11.225 11.668 11.667V17.5003H8.33464V11.667C8.33464 10.3409 8.86142 9.06914 9.7991 8.13146C10.7368 7.19378 12.0086 6.66699 13.3346 6.66699Z" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M5.0013 7.50033H1.66797V17.5003H5.0013V7.50033Z" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M3.33464 5.00033C4.25511 5.00033 5.0013 4.25413 5.0013 3.33366C5.0013 2.41318 4.25511 1.66699 3.33464 1.66699C2.41416 1.66699 1.66797 2.41318 1.66797 3.33366C1.66797 4.25413 2.41416 5.00033 3.33464 5.00033Z" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

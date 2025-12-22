@@ -3,6 +3,7 @@ import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
 import BackButton from "@/components/BackButton";
+import CheckoutFlow from "@/components/CheckoutFlow";
 import { useCart } from "@/lib/hooks/useCart";
 import { Trash2Icon, CheckCircle } from "lucide-react";
 import Image from "next/image";
@@ -13,18 +14,35 @@ import { fetchProductsAsync } from "@/lib/features/product/productSlice";
 import { fetchCartAsync } from "@/lib/features/cart/cartSlice";
 import { getImageUrl } from "@/lib/utils/imageUtils";
 import { assets } from "@/assets/assets";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
     const dispatch = useDispatch();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     
     const { cartItems, deleteFromCart, isLoggedIn } = useCart();
     const cartItemsWithDetails = useSelector(state => state.cart.items || []); // Populated items from backend
     const products = useSelector(state => state.product.list || state.product.products || []);
-
+    
+    // Cart state - declare before useEffects that use it
     const [cartArray, setCartArray] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
+    
+    // Checkout flow state - check URL parameter
+    const [showCheckout, setShowCheckout] = useState(false);
+    
+    // Check if checkout parameter is in URL
+    useEffect(() => {
+        const checkoutParam = searchParams.get('checkout');
+        if (checkoutParam === 'true' && isLoggedIn && cartArray.length > 0) {
+            setShowCheckout(true);
+            // Clean up URL
+            router.replace('/cart', { scroll: false });
+        }
+    }, [searchParams, isLoggedIn, cartArray.length, router]);
     const hasFetchedCart = useRef(false);
     
     // Pagination for cart items
@@ -294,6 +312,43 @@ export default function Cart() {
 
     const totalSavings = calculateSavings();
 
+    const handleCheckoutComplete = () => {
+        setShowCheckout(false);
+        router.push('/');
+    };
+
+    const handleStartCheckout = () => {
+        setShowCheckout(true);
+    };
+
+    // Show checkout flow if triggered
+    if (showCheckout && cartArray.length > 0) {
+        return (
+            <div className="min-h-screen bg-white py-6 sm:py-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="mb-4 sm:mb-5">
+                        <button
+                            onClick={() => setShowCheckout(false)}
+                            className="inline-flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-[#7C2A47] transition-colors duration-200"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span className="text-xs sm:text-sm font-medium">Back to Cart</span>
+                        </button>
+                    </div>
+                    <CheckoutFlow
+                        cartArray={cartArray}
+                        totalPrice={totalPrice}
+                        totalSavings={totalSavings}
+                        onComplete={handleCheckoutComplete}
+                        onCancel={() => setShowCheckout(false)}
+                    />
+                </div>
+            </div>
+        );
+    }
+
     return cartArray.length > 0 ? (
         <div className="min-h-screen bg-white py-6 sm:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -469,7 +524,12 @@ export default function Cart() {
 
                     {/* Order Summary - Right Sidebar */}
                     <div className="w-full lg:w-96 lg:flex-shrink-0">
-                        <OrderSummary totalPrice={totalPrice} items={cartArray} totalSavings={totalSavings} />
+                        <OrderSummary 
+                            totalPrice={totalPrice} 
+                            items={cartArray} 
+                            totalSavings={totalSavings}
+                            onCheckout={handleStartCheckout}
+                        />
                                 </div>
                             </div>
             </div>

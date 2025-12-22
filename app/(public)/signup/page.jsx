@@ -458,11 +458,18 @@ const SignUp = () => {
         toast.success('Account created successfully! Please login to continue.');
         setShowSuccess(true);
         
-        // Redirect to login page with email/mobile pre-filled after 2 seconds
+        // Redirect to login page with email/mobile pre-filled and checkout redirect after 2 seconds
         setTimeout(() => {
           setShowSuccess(false);
           const identifier = email || mobile;
-          router.push(`/login?email=${encodeURIComponent(identifier)}`);
+          // Check if we came from checkout flow
+          const urlParams = new URLSearchParams(window.location.search);
+          const redirect = urlParams.get('redirect');
+          if (redirect === 'checkout') {
+            router.push(`/login?email=${encodeURIComponent(identifier)}&redirect=checkout`);
+          } else {
+            router.push(`/login?email=${encodeURIComponent(identifier)}`);
+          }
         }, 2000);
       } else {
         // Signup failed

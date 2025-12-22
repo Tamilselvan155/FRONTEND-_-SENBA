@@ -437,9 +437,17 @@ function LoginPageContent() {
         toast.success('Login successful!');
         setShowPopup(true);
         
+        // Check for redirect parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+        
         setTimeout(() => {
           setShowPopup(false);
-          router.push('/');
+          if (redirect === 'checkout') {
+            router.push('/cart?checkout=true');
+          } else {
+            router.push('/');
+          }
           router.refresh();
         }, 2000);
       } else {
@@ -569,7 +577,10 @@ function LoginPageContent() {
           {/* Footer */}
           <div className="text-center mt-5 text-xs sm:text-sm text-gray-600">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold text-[#7C2A47]">
+            <Link 
+              href={searchParams.get('redirect') === 'checkout' ? '/signup?redirect=checkout' : '/signup'} 
+              className="font-semibold text-[#7C2A47]"
+            >
               Sign Up Now
             </Link>
           </div>

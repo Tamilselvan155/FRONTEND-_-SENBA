@@ -10,7 +10,7 @@ import { clearCartAsync } from '@/lib/features/cart/cartSlice';
 import { clearCart } from '@/lib/features/cart/cartSlice';
 import { createOrder } from '@/lib/actions/orderActions';
 
-const OrderSummary = ({ totalPrice, items, totalSavings = 0 }) => {
+const OrderSummary = ({ totalPrice, items, totalSavings = 0, onCheckout }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   const router = useRouter();
   const dispatch = useDispatch();
@@ -119,6 +119,12 @@ const OrderSummary = ({ totalPrice, items, totalSavings = 0 }) => {
   };
 
   const handleOrderNow = () => {
+    // If onCheckout callback is provided, use it (new checkout flow)
+    if (onCheckout) {
+      onCheckout();
+      return;
+    }
+    // Otherwise, use the old modal flow (for backward compatibility)
     setIsModalOpen(true);
   };
 
