@@ -1,17 +1,21 @@
 'use client';
 
-import { ArrowRight, ShoppingCart, Send } from 'lucide-react';
+import { ArrowRight, ShoppingCart, Send, Heart, User } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/hooks/useCart';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToWishlist, removeFromWishlist } from '@/lib/features/wishlist/wishlistSlice';
 import toast from 'react-hot-toast';
 import { assets } from '@/assets/assets';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const { wishlistItems } = useSelector(state => state.wishlist);
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   
   // Handle product data - check originalProduct if available (from transformed products)
@@ -113,6 +117,19 @@ const ProductCard = ({ product }) => {
   const productName = product.name || product.title || productData.name || productData.title || 'Product';
   const productId = product.id || product._id || productData.id || productData._id;
   
+  // Check if product is in wishlist - normalize IDs for comparison
+  const isInWishlist = (() => {
+    if (!wishlistItems || !productId) return false;
+    const normalizedProductId = String(productId);
+    // Check both the normalized ID and try to match with any wishlist key
+    return wishlistItems[normalizedProductId] || 
+           wishlistItems[productId] ||
+           Object.keys(wishlistItems).some(key => {
+             const normalizedKey = String(key);
+             return normalizedKey === normalizedProductId;
+           });
+  })();
+  
   // 🛒 Add to Cart
   const handleAddToCart = async (e, product) => {
     e.preventDefault();
@@ -139,6 +156,32 @@ const ProductCard = ({ product }) => {
     const productImageUrl = productImages.length > 0 ? productImages[0] : '';
     const enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId || '')}&productName=${encodeURIComponent(productName)}&price=${encodeURIComponent(finalPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
     router.push(enquiryUrl);
+  };
+
+  // Wishlist handlers
+  const handleWishlistToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!productId) {
+      toast.error('Product ID is missing');
+      return;
+    }
+    // Normalize productId to string to ensure consistent storage
+    const normalizedProductId = String(productId);
+    
+    if (isInWishlist) {
+      dispatch(removeFromWishlist({ productId: normalizedProductId }));
+      toast.success('Removed from wishlist');
+    } else {
+      dispatch(addToWishlist({ productId: normalizedProductId }));
+      toast.success('Added to wishlist');
+    }
+  };
+
+  const handleViewWishlist = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push('/account?section=collections-wishlist');
   };
 
   // Get product images with fallbacks
@@ -177,6 +220,18 @@ const ProductCard = ({ product }) => {
           Save {discount}%
         </div>
       )}
+      
+      {/* Wishlist Button */}
+      <button
+        onClick={handleWishlistToggle}
+        className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all z-10"
+        title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+      >
+        <Heart
+          size={16}
+          className={isInWishlist ? 'fill-[#7C2A47] text-[#7C2A47]' : 'text-gray-600 hover:text-[#7C2A47]'}
+        />
+      </button>
     </div>
   </Link>
 
@@ -268,39 +323,60 @@ const ProductCard = ({ product }) => {
     </div>
 
     {/* Actions */}
-    <div className="mt-auto pt-2 sm:pt-3 flex flex-col sm:flex-row gap-1.5 sm:gap-2">
-      <button
-        onClick={(e) => handleAddToCart(e, product)}
-        className="
-          flex-1 flex items-center justify-center gap-1.5
-          bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A]
-          text-white font-semibold text-xs sm:text-sm
-          py-2 sm:py-2.5 rounded-lg
-          shadow-md
-          transition-all duration-300
-          hover:shadow-lg hover:-translate-y-[1px]
-          active:scale-[0.98]
-        "
-      >
-        <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
-        <span className="whitespace-nowrap">Add to Cart</span>
-      </button>
+    <div className="mt-auto pt-2 sm:pt-3 flex flex-col gap-1.5 sm:gap-2">
+      <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
+        <button
+          onClick={(e) => handleAddToCart(e, product)}
+          className="
+            flex-1 flex items-center justify-center gap-1.5
+            bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A]
+            text-white font-semibold text-xs sm:text-sm
+            py-2 sm:py-2.5 rounded-lg
+            shadow-md
+            transition-all duration-300
+            hover:shadow-lg hover:-translate-y-[1px]
+            active:scale-[0.98]
+          "
+        >
+          <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+          <span className="whitespace-nowrap">Add to Cart</span>
+        </button>
 
-      <button
-        onClick={(e) => handleEnquiry(e)}
-        className="
-          flex-1 flex items-center justify-center gap-1.5
-          border border-[#7C2A47]/30
-          text-[#7C2A47] font-medium text-xs sm:text-sm
-          py-2 sm:py-2.5 rounded-lg
-          transition-all duration-300
-          hover:bg-[#7C2A47]/5
-          active:scale-[0.98]
-        "
-      >
-        <Send size={14} className="sm:w-4 sm:h-4" />
-        <span className="whitespace-nowrap">Enquiry</span>
-      </button>
+        <button
+          onClick={(e) => handleEnquiry(e)}
+          className="
+            flex-1 flex items-center justify-center gap-1.5
+            border border-[#7C2A47]/30
+            text-[#7C2A47] font-medium text-xs sm:text-sm
+            py-2 sm:py-2.5 rounded-lg
+            transition-all duration-300
+            hover:bg-[#7C2A47]/5
+            active:scale-[0.98]
+          "
+        >
+          <Send size={14} className="sm:w-4 sm:h-4" />
+          <span className="whitespace-nowrap">Enquiry</span>
+        </button>
+      </div>
+      
+      {/* View Wishlist Button - Only show if product is in wishlist */}
+      {isInWishlist && (
+        <button
+          onClick={handleViewWishlist}
+          className="
+            w-full flex items-center justify-center gap-1.5
+            border border-[#7C2A47]
+            text-[#7C2A47] font-medium text-xs sm:text-sm
+            py-2 sm:py-2.5 rounded-lg
+            transition-all duration-300
+            hover:bg-[#7C2A47] hover:text-white
+            active:scale-[0.98]
+          "
+        >
+          <User size={14} className="sm:w-4 sm:h-4" />
+          <span className="whitespace-nowrap">View in Account</span>
+        </button>
+      )}
     </div>
   </div>
 </div>

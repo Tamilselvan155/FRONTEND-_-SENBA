@@ -346,7 +346,6 @@
 // }
 
 'use client'
-import { assets } from '@/assets/assets'
 import { ArrowRightIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import React,{useState,useEffect, useCallback, useMemo} from 'react'
@@ -362,28 +361,11 @@ const Hero = () => {
   const [current, setCurrent] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [failedImages, setFailedImages] = useState(new Set());
+  const [imageErrors, setImageErrors] = useState({});
+  const [loadingImages, setLoadingImages] = useState(new Set());
 
-  // Fallback static slides
-  const fallbackSlides = [
-    {
-      image: assets.banner1,
-      title: "Your Solution for Consistent and Efficient Pumping",
-      subtitle: "Built for performance and durability",
-      cta: "Explore Products"
-    },
-    {
-      image: assets.banner2,
-      title: "Engineered for Durability and Long Working Hours",
-      subtitle: "Save more with our advanced motor technology",
-      cta: "Shop Now"
-    },
-    {
-      image: assets.banner3,
-      title: "Delivers Consistent Performance Under Heavy-Duty Operations",
-      subtitle: "Engineered for industrial and domestic use",
-      cta: "View Collection"
-    },
-  ];
+  // No fallback static slides - only use backend banners
 
   // Process backend banners and create slides
   const processedBannerSlides = useMemo(() => {
@@ -396,19 +378,21 @@ const Hero = () => {
         if (!imageUrl) return null
         
         return {
+          id: String(b.id || b._id || Math.random()),
           image: imageUrl,
           title: b.title || 'Welcome',
           subtitle: b.description || 'Explore our products',
-          cta: 'Shop Now'
+          cta: 'Shop Now',
+          isBackend: true
         }
       })
       .filter(Boolean)
   }, [banners])
 
-  // Use backend banners if available, otherwise use fallback
+  // Use only backend banners - no fallback static images
   const slides = useMemo(() => {
-    return processedBannerSlides.length > 0 ? processedBannerSlides : fallbackSlides
-  }, [processedBannerSlides, fallbackSlides])
+    return processedBannerSlides
+  }, [processedBannerSlides])
   
   // Fetch banners on mount
   useEffect(() => {
@@ -459,6 +443,20 @@ const Hero = () => {
     )
   }
 
+  // Show empty state if no banners are available
+  if (slides.length === 0) {
+    return (
+      <section className='bg-white relative overflow-hidden'>
+        <div className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] lg:h-[450px] xl:h-[480px] bg-gray-900 flex items-center justify-center">
+          <div className="text-white text-center px-4">
+            <p className="text-xl font-semibold mb-2">No banners available</p>
+            <p className="text-sm text-gray-400">Please add banners from the admin panel</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
     return (
         <section className='bg-white relative overflow-hidden' style={{ isolation: 'isolate' }}>
             {/* Hero Banner Section - Full Width with Professional Design */}
@@ -483,24 +481,113 @@ const Hero = () => {
                             {/* Background Image Layer - Bottom Layer */}
                             {(() => {
                               const currentSlide = mounted ? slides[current] : slides[0]
-                              // Handle both local asset objects and external URL strings
-                              const imageSrc = typeof currentSlide.image === 'string' 
-                                ? currentSlide.image 
-                                : (currentSlide.image?.src || currentSlide.image)
+                              if (!currentSlide) return null;
+                              
+                              // Check if this image has failed to load
+                              const imageFailed = currentSlide.isBackend && failedImages.has(currentSlide.id);
+                              
+                              // Determine image source - no fallback, only use backend images
+                              let imageSrc = '';
+                              if (!imageFailed) {
+                                // Handle both local asset objects and external URL strings
+                                imageSrc = typeof currentSlide.image === 'string' 
+                                  ? currentSlide.image 
+                                  : (currentSlide.image?.src || currentSlide.image);
+                              }
+                              
+                              // If no valid image source or image failed, return null to show placeholder
+                              if (!imageSrc || imageFailed) {
+                                return (
+                                  <div 
+                                    className="absolute inset-0 bg-gray-800 flex items-center justify-center"
+                                    style={{ zIndex: 1 }}
+                                  >
+                                    <div className="text-white text-center px-4">
+                                      <p className="text-lg font-semibold mb-2">{currentSlide.title}</p>
+                                      <p className="text-sm text-gray-300">{currentSlide.subtitle}</p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              
+                              // Use regular img tag for better error handling with external URLs
+                              const isExternalUrl = typeof imageSrc === 'string' && imageSrc.startsWith('http');
                               
                               return (
-                                <Image
-                                  src={imageSrc}
-                                  alt={currentSlide.title}
-                                  fill
-                                  priority
-                                  className="object-cover"
-                                  unoptimized={typeof imageSrc === 'string' && imageSrc.startsWith('http')}
-                                  style={{ 
-                                    position: 'absolute',
-                                    willChange: 'auto'
-                                  }}
-                                />
+                                <>
+                                  {isExternalUrl ? (
+                                    <img
+                                      src={imageSrc}
+                                      alt={currentSlide.title}
+                                      className="object-cover"
+                                      style={{ 
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        willChange: 'auto'
+                                      }}
+                                      onError={(e) => {
+                                        // Mark this image as failed if it's a backend image
+                                        if (currentSlide.isBackend && !failedImages.has(currentSlide.id)) {
+                                          setFailedImages(prev => new Set(prev).add(currentSlide.id));
+                                          setLoadingImages(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(currentSlide.id);
+                                            return newSet;
+                                          });
+                                          // Don't try to load fallback - just mark as failed
+                                          e.target.style.display = 'none';
+                                        }
+                                      }}
+                                      onLoad={() => {
+                                        // Mark image as loaded
+                                        setLoadingImages(prev => {
+                                          const newSet = new Set(prev);
+                                          newSet.delete(currentSlide.id);
+                                          return newSet;
+                                        });
+                                        
+                                        // Clear error state if image loads successfully
+                                        if (imageErrors[currentSlide.id]) {
+                                          setImageErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            delete newErrors[currentSlide.id];
+                                            return newErrors;
+                                          });
+                                        }
+                                      }}
+                                      onLoadStart={() => {
+                                        // Mark image as loading
+                                        setLoadingImages(prev => new Set(prev).add(currentSlide.id));
+                                      }}
+                                    />
+                                  ) : (
+                                    <Image
+                                      src={imageSrc}
+                                      alt={currentSlide.title}
+                                      fill
+                                      priority
+                                      className="object-cover"
+                                      style={{ 
+                                        position: 'absolute',
+                                        willChange: 'auto'
+                                      }}
+                                    />
+                                  )}
+                                  
+                                  {/* Loading overlay */}
+                                  {loadingImages.has(currentSlide.id) && (
+                                    <div 
+                                      className="absolute inset-0 bg-gray-800/50 flex items-center justify-center"
+                                      style={{ zIndex: 2 }}
+                                    >
+                                      <div className="text-white text-sm">Loading...</div>
+                                    </div>
+                                  )}
+                                </>
                               )
                             })()}
                             

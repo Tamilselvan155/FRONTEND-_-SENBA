@@ -2,13 +2,15 @@
 'use client'
 
 import { useCart } from "@/lib/hooks/useCart";
-import { StarIcon, TagIcon, Truck, Shield, Award } from "lucide-react";
+import { StarIcon, TagIcon, Truck, Shield, Award, Heart, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { assets } from '@/assets/assets';
+import { addToWishlist, removeFromWishlist } from "@/lib/features/wishlist/wishlistSlice";
+import toast from "react-hot-toast";
 
 const ProductDetails = ({ product }) => {
   if (!product) {
@@ -19,9 +21,24 @@ const ProductDetails = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
 
   const cart = useSelector(state => state.cart.cartItems);
+  const { wishlistItems } = useSelector(state => state.wishlist);
   const { addToCart } = useCart();
+  const dispatch = useDispatch();
 
   const router = useRouter();
+  
+  // Check if product is in wishlist - normalize IDs for comparison
+  const isInWishlist = (() => {
+    if (!wishlistItems || !productId) return false;
+    const normalizedProductId = String(productId);
+    // Check both the normalized ID and try to match with any wishlist key
+    return wishlistItems[normalizedProductId] || 
+           wishlistItems[productId] ||
+           Object.keys(wishlistItems).some(key => {
+             const normalizedKey = String(key);
+             return normalizedKey === normalizedProductId;
+           });
+  })();
   
   // Safely handle images
   const productImages = product.images && Array.isArray(product.images) && product.images.length > 0 
@@ -362,6 +379,24 @@ const ProductDetails = ({ product }) => {
     });
   };
 
+  // Wishlist handlers
+  const handleWishlistToggle = () => {
+    // Normalize productId to string to ensure consistent storage
+    const normalizedProductId = String(productId);
+    
+    if (isInWishlist) {
+      dispatch(removeFromWishlist({ productId: normalizedProductId }));
+      toast.success('Removed from wishlist');
+    } else {
+      dispatch(addToWishlist({ productId: normalizedProductId }));
+      toast.success('Added to wishlist');
+    }
+  };
+
+  const handleViewWishlist = () => {
+    router.push('/account?section=collections-wishlist');
+  };
+
 
   // Get brand name
   const brandName = product.brand || product.category || 'BRAND';
@@ -406,7 +441,7 @@ const ProductDetails = ({ product }) => {
   )}
 
    {/* Main Image */}
-   <div className="flex justify-center items-center bg-white rounded-lg border border-gray-200 p-2 sm:p-3 md:p-4 flex-1 min-h-[400px] lg:min-h-[500px]">
+   <div className="relative flex justify-center items-center bg-white rounded-lg border border-gray-200 p-2 sm:p-3 md:p-4 flex-1 min-h-[400px] lg:min-h-[500px]">
      {mainImage ? (
        <Image
          src={mainImage}
@@ -421,6 +456,18 @@ const ProductDetails = ({ product }) => {
          <p className="text-gray-400 text-sm">No image available</p>
        </div>
      )}
+     
+     {/* Wishlist Button */}
+     <button
+       onClick={handleWishlistToggle}
+       className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all z-10"
+       title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+     >
+       <Heart
+         size={20}
+         className={isInWishlist ? 'fill-[#7C2A47] text-[#7C2A47]' : 'text-gray-600 hover:text-[#7C2A47]'}
+       />
+     </button>
    </div>
 
 </div>
@@ -617,6 +664,17 @@ const ProductDetails = ({ product }) => {
      Book Enquiry
    </button>
      </div>
+     
+     {/* View Wishlist Button */}
+     {isInWishlist && (
+       <button
+         onClick={handleViewWishlist}
+         className="mt-2 w-full flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium rounded-lg border border-[#7C2A47] text-[#7C2A47] hover:bg-[#7C2A47] hover:text-white transition-all"
+       >
+         <User size={16} />
+         <span>View in Account</span>
+       </button>
+     )}
  </div>
 </div>
 

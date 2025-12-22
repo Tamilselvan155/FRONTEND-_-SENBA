@@ -24,7 +24,16 @@ export default function Wishlist() {
   const createWishlistArray = () => {
     const array = [];
     for (const [key] of Object.entries(wishlistItems)) {
-      const product = products.find((p) => p.id === key);
+      // Normalize the key to string for comparison
+      const normalizedKey = String(key);
+      
+      // Find product by matching both id and _id (normalized to strings)
+      const product = products.find((p) => {
+        const productId = p.id ? String(p.id) : null;
+        const productIdAlt = p._id ? String(p._id) : null;
+        return productId === normalizedKey || productIdAlt === normalizedKey;
+      });
+      
       if (product) array.push(product);
     }
     setWishlistArray(array);

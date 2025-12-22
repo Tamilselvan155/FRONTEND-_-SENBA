@@ -12,20 +12,28 @@ import { useSelector } from "react-redux"
     const search = searchParams.get('search')
     const router = useRouter()
 
-    const products = useSelector(state => state.product.list)
+    const products = useSelector(state => state.product.list || state.product.products || [])
 
-    const filteredProducts = search
+    const filteredProducts = search && Array.isArray(products)
         ? products.filter(product =>
-            product.name.toLowerCase().includes(search.toLowerCase())
+            product && product.name && product.name.toLowerCase().includes(search.toLowerCase())
         )
-        : products;
+        : (Array.isArray(products) ? products : []);
 
     return (
         <div className="min-h-[70vh] mx-6">
             <div className=" max-w-6xl mx-auto">
                 <h1 onClick={() => router.push('/shop')} className="text-2xl text-slate-500 my-6 flex items-center gap-2 cursor-pointer"> {search && <MoveLeftIcon size={20} />}  All <span className="text-slate-700 font-medium">Products</span></h1>
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 xl:gap-12 mx-auto mb-32 items-stretch">
-                    {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+                    {filteredProducts && filteredProducts.length > 0 ? (
+                        filteredProducts.map((product) => (
+                            <ProductCard key={product.id || product._id} product={product} />
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center py-12">
+                            <p className="text-gray-500">No products found</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

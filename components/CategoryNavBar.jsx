@@ -1,63 +1,308 @@
 'use client'
 
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
-import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { categories, pumpSubCategories } from '@/assets/assets'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchCategoriesWithSubcategoriesAsync } from '@/lib/features/category/categorySlice'
 
 const CategoryNavBar = () => {
+  const dispatch = useDispatch()
+  const { categoriesWithSubcategories, loading } = useSelector((state) => state.category)
   const [hoveredCategory, setHoveredCategory] = useState(null)
-  const [showPumpSubmenu, setShowPumpSubmenu] = useState(false)
   const [activeCategory, setActiveCategory] = useState(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const timeoutRef = useRef(null)
-  const pumpSubmenuRef = useRef(null)
+  const dropdownRef = useRef(null)
+  const buttonRefs = useRef({})
+  const navContainerRef = useRef(null)
 
-  // Format category names for display
-  const formatCategoryName = (cat) => {
-    return cat.replace(/([A-Z])/g, ' $1').trim()
+  // Fetch categories on mount
+  useEffect(() => {
+    dispatch(fetchCategoriesWithSubcategoriesAsync())
+  }, [dispatch])
+
+  // Process categories: filter active parent categories and sort
+  const processedCategories = useMemo(() => {
+    let categoriesData = categoriesWithSubcategories
+    
+    if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
+      if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data
+      } else if (Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data
+      }
+    }
+    
+    if (!categoriesData || !Array.isArray(categoriesData) || categoriesData.length === 0) {
+      return []
+    }
+    
+    return [...categoriesData]
+      .filter(cat => {
+        const isActive = cat.status === 'active'
+        const isParent = cat.isParent === true
+        return isActive && isParent
+      })
+      .map(cat => {
+        let processedSubcategories = []
+        if (Array.isArray(cat.subcategories) && cat.subcategories.length > 0) {
+          processedSubcategories = [...cat.subcategories]
+            .filter(sub => {
+              const subStatus = sub.status
+              return subStatus === 'active' || subStatus === undefined
+            })
+            .map(sub => {
+              const subId = sub.id || sub._id
+              return {
+                id: subId?.toString() || String(subId) || '',
+                _id: subId?.toString() || String(subId) || '',
+                title: sub.title || sub.englishName || '',
+                englishName: sub.englishName || sub.title || '',
+                slug: sub.slug || sub.englishName?.toLowerCase().replace(/\s+/g, '-') || '',
+                sortOrder: sub.sortOrder !== undefined && sub.sortOrder !== null ? sub.sortOrder : null,
+                status: sub.status || 'active'
+              }
+            })
+        }
+        
+        const catId = cat.id || cat._id
+        return {
+          ...cat,
+          id: catId?.toString() || String(catId) || '',
+          _id: catId?.toString() || String(catId) || '',
+          subcategories: processedSubcategories
+        }
+      })
+      .sort((a, b) => {
+        if (a.sortOrder !== null && b.sortOrder !== null) {
+          return a.sortOrder - b.sortOrder
+        }
+        if (a.sortOrder !== null) return -1
+        if (b.sortOrder !== null) return 1
+        return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
+      })
+  }, [categoriesWithSubcategories])
+
+  // Format category names for display (convert camelCase to Title Case, then uppercase)
+  const formatCategoryName = (category) => {
+    const name = category.title || category.englishName || ''
+    // Convert camelCase to Title Case
+    const formatted = name.replace(/([A-Z])/g, ' $1').trim()
+    return formatted.toUpperCase()
   }
 
-  const handleMouseEnter = (category) => {
+  // Desktop hover handlers
+  const handleMouseEnter = (categoryId) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
-    setHoveredCategory(category)
-    if (category === 'Pumps') {
-      setShowPumpSubmenu(true)
-    }
+    setHoveredCategory(categoryId)
   }
 
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setHoveredCategory(null)
-      setShowPumpSubmenu(false)
     }, 200)
   }
 
-  const handlePumpSubmenuMouseEnter = () => {
+  const handleDropdownMouseEnter = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
-    setShowPumpSubmenu(true)
   }
 
-  const handlePumpSubmenuMouseLeave = () => {
+  const handleDropdownMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
-      setShowPumpSubmenu(false)
       setHoveredCategory(null)
     }, 200)
   }
 
-  const handleCategoryClick = (category) => {
-    if (category === 'Pumps') {
-      setActiveCategory(activeCategory === category ? null : category)
-      setShowPumpSubmenu(activeCategory !== category)
-    } else {
+  // Mobile click handler
+  const handleCategoryClick = (e, categoryId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (activeCategory === categoryId) {
+      // Close dropdown
       setActiveCategory(null)
-      setShowPumpSubmenu(false)
+      setDropdownPosition({ top: 0, left: 0, width: 0 })
+    } else {
+      // Open dropdown first
+      setActiveCategory(categoryId)
+      
+      // Calculate position - use multiple attempts to ensure we get the correct position
+      const calculatePosition = (attempt = 0) => {
+        const button = buttonRefs.current[categoryId]
+        if (!button) {
+          if (attempt < 3) {
+            requestAnimationFrame(() => calculatePosition(attempt + 1))
+          }
+          return
+        }
+        
+        // Force a reflow to ensure latest layout
+        void button.offsetHeight
+        
+        // Get fresh position - getBoundingClientRect() returns viewport coordinates
+        // which automatically account for all scrolling
+        const rect = button.getBoundingClientRect()
+        
+        // Validate button has valid dimensions and coordinates
+        if (rect.width > 0 && rect.height > 0 && 
+            !isNaN(rect.left) && !isNaN(rect.top) && 
+            !isNaN(rect.bottom) && !isNaN(rect.right) &&
+            rect.left >= -window.innerWidth && rect.left <= window.innerWidth * 2) {
+          calculateDropdownPosition(rect, categoryId)
+        } else if (attempt < 3) {
+          // Retry if position isn't valid yet
+          requestAnimationFrame(() => calculatePosition(attempt + 1))
+        }
+      }
+      
+      // Start calculation
+      requestAnimationFrame(() => {
+        calculatePosition(0)
+      })
     }
   }
 
+  // Helper function to calculate dropdown position
+  const calculateDropdownPosition = (rect, categoryId) => {
+    const dropdownWidth = 160 // Professional width for mobile dropdown
+    const padding = 12 // 0.75rem = 12px
+    const viewportWidth = window.innerWidth
+    
+    // Calculate left position: align dropdown to button's left edge
+    // This ensures the dropdown is always directly under the button
+    let left = rect.left
+    
+    // If button is wider than dropdown, we can optionally center it
+    // But for better alignment, keep it left-aligned
+    // Only center if button is significantly wider
+    if (rect.width > dropdownWidth + 40) {
+      left = rect.left + (rect.width / 2) - (dropdownWidth / 2)
+    }
+    
+    // Ensure dropdown stays within viewport bounds
+    // If dropdown would overflow on the right
+    if (left + dropdownWidth > viewportWidth - padding) {
+      // Try to align to button's right edge, or use viewport edge
+      left = Math.max(padding, Math.min(rect.right - dropdownWidth, viewportWidth - dropdownWidth - padding))
+    }
+    // If dropdown would overflow on the left
+    if (left < padding) {
+      left = padding
+    }
+    
+    // Calculate top position (below button with spacing)
+    // Using fixed positioning, so use rect.bottom directly (already viewport-relative)
+    const top = Math.max(0, rect.bottom + 8) // 8px spacing below button, ensure not negative
+    
+    // Set position with the calculated values
+    setDropdownPosition({
+      top: top,
+      left: left,
+      width: Math.min(dropdownWidth, viewportWidth - (padding * 2))
+    })
+  }
+
+  // Calculate initial position immediately when dropdown opens (before paint)
+  useLayoutEffect(() => {
+    if (!activeCategory) {
+      return
+    }
+    
+    const button = buttonRefs.current[activeCategory]
+    if (button) {
+      // Get position immediately, before browser paints
+      const rect = button.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0 && 
+          !isNaN(rect.left) && !isNaN(rect.top) && 
+          !isNaN(rect.bottom) && !isNaN(rect.right)) {
+        calculateDropdownPosition(rect, activeCategory)
+      }
+    }
+  }, [activeCategory])
+
+  // Update dropdown position on scroll/resize when active and prevent horizontal scroll
+  useEffect(() => {
+    if (!activeCategory) {
+      // Reset overflow when dropdown is closed
+      document.body.style.overflowX = ''
+      return
+    }
+
+    let rafId = null
+    const updatePosition = () => {
+      // Cancel any pending animation frame
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
+      
+      // Use requestAnimationFrame for smooth, real-time updates during scroll
+      rafId = requestAnimationFrame(() => {
+        const button = buttonRefs.current[activeCategory]
+        if (button) {
+          // Force a reflow to ensure latest layout
+          void button.offsetHeight
+          
+          // Always get fresh position - getBoundingClientRect() is viewport-relative
+          // and automatically accounts for all scrolling
+          const rect = button.getBoundingClientRect()
+          
+          // Validate button has valid dimensions and coordinates
+          if (rect.width > 0 && rect.height > 0 && 
+              !isNaN(rect.left) && !isNaN(rect.top) && 
+              !isNaN(rect.bottom) && !isNaN(rect.right) &&
+              rect.left >= -window.innerWidth && rect.left <= window.innerWidth * 2) {
+            calculateDropdownPosition(rect, activeCategory)
+          }
+        }
+        rafId = null
+      })
+    }
+
+    // Prevent horizontal scroll when dropdown is open
+    document.body.style.overflowX = 'hidden'
+
+    // Initial position update
+    updatePosition()
+    
+    // Listen for window scroll and resize
+    window.addEventListener('scroll', updatePosition, { passive: true })
+    window.addEventListener('resize', updatePosition)
+    
+    // Listen to nav container scroll events (for horizontal scrolling)
+    // This is critical for updating dropdown position when category bar is scrolled
+    const navContainer = navContainerRef.current
+    if (navContainer) {
+      // Use both scroll and scrollend events for better coverage
+      navContainer.addEventListener('scroll', updatePosition, { passive: true })
+      
+      // Also listen for scrollend if supported (for final position after scroll completes)
+      if ('onscrollend' in window) {
+        navContainer.addEventListener('scrollend', updatePosition, { passive: true })
+      }
+    }
+
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
+      window.removeEventListener('scroll', updatePosition)
+      window.removeEventListener('resize', updatePosition)
+      if (navContainer) {
+        navContainer.removeEventListener('scroll', updatePosition)
+        if ('onscrollend' in window) {
+          navContainer.removeEventListener('scrollend', updatePosition)
+        }
+      }
+      document.body.style.overflowX = ''
+    }
+  }, [activeCategory])
+
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -66,147 +311,236 @@ const CategoryNavBar = () => {
     }
   }, [])
 
+  // Get category slug for URL
+  const getCategorySlug = (category) => {
+    return category.slug || (category.englishName ? category.englishName.toLowerCase().replace(/\s+/g, '-') : '') || ''
+  }
+
+  // Get subcategory slug for URL
+  const getSubcategorySlug = (subcategory) => {
+    return subcategory.slug || (subcategory.englishName ? subcategory.englishName.toLowerCase().replace(/\s+/g, '-') : '') || ''
+  }
+
   return (
     <div className="sticky top-16 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 relative">
         {/* Mobile: Horizontal Scrollable */}
-        <nav className={`lg:hidden flex items-center gap-2 sm:gap-3 py-2.5 touch-pan-x ${activeCategory ? 'overflow-visible' : 'overflow-x-auto scrollbar-hide'}`}>
-          {categories.map((category, index) => {
-            const categoryName = formatCategoryName(category).toUpperCase()
-            const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
-            const isPumps = category === 'Pumps'
-            const isActive = activeCategory === category
+        <nav 
+          ref={navContainerRef}
+          className={`lg:hidden flex items-center gap-1.5 sm:gap-2 py-2 touch-pan-x ${activeCategory ? 'overflow-visible' : 'overflow-x-auto scrollbar-hide'}`}
+        >
+          {loading ? (
+            <div className="px-3 py-2 text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">Loading categories...</div>
+          ) : processedCategories.length === 0 ? (
+            <div className="px-3 py-2 text-[11px] sm:text-xs text-gray-500 whitespace-nowrap">No categories available</div>
+          ) : (
+            processedCategories.map((category) => {
+              const categoryName = formatCategoryName(category)
+              const categorySlug = getCategorySlug(category)
+              const categoryHref = `/category/products?category=${encodeURIComponent(categorySlug)}`
+              const categoryId = String(category.id || category._id || '')
+              const subcategories = Array.isArray(category.subcategories) ? category.subcategories : []
+              const hasSubcategories = subcategories.length > 0
+              const isActive = activeCategory === categoryId
 
-            return (
-              <div key={index} className="relative flex-shrink-0 z-[60]">
-                {isPumps ? (
-                  <button
-                    onClick={() => handleCategoryClick(category)}
-                    className={`flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation ${
-                      isActive
-                        ? 'text-[#7C2A47] bg-[#7C2A47]/10'
-                        : 'text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5'
-                    }`}
-                  >
-                    <span>{categoryName}</span>
-                    {/* Show down arrow only for items with submenus */}
-                    <ChevronDown 
-                      size={10} 
-                      className={`transition-transform duration-200 ${
-                        isActive ? 'rotate-180' : ''
-                      } ${isActive ? 'text-[#7C2A47]' : 'text-gray-500'}`}
-                    />
-                  </button>
-                ) : (
-                  <Link
-                    href={categoryHref}
-                    className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
-                    onClick={() => {
-                      setActiveCategory(null)
-                      setShowPumpSubmenu(false)
-                    }}
-                  >
-                    <span>{categoryName}</span>
-                    {/* No down arrow for items without submenus */}
-                  </Link>
-                )}
-
-                {/* Mobile Dropdown for Pumps */}
-                {isPumps && isActive && (
-                  <>
-                    {/* Backdrop to close dropdown when clicking outside */}
-                    <div 
-                      className="fixed inset-0 bg-black/20 z-[55] lg:hidden"
+              return (
+                <div key={categoryId} className="relative flex-shrink-0 z-[60]">
+                  {hasSubcategories ? (
+                    <button
+                      ref={(el) => {
+                        if (el) buttonRefs.current[categoryId] = el
+                      }}
+                      onClick={(e) => handleCategoryClick(e, categoryId)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className={`flex items-center gap-1 py-1.5 px-2.5 sm:py-2 sm:px-3 text-[11px] sm:text-xs font-semibold uppercase tracking-tight transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation ${
+                        isActive
+                          ? 'text-[#7C2A47] bg-[#7C2A47]/10'
+                          : 'text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5'
+                      }`}
+                    >
+                      <span className="leading-tight">{categoryName}</span>
+                      <ChevronDown 
+                        size={12} 
+                        className={`flex-shrink-0 transition-transform duration-200 ${
+                          isActive ? 'rotate-180' : ''
+                        } ${isActive ? 'text-[#7C2A47]' : 'text-gray-500'}`}
+                      />
+                    </button>
+                  ) : (
+                    <Link
+                      href={categoryHref}
+                      className="flex items-center gap-1 py-1.5 px-2.5 sm:py-2 sm:px-3 text-[11px] sm:text-xs font-semibold uppercase tracking-tight transition-all duration-200 rounded-lg whitespace-nowrap touch-manipulation text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5"
                       onClick={() => {
                         setActiveCategory(null)
-                        setShowPumpSubmenu(false)
+                        setDropdownPosition({ top: 0, left: 0, width: 0 })
                       }}
-                    />
-                    <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg w-48 py-2 z-[60] border border-gray-200 min-w-max max-h-[70vh] overflow-y-auto">
-                    {pumpSubCategories.map((subCat, subIndex) => (
-                      <Link
-                        key={subIndex}
-                        href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
-                          className="block px-4 py-2.5 text-xs text-gray-700 active:text-[#7C2A47] active:bg-[#7C2A47]/10 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 transition-colors duration-200"
+                    >
+                      <span className="leading-tight">{categoryName}</span>
+                    </Link>
+                  )}
+
+                  {/* Mobile Dropdown */}
+                  {hasSubcategories && isActive && (
+                    <>
+                      {/* Backdrop to close dropdown when clicking outside - transparent */}
+                      <div 
+                        className="fixed inset-0 z-[55] lg:hidden"
                         onClick={() => {
                           setActiveCategory(null)
-                          setShowPumpSubmenu(false)
+                          setDropdownPosition({ top: 0, left: 0, width: 0 })
                         }}
+                      />
+                      <div 
+                        ref={dropdownRef}
+                        className="fixed bg-white shadow-2xl rounded-lg py-1 z-[60] border border-gray-200/80 max-h-[70vh] overflow-y-auto lg:hidden min-w-[140px] max-w-[180px]"
+                        style={{
+                          top: `${dropdownPosition.top}px`,
+                          left: `${dropdownPosition.left}px`,
+                          width: `${dropdownPosition.width}px`,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
                       >
-                        <span className="font-medium">{subCat}</span>
-                      </Link>
-                    ))}
-                  </div>
-                  </>
-                )}
-              </div>
-            )
-          })}
+                        {subcategories.length > 0 ? (
+                          <ul className="list-none m-0 p-0">
+                            {[...subcategories]
+                              .sort((a, b) => {
+                                if (a.sortOrder !== null && b.sortOrder !== null) {
+                                  return a.sortOrder - b.sortOrder
+                                }
+                                if (a.sortOrder !== null) return -1
+                                if (b.sortOrder !== null) return 1
+                                return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
+                              })
+                              .map((subCat, subIndex) => {
+                                const subCategoryName = subCat.title || subCat.englishName || ''
+                                const subCategorySlug = getSubcategorySlug(subCat)
+                                
+                                if (!subCategoryName) return null
+                                
+                                return (
+                                  <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
+                                    <Link
+                                      href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
+                                      className="flex items-center justify-center w-full px-3 py-1.5 text-xs text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 active:text-[#7C2A47] transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
+                                      onClick={() => {
+                                        setActiveCategory(null)
+                                        setDropdownPosition({ top: 0, left: 0, width: 0 })
+                                      }}
+                                    >
+                                      <span className="font-normal text-center w-full leading-normal">{subCategoryName}</span>
+                                    </Link>
+                                  </li>
+                                )
+                              })
+                              .filter(Boolean)}
+                          </ul>
+                        ) : (
+                          <div className="px-3 py-2 text-xs text-gray-500 text-center w-full">No subcategories available</div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })
+          )}
         </nav>
 
         {/* Desktop: Evenly Distributed */}
         <nav className="hidden lg:flex items-center justify-between w-full">
-          {categories.map((category, index) => {
-            const categoryName = formatCategoryName(category).toUpperCase()
-            const categoryHref = `/category/products?category=${encodeURIComponent(category)}`
-            const isHovered = hoveredCategory === category
-            const isPumps = category === 'Pumps'
+          {loading ? (
+            <div className="px-4 py-2.5 text-xs text-gray-500">Loading categories...</div>
+          ) : processedCategories.length === 0 ? (
+            <div className="px-4 py-2.5 text-xs text-gray-500">No categories available</div>
+          ) : (
+            processedCategories.map((category) => {
+              const categoryName = formatCategoryName(category)
+              const categorySlug = getCategorySlug(category)
+              const categoryHref = `/category/products?category=${encodeURIComponent(categorySlug)}`
+              const categoryId = String(category.id || category._id || '')
+              const subcategories = Array.isArray(category.subcategories) ? category.subcategories : []
+              const hasSubcategories = subcategories.length > 0
+              const isHovered = hoveredCategory === categoryId
 
-            return (
-              <div
-                key={index}
-                className="relative flex-1 flex justify-center"
-                onMouseEnter={() => handleMouseEnter(category)}
-                onMouseLeave={handleMouseLeave}
-              >
-                <Link
-                  href={categoryHref}
-                  className={`flex items-center gap-1.5 py-2.5 px-3 text-sm font-semibold uppercase tracking-wide transition-all duration-200 relative group ${
-                    isHovered || (isPumps && showPumpSubmenu)
-                      ? 'text-[#7C2A47]'
-                      : 'text-gray-700 hover:text-[#7C2A47]'
-                  }`}
+              return (
+                <div
+                  key={categoryId}
+                  className="relative flex-1 flex justify-center"
+                  onMouseEnter={() => handleMouseEnter(categoryId)}
+                  onMouseLeave={handleMouseLeave}
                 >
-                  <span>{categoryName}</span>
-                  {/* Show down arrow only for items with submenus (Pumps) */}
-                  {isPumps && (
-                    <ChevronDown 
-                      size={12} 
-                      className={`transition-all duration-200 ${
-                        isHovered || showPumpSubmenu 
-                          ? 'rotate-180 text-[#7C2A47]' 
-                          : 'text-gray-500 group-hover:text-[#7C2A47]'
-                      }`}
-                    />
-                  )}
-                </Link>
-
-                {/* Desktop Dropdown Menu for Pumps */}
-                {isPumps && showPumpSubmenu && (
-                  <div
-                    ref={pumpSubmenuRef}
-                    onMouseEnter={handlePumpSubmenuMouseEnter}
-                    onMouseLeave={handlePumpSubmenuMouseLeave}
-                    className="absolute bg-white shadow-lg rounded-lg top-full mt-2 left-1/2 -translate-x-1/2 w-56 py-1 z-50 border border-gray-200"
+                  <Link
+                    href={categoryHref}
+                    className={`flex items-center gap-1.5 py-2.5 px-2 lg:px-3 text-xs font-semibold uppercase tracking-tight transition-all duration-200 relative group ${
+                      isHovered || (hasSubcategories && hoveredCategory === categoryId)
+                        ? 'text-[#7C2A47]'
+                        : 'text-gray-700 hover:text-[#7C2A47]'
+                    }`}
                   >
-                    {pumpSubCategories.map((subCat, subIndex) => (
-                      <Link
-                        key={subIndex}
-                        href={`/category/products?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subCat)}`}
-                        className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 transition-all duration-200 rounded-md mx-1"
-                        onClick={() => {
-                          setShowPumpSubmenu(false)
-                          setHoveredCategory(null)
-                        }}
-                      >
-                        <span className="font-medium">{subCat}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                    <span className="leading-tight whitespace-nowrap">{categoryName}</span>
+                    {hasSubcategories && (
+                      <ChevronDown 
+                        size={12} 
+                        className={`flex-shrink-0 transition-all duration-200 ${
+                          isHovered || hoveredCategory === categoryId
+                            ? 'rotate-180 text-[#7C2A47]' 
+                            : 'text-gray-500 group-hover:text-[#7C2A47]'
+                        }`}
+                      />
+                    )}
+                  </Link>
+
+                  {/* Desktop Dropdown Menu */}
+                  {hasSubcategories && isHovered && (
+                    <div
+                      ref={dropdownRef}
+                      onMouseEnter={handleDropdownMouseEnter}
+                      onMouseLeave={handleDropdownMouseLeave}
+                      className="absolute bg-white shadow-2xl rounded-lg top-full mt-2 left-1/2 -translate-x-1/2 w-64 py-1 z-50 border border-gray-200/80 max-h-[70vh] overflow-y-auto"
+                    >
+                      {subcategories.length > 0 ? (
+                        <ul className="list-none m-0 p-0">
+                          {[...subcategories]
+                            .sort((a, b) => {
+                              if (a.sortOrder !== null && b.sortOrder !== null) {
+                                return a.sortOrder - b.sortOrder
+                              }
+                              if (a.sortOrder !== null) return -1
+                              if (b.sortOrder !== null) return 1
+                              return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
+                            })
+                            .map((subCat, subIndex) => {
+                              const subCategoryName = subCat.title || subCat.englishName || ''
+                              const subCategorySlug = getSubcategorySlug(subCat)
+                              
+                              if (!subCategoryName) return null
+                              
+                              return (
+                                <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
+                                  <Link
+                                    href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
+                                    className="flex items-center justify-center w-full px-3 py-1.5 text-xs text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
+                                    onClick={() => {
+                                      setHoveredCategory(null)
+                                    }}
+                                  >
+                                    <span className="font-normal text-center w-full leading-normal">{subCategoryName}</span>
+                                  </Link>
+                                </li>
+                              )
+                            })
+                            .filter(Boolean)}
+                        </ul>
+                      ) : (
+                        <div className="px-3 py-2 text-xs text-gray-500 text-center w-full">No subcategories available</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </nav>
       </div>
     </div>
@@ -214,9 +548,3 @@ const CategoryNavBar = () => {
 }
 
 export default CategoryNavBar
-
-
-
-
-
-
