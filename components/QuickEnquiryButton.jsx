@@ -4,16 +4,16 @@ import React from 'react'
 export default function QuickEnquiryButton() {
   return (
     <Link href="/contact">
-<div className="fixed top-1/2 right-0 z-50 -translate-y-1/2 ">
+<div className="fixed bottom-6 right-6 z-50">
   <button
     className="flex flex-col items-center justify-center bg-[#7C2A47] text-white 
-               px-3 py-3 rounded-l-lg hover:bg-[#7C2A48] transition-all duration-300"
+               px-4 py-4 rounded-full hover:bg-[#8B3A5A] transition-all duration-300 shadow-lg hover:shadow-xl"
     
   >
-    <MessageCircle size={20} />
-    <span className="mt-2 text-xs sm:text-sm font-semibold tracking-wider [writing-mode:vertical-rl] rotate-180">
+    <MessageCircle size={24} />
+    {/* <span className="mt-2 text-xs sm:text-sm font-semibold tracking-wider [writing-mode:vertical-rl] rotate-180">
       QUICK ENQUIRY
-    </span>
+    </span> */}
   </button>
 </div>
 </Link>

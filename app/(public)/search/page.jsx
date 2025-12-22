@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Search, ArrowRight, Package } from "lucide-react";
 import Loading from "@/components/Loading";
 import ProductCard from "@/components/ProductCard";
+import BackButton from "@/components/BackButton";
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -161,6 +162,10 @@ function SearchContent() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Go Back Button - Top Left Corner */}
+        <div className="mb-4 sm:mb-5">
+          <BackButton fallbackUrl="/" />
+        </div>
         {/* Search Header */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Search Products</h1>

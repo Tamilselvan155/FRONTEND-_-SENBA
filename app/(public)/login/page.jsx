@@ -304,16 +304,19 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lock,
   Mail,
+  Phone,
   ArrowRight,
   CheckCircle2,
 } from 'lucide-react';
 import { loginRequest, loginSuccess, loginFailure } from '@/lib/features/login/authSlice';
 import { syncCartAsync, fetchCartAsync } from '@/lib/features/cart/cartSlice';
 import toast from 'react-hot-toast';
+import logo from '@/assets/YUCHII LOGO.png';
 
 function LoginPageContent() {
   const dispatch = useDispatch();
@@ -325,7 +328,7 @@ function LoginPageContent() {
   const emailFromParams = searchParams.get('email');
   
   const [formData, setFormData] = useState({ 
-    email: emailFromParams || '', 
+    emailOrMobile: emailFromParams || '', 
     password: '' 
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -334,7 +337,7 @@ function LoginPageContent() {
   // Update email if it comes from query params
   useEffect(() => {
     if (emailFromParams) {
-      setFormData(prev => ({ ...prev, email: emailFromParams }));
+      setFormData(prev => ({ ...prev, emailOrMobile: emailFromParams }));
       // Show success message if coming from signup
       toast.success('Account created! Please enter your password to login.');
     }
@@ -349,11 +352,20 @@ function LoginPageContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const email = formData.email.trim();
+    const emailOrMobile = formData.emailOrMobile.trim();
     const password = formData.password.trim();
 
-    if (!email || !password) {
-      dispatch(loginFailure('Please enter both email and password'));
+    if (!emailOrMobile || !password) {
+      dispatch(loginFailure('Please enter both email/mobile and password'));
+      return;
+    }
+
+    // Determine if input is email or mobile
+    const isEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(emailOrMobile);
+    const isMobile = /^[0-9]{10}$/.test(emailOrMobile);
+
+    if (!isEmail && !isMobile) {
+      dispatch(loginFailure('Please enter a valid email or 10-digit mobile number'));
       return;
     }
 
@@ -361,16 +373,24 @@ function LoginPageContent() {
 
     try {
       // Use the real API endpoint for user login
+      const requestBody = {
+        password: password,
+        userType: 'user', // Specify user type
+      };
+
+      // Add email or mobile based on what was entered
+      if (isEmail) {
+        requestBody.email = emailOrMobile;
+      } else {
+        requestBody.mobile = emailOrMobile;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          userType: 'user', // Specify user type
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       let data;
@@ -423,7 +443,7 @@ function LoginPageContent() {
           router.refresh();
         }, 2000);
       } else {
-        const errorMessage = data.message || 'Invalid email or password';
+        const errorMessage = data.message || 'Invalid email/mobile or password';
         dispatch(loginFailure(errorMessage));
         toast.error(errorMessage);
       }
@@ -452,8 +472,13 @@ function LoginPageContent() {
         <div className="relative z-10">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#7C2A47] to-[#8B3A5A] mb-4 mx-auto shadow-lg">
-              <Lock className="w-7 h-7 text-white" />
+            <div className="flex items-center justify-center mb-4 mx-auto">
+              <Image 
+                src={logo} 
+                alt="Logo" 
+                className="h-16 w-auto object-contain"
+                priority
+              />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               Sign In to Your Account
@@ -476,19 +501,19 @@ function LoginPageContent() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
+            {/* Email or Mobile */}
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
-                Email Address
+                Email or Mobile Number
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  name="emailOrMobile"
+                  value={formData.emailOrMobile}
                   onChange={handleChange}
-                  placeholder="example@gmail.com"
+                  placeholder="example@gmail.com or 1234567890"
                   required
                   className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47]"
                 />

@@ -1,6 +1,7 @@
 'use client'
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
+import BackButton from "@/components/BackButton";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -253,8 +254,12 @@ export default function Product() {
     return (
         <div className="min-h-screen bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Go Back Button - Top Left Corner */}
+                <div className="pt-4 sm:pt-5 lg:pt-6 pb-3 sm:pb-4">
+                    <BackButton fallbackUrl="/category/products" />
+                </div>
                 {/* ✅ Breadcrumbs - Properly Aligned */}
-                <div className="pt-4 sm:pt-6 lg:pt-8 pb-4 sm:pb-6">
+                <div className="pb-4 sm:pb-6">
                     <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm md:text-base">
                         <Link 
                             href="/" 

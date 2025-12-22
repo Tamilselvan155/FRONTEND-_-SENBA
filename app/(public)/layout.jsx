@@ -49,8 +49,8 @@ export default function PublicLayout({ children }) {
         }
     }, [email]);
 
-    // Check if we're showing login/signup page - hide navbar/footer on these pages regardless of auth status
-    const isLoginPage = pathname === '/login' || pathname === '/signup' || pathname === '/admin/login' || pathname === '/admin';
+    // Check if we're showing login/signup/forgot password page - hide navbar/footer on these pages regardless of auth status
+    const isLoginPage = pathname === '/login' || pathname === '/signup' || pathname === '/forgot_password' || pathname === '/admin/login' || pathname === '/admin';
 
     // Show navbar only when not on login/signup page and not checking
     const shouldShowNavbar = !isChecking && !isLoginPage;

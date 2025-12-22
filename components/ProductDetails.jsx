@@ -694,21 +694,27 @@ const ProductDetails = ({ product }) => {
            </div>
          )}
          
-         {/* Head & Discharge as paired values */}
+         {/* Head & Discharge as table */}
          {(variantDetails.head || variantDetails.discharge) && (
            <div>
-             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-               Head (meters) & Discharge (LPM)
-             </p>
-             <div className="space-y-1.5 sm:space-y-1.5">
+             <div className="overflow-x-auto">
                {(() => {
+                 // Helper function to clean values (remove H, D suffixes and trim)
+                 const cleanValue = (value) => {
+                   if (!value) return '';
+                   let cleaned = String(value).trim();
+                   // Remove H or D suffix if present
+                   cleaned = cleaned.replace(/[HD]$/i, '').trim();
+                   return cleaned;
+                 };
+                 
                  // Parse Head values (could be comma-separated string or array)
                  let headValues = [];
                  if (variantDetails.head) {
                    if (Array.isArray(variantDetails.head)) {
-                     headValues = variantDetails.head.map(v => String(v).trim()).filter(v => v);
+                     headValues = variantDetails.head.map(v => cleanValue(v)).filter(v => v);
                    } else {
-                     headValues = String(variantDetails.head).split(',').map(v => v.trim()).filter(v => v);
+                     headValues = String(variantDetails.head).split(',').map(v => cleanValue(v)).filter(v => v);
                    }
                  }
                  
@@ -716,9 +722,9 @@ const ProductDetails = ({ product }) => {
                  let dischargeValues = [];
                  if (variantDetails.discharge) {
                    if (Array.isArray(variantDetails.discharge)) {
-                     dischargeValues = variantDetails.discharge.map(v => String(v).trim()).filter(v => v);
+                     dischargeValues = variantDetails.discharge.map(v => cleanValue(v)).filter(v => v);
                    } else {
-                     dischargeValues = String(variantDetails.discharge).split(',').map(v => v.trim()).filter(v => v);
+                     dischargeValues = String(variantDetails.discharge).split(',').map(v => cleanValue(v)).filter(v => v);
                    }
                  }
                  
@@ -742,33 +748,46 @@ const ProductDetails = ({ product }) => {
                        {variantDetails.head && (
                          <div>
                            <p className="text-xs text-gray-600 mb-1">Head:</p>
-                           <p className="text-xs sm:text-sm font-medium text-gray-900">{variantDetails.head}</p>
+                           <p className="text-xs sm:text-sm font-medium text-gray-900">{cleanValue(variantDetails.head)}</p>
                          </div>
                        )}
                        {variantDetails.discharge && (
                          <div>
                            <p className="text-[10px] sm:text-xs text-gray-600 mb-1">Discharge:</p>
-                           <p className="text-xs sm:text-sm font-medium text-gray-900">{variantDetails.discharge}</p>
+                           <p className="text-xs sm:text-sm font-medium text-gray-900">{cleanValue(variantDetails.discharge)}</p>
                          </div>
                        )}
                      </div>
                    );
                  }
                  
-                 // Display pairs
-                 return pairs.map((pair, index) => (
-                   <div key={index} className="flex items-center py-1.5 px-2.5 bg-gray-50 rounded-md border border-gray-100 hover:bg-gray-100 transition-colors">
-                     <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                     {pair.head && pair.discharge ? (
-                       <span>{pair.head}H & {pair.discharge}D</span>
-                     ) : pair.head ? (
-                       <span>{pair.head}H</span>
-                     ) : pair.discharge ? (
-                       <span>{pair.discharge}D</span>
-                     ) : null}
-                     </span>
-                   </div>
-                 ));
+                 // Display as table
+                 return (
+                   <table className="w-full border-collapse">
+                     <thead>
+                       <tr className="border-b border-gray-200">
+                         <th className="text-left py-1.5 px-2 text-[10px] sm:text-xs font-medium text-gray-600 uppercase tracking-wide">
+                           Head (meters)
+                         </th>
+                         <th className="text-left py-1.5 px-2 text-[10px] sm:text-xs font-medium text-gray-600 uppercase tracking-wide">
+                           Discharge (LPM)
+                         </th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {pairs.map((pair, index) => (
+                         <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                           <td className="py-1.5 px-2 text-xs sm:text-sm font-semibold text-gray-900">
+                             {pair.head || '-'}
+                           </td>
+                           <td className="py-1.5 px-2 text-xs sm:text-sm font-semibold text-gray-900">
+                             {pair.discharge || '-'}
+                           </td>
+                         </tr>
+                       ))}
+                     </tbody>
+                   </table>
+                 );
                })()}
              </div>
            </div>

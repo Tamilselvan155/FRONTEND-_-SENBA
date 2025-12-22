@@ -8,6 +8,7 @@ import { createEnquiry } from '@/lib/actions/enquiryActions';
 import { addEnquiry } from '@/lib/features/enquiry/enquirySlice';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 
 const EnquiryContent = () => {
   const router = useRouter();
@@ -177,6 +178,10 @@ const EnquiryContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      {/* Go Back Button - Top Left Corner */}
+      <div className="max-w-4xl mx-auto mb-4 sm:mb-5">
+        <BackButton fallbackUrl="/" />
+      </div>
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 sm:mb-10 text-center">

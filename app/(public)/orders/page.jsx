@@ -17,6 +17,10 @@ export default function Orders() {
             {orders.length > 0 ? (
                 (
                     <div className="my-20 max-w-7xl mx-auto">
+                        {/* Go Back Button - Top Left Corner */}
+                        <div className="mb-4 sm:mb-5">
+                            <BackButton fallbackUrl="/" />
+                        </div>
                         <PageTitle heading="My Orders" text={`Showing total ${orders.length} orders`} linkText={'Go to home'} />
 
                         <table className="w-full max-w-5xl text-slate-500 table-auto border-separate border-spacing-y-12 border-spacing-x-4">

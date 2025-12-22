@@ -22,6 +22,7 @@ import AccountDetailsSection from '@/components/account/AccountDetailsSection';
 import AddressesSection from '@/components/account/AddressesSection';
 import EnquirySection from '@/components/account/EnquirySection';
 import ContactUsSection from '@/components/account/ContactUsSection';
+import BackButton from '@/components/BackButton';
 
 const AccountContent = () => {
   const dispatch = useDispatch();
@@ -181,6 +182,10 @@ const AccountContent = () => {
   return (
     <div className="min-h-screen bg-white py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Go Back Button - Top Left Corner */}
+        <div className="mb-4 sm:mb-5">
+          <BackButton fallbackUrl="/" />
+        </div>
         {/* Page Header with Profile */}
         <div className="bg-white rounded-lg shadow-sm mb-6 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

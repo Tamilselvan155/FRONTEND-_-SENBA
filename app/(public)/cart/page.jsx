@@ -2,6 +2,7 @@
 import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
+import BackButton from "@/components/BackButton";
 import { useCart } from "@/lib/hooks/useCart";
 import { Trash2Icon, CheckCircle } from "lucide-react";
 import Image from "next/image";
@@ -296,6 +297,10 @@ export default function Cart() {
     return cartArray.length > 0 ? (
         <div className="min-h-screen bg-white py-6 sm:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Go Back Button - Top Left Corner */}
+                <div className="mb-4 sm:mb-5">
+                    <BackButton fallbackUrl="/" />
+                </div>
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">My basket</h1>

@@ -311,9 +311,16 @@ const CategoryNavBar = () => {
     }
   }, [])
 
-  // Get category slug for URL
+  // Get category slug for URL - use title/englishName for better matching
   const getCategorySlug = (category) => {
-    return category.slug || (category.englishName ? category.englishName.toLowerCase().replace(/\s+/g, '-') : '') || ''
+    // Use title or englishName directly (not slug) for better matching with product categories
+    const categoryTitle = category.title || category.englishName || '';
+    if (categoryTitle) {
+      // Return the title as-is (will be URL encoded) for exact matching
+      return categoryTitle;
+    }
+    // Fallback to slug if title/englishName not available
+    return category.slug || '';
   }
 
   // Get subcategory slug for URL

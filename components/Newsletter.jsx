@@ -27,10 +27,10 @@ const Newsletter = () => {
         <section className="w-full bg-white py-12 sm:py-16 lg:pt-10 lg:pb-0">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-8 sm:mb-10">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
                         Get exclusive discounts & promotions
                     </h2>
-                    <p className="text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
+                    <p className="text-base text-gray-600 leading-relaxed max-w-2xl mx-auto">
                         Subscribe to our newsletter to get exclusive discounts and promotions sent direct to your inbox. You will receive 10% off on all parts. We never spam :)
                     </p>
                 </div>
@@ -44,14 +44,14 @@ const Newsletter = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Your email"
-                                className="flex-1 outline-none text-sm sm:text-base text-gray-700 placeholder-gray-400 bg-transparent"
+                                className="flex-1 outline-none text-base text-gray-700 placeholder-gray-400 bg-transparent"
                                 required
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold text-sm sm:text-base hover:from-[#6a2340] hover:to-[#7a2a4a] transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap w-full sm:w-auto"
+                            className="bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold text-base hover:from-[#6a2340] hover:to-[#7a2a4a] transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap w-full sm:w-auto"
                         >
                             {isSubmitting ? 'Subscribing...' : 'Subscribe'}
                         </button>

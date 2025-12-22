@@ -23,14 +23,12 @@ const Footer = () => {
     };
 
     const keyInfoLinks = [
-        { text: "Delivery", path: '/delivery' },
-        { text: "Returns", path: '/returns' },
+        { text: "About", path: '/about' },
+        // { text: "Delivery", path: '/delivery' },
+        { text: "Shipping Policy", path: '/shipping' },
+        // { text: "Returns", path: '/returns' },
+        { text: "Refund Policy", path: '/refund' },
         { text: "Warranty", path: '/warranty' },
-        { text: "FAQ", path: '/faq' },
-        { text: "Finance", path: '/finance' },
-        { text: "Customer Reviews", path: '/reviews' },
-        { text: "Terms & Conditions", path: '/terms' },
-        { text: "Business Terms", path: '/business-terms' },
         { text: "Privacy Policy", path: '/privacy' },
         { text: "Contact", path: '/contact' }
     ];

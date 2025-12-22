@@ -7,9 +7,10 @@ import { useCart } from "@/lib/hooks/useCart";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ArrowRight, Send } from "lucide-react";
+import { ShoppingCart, ArrowRight, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductFilters from "./ProductFilters";
 import Loading from "./Loading";
+import BackButton from "./BackButton";
 import { assets } from "@/assets/assets";
 
 export default function CategoryProductsFilter({ categoryName, subCategoryName }) {
@@ -272,35 +273,6 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
     };
   };
 
-  // Auto-select category from URL query params after products are loaded
-  useEffect(() => {
-    if (categoryName && categoryName !== "products" && products.length > 0 && filters.selectedCategories.length === 0) {
-      // Normalize category name for matching
-      const normalizeCategory = (cat) => {
-        if (!cat) return '';
-        return cat.trim().toLowerCase().replace(/\s+/g, ' ');
-      };
-      
-      const normalizedCategoryName = normalizeCategory(categoryName);
-      
-      // Find matching category from available categories
-      const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
-      const matchingCategory = allCategories.find(cat => {
-        const normalizedCat = normalizeCategory(cat);
-        return normalizedCat === normalizedCategoryName ||
-               normalizedCat.includes(normalizedCategoryName) ||
-               normalizedCategoryName.includes(normalizedCat);
-      });
-      
-      if (matchingCategory) {
-        setFilters(prev => ({
-          ...prev,
-          selectedCategories: [matchingCategory]
-        }));
-      }
-    }
-  }, [categoryName, products]);
-
   // Fetch products from API
   useEffect(() => {
     const loadProducts = async () => {
@@ -347,21 +319,34 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
   // Auto-select category from URL query params after products are loaded
   useEffect(() => {
     if (categoryName && categoryName !== "products" && products.length > 0 && filters.selectedCategories.length === 0) {
-      // Normalize category name for matching
+      // Normalize category name for matching - handle both hyphens and spaces
       const normalizeCategory = (cat) => {
         if (!cat) return '';
-        return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+        // Convert to lowercase, replace hyphens with spaces, normalize spaces
+        return cat.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
       };
       
-      const normalizedCategoryName = normalizeCategory(categoryName);
+      // Decode URL-encoded category name
+      const decodedCategoryName = decodeURIComponent(categoryName);
+      const normalizedCategoryName = normalizeCategory(decodedCategoryName);
       
       // Find matching category from available categories
       const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
       const matchingCategory = allCategories.find(cat => {
         const normalizedCat = normalizeCategory(cat);
-        return normalizedCat === normalizedCategoryName ||
-               normalizedCat.includes(normalizedCategoryName) ||
-               normalizedCategoryName.includes(normalizedCat);
+        // Exact match first
+        if (normalizedCat === normalizedCategoryName) {
+          return true;
+        }
+        // Check if category names match when comparing word by word
+        const catWords = normalizedCat.split(' ').filter(w => w.length > 0);
+        const nameWords = normalizedCategoryName.split(' ').filter(w => w.length > 0);
+        // Match if all words from one are in the other
+        if (catWords.length > 0 && nameWords.length > 0) {
+          return catWords.every(word => nameWords.includes(word)) || 
+                 nameWords.every(word => catWords.includes(word));
+        }
+        return false;
       });
       
       if (matchingCategory) {
@@ -371,7 +356,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
         }));
       }
     }
-  }, [categoryName, products]);
+  }, [categoryName, products, filters.selectedCategories.length]);
 
   // Apply filters and sorting
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -421,15 +406,17 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
 
     let updatedProducts = [...products];
 
-    // Helper function to normalize category/subcategory names
+    // Helper function to normalize category/subcategory names - handle hyphens and spaces
     const normalizeCategory = (cat) => {
       if (!cat) return '';
-      return cat.trim().toLowerCase().replace(/\s+/g, ' ');
+      // Convert to lowercase, replace hyphens with spaces, normalize spaces
+      return cat.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
     };
 
     // Apply subcategory filter first (if subcategory is provided from query params)
     if (subCategoryName) {
-      const normalizedSubCategoryName = normalizeCategory(subCategoryName);
+      const decodedSubCategoryName = decodeURIComponent(subCategoryName);
+      const normalizedSubCategoryName = normalizeCategory(decodedSubCategoryName);
       updatedProducts = updatedProducts.filter((p) => {
         const productSubCat = normalizeCategory(p.subCategory || '');
         return productSubCat === normalizedSubCategoryName ||
@@ -446,20 +433,35 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
         filters.selectedCategories.some(selectedCat => {
           const productCat = normalizeCategory(p.category || '');
           const selectedCatLower = normalizeCategory(selectedCat);
-          return productCat === selectedCatLower || 
-                 productCat.includes(selectedCatLower) || 
-                 selectedCatLower.includes(productCat);
+          // Exact match first
+          if (productCat === selectedCatLower) return true;
+          // Word-by-word matching for better accuracy
+          const productWords = productCat.split(' ').filter(w => w.length > 0);
+          const selectedWords = selectedCatLower.split(' ').filter(w => w.length > 0);
+          if (productWords.length > 0 && selectedWords.length > 0) {
+            return productWords.every(word => selectedWords.includes(word)) || 
+                   selectedWords.every(word => productWords.includes(word));
+          }
+          return false;
         })
       );
     } else if (categoryName && categoryName !== "products" && !subCategoryName) {
       // If no categories selected but categoryName provided (and no subcategory), filter by it
-      const normalizedCategoryName = normalizeCategory(categoryName);
+      const decodedCategoryName = decodeURIComponent(categoryName);
+      const normalizedCategoryName = normalizeCategory(decodedCategoryName);
       
       updatedProducts = updatedProducts.filter((p) => {
         const productCat = normalizeCategory(p.category || '');
-        return productCat === normalizedCategoryName ||
-               productCat.includes(normalizedCategoryName) ||
-               normalizedCategoryName.includes(productCat);
+        // Exact match first
+        if (productCat === normalizedCategoryName) return true;
+        // Word-by-word matching for better accuracy
+        const productWords = productCat.split(' ').filter(w => w.length > 0);
+        const nameWords = normalizedCategoryName.split(' ').filter(w => w.length > 0);
+        if (productWords.length > 0 && nameWords.length > 0) {
+          return productWords.every(word => nameWords.includes(word)) || 
+                 nameWords.every(word => productWords.includes(word));
+        }
+        return false;
       });
     }
 
@@ -606,12 +608,41 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
     router.push(enquiryUrl);
   }
 
-  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [viewMode, setViewMode] = useState('list'); // grid or list
   const [itemsPerPage, setItemsPerPage] = useState(24);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, itemsPerPage]);
+
+  // Reset to page 1 if current page exceeds total pages
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <div className="max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-4 lg:px-8">
+      {/* Go Back Button - Top Left Corner */}
+      <div className="mb-3 sm:mb-4 lg:mb-5">
+        <BackButton fallbackUrl="/" />
+      </div>
       {/* ✅ Breadcrumbs */}
         <nav className="text-gray-600 text-xs sm:text-sm lg:text-base mb-3 sm:mb-5 lg:mb-6 flex items-center gap-1.5 sm:gap-2">
         <Link
@@ -704,7 +735,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                     {loading ? (
                       "Loading products..."
                     ) : filteredProducts.length > 0 ? (
-                      `Showing 1 - ${Math.min(itemsPerPage, filteredProducts.length)} of ${filteredProducts.length} products`
+                      `Showing ${startIndex + 1} - ${Math.min(endIndex, filteredProducts.length)} of ${filteredProducts.length} products`
                     ) : (
                       "No products found"
                     )}
@@ -716,11 +747,11 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                   {/* Items Per Page */}
                   <div className="flex items-center gap-1.5">
                     <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">Display:</label>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                      className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 min-w-[100px]"
-                    >
+                  <select
+                    value={itemsPerPage}
+                    onChange={handleItemsPerPageChange}
+                    className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 min-w-[100px]"
+                  >
                       <option value={12}>12 per page</option>
                       <option value={24}>24 per page</option>
                       <option value={48}>48 per page</option>
@@ -786,7 +817,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                   <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">Display:</label>
                   <select
                     value={itemsPerPage}
-                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    onChange={handleItemsPerPageChange}
                     className="px-2.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:ring-2 focus:ring-[#7C2A47] focus:border-[#7C2A47] transition-all cursor-pointer shadow-sm hover:border-gray-400 w-full"
                   >
                     <option value={12}>12 per page</option>
@@ -830,8 +861,9 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
               </button>
             </div>
           ) : filteredProducts.length > 0 ? (
+            <>
             <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 w-full overflow-x-hidden' : 'space-y-3 sm:space-y-4 lg:space-y-5 w-full overflow-x-hidden'}>
-              {filteredProducts.slice(0, itemsPerPage).map((product, index) => {
+              {paginatedProducts.map((product, index) => {
                 const displayPrice = getDisplayPrice(product);
                 
                 // Extract brand/category
@@ -1097,6 +1129,67 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                 );
               })}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 sm:mt-8 pt-6 border-t border-gray-200">
+                <div className="text-xs sm:text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                  >
+                    <ChevronLeft size={16} />
+                    <span className="hidden sm:inline">Previous</span>
+                    <span className="sm:hidden">Prev</span>
+                  </button>
+                  
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-[#7C2A47] text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <span className="sm:hidden">Next</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+            </>
           ) : (
             <p className="text-center text-gray-600 text-sm sm:text-base">
               No products match the filters.

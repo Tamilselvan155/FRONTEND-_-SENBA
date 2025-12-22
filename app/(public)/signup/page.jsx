@@ -327,8 +327,9 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, CheckCircle2, UserPlus, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, CheckCircle2, UserPlus, ArrowRight, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   signupRequest,
@@ -336,6 +337,7 @@ import {
   signupFailure,
   clearError,
 } from '../../../lib/features/login/authSlice';
+import logo from '@/assets/YUCHII LOGO.png';
 
 const SignUp = () => {
   const dispatch = useDispatch();
@@ -345,6 +347,7 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    mobile: '',
     password: '',
     confirmPassword: '',
   });
@@ -363,12 +366,19 @@ const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { fullName, email, password, confirmPassword } = formData;
+    const { fullName, email, mobile, password, confirmPassword } = formData;
 
     // Client-side validation
-    if (!fullName || !email || !password || !confirmPassword) {
-      dispatch(signupFailure('All fields are required'));
-      toast.error('All fields are required');
+    if (!fullName || !password || !confirmPassword) {
+      dispatch(signupFailure('Name, password, and confirm password are required'));
+      toast.error('Name, password, and confirm password are required');
+      return;
+    }
+
+    // Require either email or mobile
+    if (!email && !mobile) {
+      dispatch(signupFailure('Please provide either email or mobile number'));
+      toast.error('Please provide either email or mobile number');
       return;
     }
 
@@ -384,29 +394,49 @@ const SignUp = () => {
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      dispatch(signupFailure('Please enter a valid email address'));
-      toast.error('Please enter a valid email address');
-      return;
+    // Email validation (if provided)
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        dispatch(signupFailure('Please enter a valid email address'));
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
+    // Mobile validation (if provided)
+    if (mobile) {
+      const mobileRegex = /^[0-9]{10}$/;
+      if (!mobileRegex.test(mobile.trim())) {
+        dispatch(signupFailure('Please enter a valid 10-digit mobile number'));
+        toast.error('Please enter a valid 10-digit mobile number');
+        return;
+      }
     }
 
     dispatch(signupRequest());
 
     try {
       // Call the signup API endpoint
-      // The backend accepts name, firstName+lastName, or just firstName
+      const requestBody = {
+        name: fullName.trim(),
+        password: password,
+      };
+
+      // Add email or mobile based on what was provided
+      if (email) {
+        requestBody.email = email;
+      }
+      if (mobile) {
+        requestBody.mobile = mobile.trim();
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: fullName.trim(), // Send full name directly
-          email: email,
-          password: password,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       let data;
@@ -420,18 +450,19 @@ const SignUp = () => {
         // Signup successful
         dispatch(signupSuccess({ 
           name: fullName.trim(),
-          email: email, 
+          email: email || mobile, 
           password: password 
         }));
 
-        // Don't auto-login, just show success and redirect to login page with email
+        // Don't auto-login, just show success and redirect to login page
         toast.success('Account created successfully! Please login to continue.');
         setShowSuccess(true);
         
-        // Redirect to login page with email pre-filled after 2 seconds
+        // Redirect to login page with email/mobile pre-filled after 2 seconds
         setTimeout(() => {
           setShowSuccess(false);
-          router.push(`/login?email=${encodeURIComponent(email)}`);
+          const identifier = email || mobile;
+          router.push(`/login?email=${encodeURIComponent(identifier)}`);
         }, 2000);
       } else {
         // Signup failed
@@ -462,8 +493,13 @@ const SignUp = () => {
         <div className="relative z-10">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#7C2A47] to-[#8B3A5A] mb-4 mx-auto shadow-lg">
-              <UserPlus className="w-7 h-7 text-white" />
+            <div className="flex items-center justify-center mb-4 mx-auto">
+              <Image 
+                src={logo} 
+                alt="Logo" 
+                className="h-16 w-auto object-contain"
+                priority
+              />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               Create Your Account
@@ -508,7 +544,7 @@ const SignUp = () => {
             {/* Email */}
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
-                Email Address
+                Email Address <span className="text-gray-400 text-xs">(Optional)</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -518,10 +554,31 @@ const SignUp = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="example@gmail.com"
-                  required
                   className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47]"
                 />
               </div>
+            </div>
+
+            {/* Mobile */}
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                Mobile Number <span className="text-gray-400 text-xs">(Optional)</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="tel"
+                  name="mobile"
+                  value={formData.mobile}
+                  onChange={handleChange}
+                  placeholder="1234567890"
+                  maxLength="10"
+                  className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47]"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Provide either email or mobile number (at least one is required)
+              </p>
             </div>
 
             {/* Password */}
@@ -616,7 +673,8 @@ const SignUp = () => {
               <button
                 onClick={() => {
                   setShowSuccess(false);
-                  router.push(`/login?email=${encodeURIComponent(formData.email)}`);
+                  const identifier = formData.email || formData.mobile;
+                  router.push(`/login?email=${encodeURIComponent(identifier)}`);
                 }}
                 className="mt-4 w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] text-white py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all"
               >

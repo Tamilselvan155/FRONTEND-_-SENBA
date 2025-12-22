@@ -4,172 +4,179 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Mail } from 'lucide-react';
 import { clearError, forgetPasswordRequest, forgetPasswordSuccess, forgetPasswordFailure } from '../../../lib/features/login/authSlice';
+import toast from 'react-hot-toast';
+import logo from '@/assets/YUCHII LOGO.png';
 
 const ForgetPassword = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { isLoading, error, users } = useSelector((state) => state.auth);
+  const { isLoading, error } = useSelector((state) => state.auth);
   const [showPopup, setShowPopup] = useState(false);
-  const [email, setEmail] = useState('');
+  const [emailOrMobile, setEmailOrMobile] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const identifier = emailOrMobile.trim();
+
+    if (!identifier) {
+      toast.error('Please enter email or mobile number');
+      return;
+    }
+
+    // Determine if input is email or mobile
+    const isEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(identifier);
+    const isMobile = /^[0-9]{10}$/.test(identifier);
+
+    if (!isEmail && !isMobile) {
+      toast.error('Please enter a valid email or 10-digit mobile number');
+      return;
+    }
+
     dispatch(forgetPasswordRequest());
 
-    setTimeout(() => {
-      const user = users?.find((u) => u.email === email.trim());
-      if (user) {
+    try {
+      const requestBody = {};
+      if (isEmail) {
+        requestBody.email = identifier;
+      } else {
+        requestBody.mobile = identifier;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         dispatch(forgetPasswordSuccess());
+        toast.success(data.message);
         setShowPopup(true);
         setTimeout(() => {
           setShowPopup(false);
           router.push('/login');
         }, 2000);
       } else {
-        dispatch(forgetPasswordFailure('No account found with this email'));
+        dispatch(forgetPasswordFailure(data.message || 'Failed to send reset link'));
+        toast.error(data.message || 'Failed to send reset link');
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      dispatch(forgetPasswordFailure('An error occurred. Please try again.'));
+      toast.error('An error occurred. Please try again.');
+    }
   };
 
   return (
-    <div className="bg-white px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Breadcrumbs */}
-      <nav className="w-full max-w-7xl mx-auto mb-8 text-sm font-medium text-gray-600">
-        <ol className="flex items-center space-x-2">
-          <li>
-            <Link href="/" className="text-[#f48638] hover:text-[#c31e5aff] transition-colors duration-200">
-              Home
-            </Link>
-          </li>
-          <li>
-            <span className="text-gray-400">&gt;</span>
-          </li>
-          <li>
-            <Link href="/login" className="text-[#f48638] hover:text-[#c31e5aff] transition-colors duration-200">
-              Sign In
-            </Link>
-          </li>
-          <li>
-            <span className="text-gray-400">&gt;</span>
-          </li>
-          <li>
-            <span className="text-gray-700">Forgot Password</span>
-          </li>
-        </ol>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 px-4 py-12 flex items-center justify-center relative overflow-hidden">
+      {/* FORGOT PASSWORD CARD */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-sm sm:max-w-md lg:max-w-lg bg-white rounded-xl shadow-xl border border-gray-200 p-6 sm:p-8 relative overflow-hidden"
+      >
+        {/* Decorative Blobs */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#7C2A47]/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#8B3A5A]/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
 
-      {/* Forget Password Card */}
-      <div className="flex items-center justify-center">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 sm:p-10">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-center text-[#c31e5aff] mb-2">
-            Forgot Your Password?
-          </h1>
-          <p className="text-sm sm:text-base text-gray-400 text-center mb-8">
-            Enter your email to reset your password
-          </p>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-400 text-red-600 text-sm sm:text-base p-3 rounded mb-6 text-center">
-              {error}
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center mb-4 mx-auto">
+              <Image 
+                src={logo} 
+                alt="Logo" 
+                className="h-16 w-auto object-contain"
+                priority
+              />
             </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+              Forgot Your Password?
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500">
+              Enter your email or mobile number to reset your password
+            </p>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border-l-4 border-red-500 text-red-700 text-xs sm:text-sm p-3 rounded mb-5"
+            >
+              {error}
+            </motion.div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email or Mobile */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm sm:text-base font-medium text-gray-700 mb-1"
-              >
-                Email
+              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                Email or Mobile Number
               </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="example@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-md text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#0F172A] focus:border-[#0F172A] transition"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  name="emailOrMobile"
+                  value={emailOrMobile}
+                  onChange={(e) => setEmailOrMobile(e.target.value)}
+                  placeholder="example@gmail.com or 1234567890"
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47]"
+                />
+              </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#0F172A] text-white py-3 rounded-md text-sm sm:text-base font-medium hover:bg-[#0a1220] transition disabled:opacity-60"
+              className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
 
-          <p className="mt-4 text-center text-gray-600 text-xs sm:text-sm">
+          {/* Footer */}
+          <div className="text-center mt-5 text-xs sm:text-sm text-gray-600">
             Remember your password?{' '}
-            <Link
-              href="/login"
-              className="font-semibold text-[#f48638] hover:underline"
-            >
+            <Link href="/login" className="font-semibold text-[#7C2A47] hover:text-[#8B3A5A] transition-colors">
               Sign In
             </Link>
-          </p>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Animated Success Popup */}
+      {/* SUCCESS POPUP */}
       <AnimatePresence>
         {showPopup && (
           <motion.div
-            key="popup"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="relative bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl p-8 text-center border border-gray-200"
+              initial={{ scale: 0.85 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.85 }}
+              className="bg-white rounded-2xl shadow-2xl p-8 text-center"
             >
-              <motion.div
-                initial={{ rotate: -20, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 10 }}
-                className="flex justify-center mb-4"
-              >
-                <CheckCircle2 className="w-14 h-14 text-green-500" />
-              </motion.div>
-
-              <motion.h2
-                initial={{ y: -10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 }}
-                className="text-xl sm:text-2xl font-semibold text-[#0F172A] mb-2"
-              >
-                Reset Link Sent
-              </motion.h2>
-
-              <motion.p
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-gray-500 text-sm sm:text-base"
-              >
-                Check your email for the reset link.
-              </motion.p>
-
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: 0.3, duration: 2, ease: 'easeInOut' }}
-                className="mt-5 h-1 bg-green-500 rounded-full origin-left"
-              />
+              <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Reset Link Sent</h2>
+              <p className="text-gray-500">Check your email or mobile for the reset link.</p>
             </motion.div>
           </motion.div>
         )}

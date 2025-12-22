@@ -10,6 +10,7 @@ import {
 import { X, CheckCircle, FolderHeart,Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import BackButton from "@/components/BackButton";
 export default function Wishlist() {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
 
@@ -72,6 +73,10 @@ export default function Wishlist() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm p-6">
+        {/* Go Back Button - Top Left Corner */}
+        <div className="mb-4 sm:mb-5">
+          <BackButton fallbackUrl="/" />
+        </div>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">Your Wishlist</h1>
           <button
