@@ -367,6 +367,8 @@ const Hero = () => {
   const [preloadedImages, setPreloadedImages] = useState(new Set());
   const [loadedImages, setLoadedImages] = useState(new Set());
   const preloadLinkRef = useRef(null);
+  const preloadedSlidesRef = useRef(new Set()); // Track preloaded slides to avoid re-execution
+  const prefetchLinksRef = useRef([]); // Track prefetch links for cleanup
 
   // No fallback static slides - only use backend banners
 
@@ -421,35 +423,113 @@ const Hero = () => {
       }
     };
 
-    // Add preload link to head for first image (critical for LCP)
-    if (slides[0]?.image) {
-      // Remove existing preload link if any
-      if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
-        document.head.removeChild(preloadLinkRef.current);
+    // Helper to extract domain for DNS prefetch/preconnect
+    const getImageDomain = (url) => {
+      try {
+        const imgUrl = new URL(url, window.location.href);
+        return imgUrl.origin;
+      } catch {
+        return null;
       }
+    };
 
+    // Add DNS prefetch and preconnect for cross-origin images (faster connection)
+    if (slides.length > 0 && slides[0]?.image) {
+      const imageDomain = getImageDomain(slides[0].image);
+      if (imageDomain && imageDomain !== window.location.origin) {
+        // Check if DNS prefetch already exists
+        let dnsPrefetch = document.querySelector('link[rel="dns-prefetch"][href="' + imageDomain + '"]');
+        if (!dnsPrefetch) {
+          dnsPrefetch = document.createElement('link');
+          dnsPrefetch.rel = 'dns-prefetch';
+          dnsPrefetch.href = imageDomain;
+          document.head.appendChild(dnsPrefetch);
+        }
+        
+        // Check if preconnect already exists
+        let preconnect = document.querySelector('link[rel="preconnect"][href="' + imageDomain + '"]');
+        if (!preconnect) {
+          preconnect = document.createElement('link');
+          preconnect.rel = 'preconnect';
+          preconnect.href = imageDomain;
+          preconnect.crossOrigin = 'anonymous';
+          document.head.appendChild(preconnect);
+        }
+      }
+    }
+
+    // Add preload links for first 2 slides (critical for LCP and next slide)
+    // Remove existing preload links if any
+    if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
+      document.head.removeChild(preloadLinkRef.current);
+      preloadLinkRef.current = null;
+    }
+
+    // Preload first slide (critical for LCP)
+    if (slides[0]?.image) {
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'image';
       link.href = slides[0].image;
       link.fetchPriority = 'high';
-      // Add fetchpriority attribute for better browser support
       if ('fetchPriority' in link) {
         link.setAttribute('fetchpriority', 'high');
       }
-      
-      // Only set crossOrigin if image is from different origin
       if (isCrossOrigin(slides[0].image)) {
         link.crossOrigin = 'anonymous';
       }
-      
       document.head.appendChild(link);
       preloadLinkRef.current = link;
     }
 
-    // Preload image with cache detection and immediate loading
+    // Preload second slide (next slide)
+    if (slides.length > 1 && slides[1]?.image) {
+      const link2 = document.createElement('link');
+      link2.rel = 'preload';
+      link2.as = 'image';
+      link2.href = slides[1].image;
+      link2.fetchPriority = 'high';
+      if ('fetchPriority' in link2) {
+        link2.setAttribute('fetchpriority', 'high');
+      }
+      if (isCrossOrigin(slides[1].image)) {
+        link2.crossOrigin = 'anonymous';
+      }
+      document.head.appendChild(link2);
+      // Store second preload link reference
+      if (!preloadLinkRef.current) {
+        preloadLinkRef.current = link2;
+      }
+    }
+
+    // Add prefetch links for remaining slides (lower priority)
+    // Clean up old prefetch links
+    prefetchLinksRef.current.forEach(link => {
+      if (document.head.contains(link)) {
+        document.head.removeChild(link);
+      }
+    });
+    prefetchLinksRef.current = [];
+
+    // Prefetch remaining slides (if more than 2)
+    for (let i = 2; i < slides.length && i < 5; i++) { // Limit to first 5 slides
+      if (slides[i]?.image) {
+        const prefetchLink = document.createElement('link');
+        prefetchLink.rel = 'prefetch';
+        prefetchLink.as = 'image';
+        prefetchLink.href = slides[i].image;
+        if (isCrossOrigin(slides[i].image)) {
+          prefetchLink.crossOrigin = 'anonymous';
+        }
+        document.head.appendChild(prefetchLink);
+        prefetchLinksRef.current.push(prefetchLink);
+      }
+    }
+
+    // Preload image with optimized cache detection and immediate loading
     const preloadImage = (src, slideId, isHighPriority = false) => {
-      if (preloadedImages.has(slideId) || !src) return Promise.resolve();
+      // Check ref first to avoid unnecessary work
+      if (preloadedSlidesRef.current.has(slideId) || !src) return Promise.resolve();
       
       return new Promise((resolve, reject) => {
         // Use window.Image to avoid conflict with Next.js Image component
@@ -465,12 +545,17 @@ const Hero = () => {
         }
         img.decoding = 'async';
         
-        img.onload = () => {
-          // Batch state updates
+        // Batch all state updates into single requestAnimationFrame
+        const updateState = () => {
           requestAnimationFrame(() => {
             setPreloadedImages(prev => new Set(prev).add(slideId));
             setLoadedImages(prev => new Set(prev).add(slideId));
           });
+          preloadedSlidesRef.current.add(slideId);
+        };
+        
+        img.onload = () => {
+          updateState();
           resolve();
         };
         
@@ -482,50 +567,45 @@ const Hero = () => {
         // Start loading immediately (set src first to trigger browser cache check)
         img.src = src;
         
-        // Check cache after setting src (browser may load from cache synchronously)
-        // Use setTimeout to check after browser processes the src assignment
-        setTimeout(() => {
+        // Check cache synchronously after setting src (browser may load from cache synchronously)
+        // Use requestAnimationFrame for immediate check without setTimeout delay
+        requestAnimationFrame(() => {
           if (img.complete && img.naturalWidth > 0) {
             // Image is already loaded/cached, resolve immediately
-            requestAnimationFrame(() => {
-              setPreloadedImages(prev => new Set(prev).add(slideId));
-              setLoadedImages(prev => new Set(prev).add(slideId));
-            });
+            updateState();
             resolve();
           }
-        }, 0);
+        });
       });
     };
 
-    // Preload all slides in parallel for faster transitions
-    // First slide gets high priority, others get auto priority
+    // Preload all slides immediately in parallel (no artificial delays)
+    // First slide gets high priority via fetchPriority, others get auto priority
     slides.forEach((slide, index) => {
-      if (slide?.image && !preloadedImages.has(slide.id)) {
-        const isHighPriority = index === 0;
-        // Small delay for non-first slides to prioritize first image
-        const delay = index === 0 ? 0 : index * 50;
-        
-        if (delay === 0) {
-          preloadImage(slide.image, slide.id, isHighPriority).catch(() => {
-            // Error handled silently
-          });
-        } else {
-          setTimeout(() => {
-            preloadImage(slide.image, slide.id, isHighPriority).catch(() => {
-              // Error handled silently
-            });
-          }, delay);
-        }
+      if (slide?.image && !preloadedSlidesRef.current.has(slide.id)) {
+        const isHighPriority = index === 0 || index === 1; // First 2 slides get high priority
+        // Start loading immediately - no delays
+        preloadImage(slide.image, slide.id, isHighPriority).catch(() => {
+          // Error handled silently
+        });
       }
     });
     
     return () => {
-      // Cleanup preload link on unmount
+      // Cleanup preload links on unmount
       if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
         document.head.removeChild(preloadLinkRef.current);
+        preloadLinkRef.current = null;
       }
+      // Cleanup prefetch links
+      prefetchLinksRef.current.forEach(link => {
+        if (document.head.contains(link)) {
+          document.head.removeChild(link);
+        }
+      });
+      prefetchLinksRef.current = [];
     };
-  }, [mounted, slides, preloadedImages]);
+  }, [mounted, slides]); // Removed preloadedImages from dependencies - using ref instead
 
   // Preload next slide when current changes (optimized with cache detection)
   useEffect(() => {
@@ -534,7 +614,7 @@ const Hero = () => {
     const nextIndex = (current + 1) % slides.length;
     const nextSlide = slides[nextIndex];
     
-    if (nextSlide?.image && !preloadedImages.has(nextSlide.id)) {
+    if (nextSlide?.image && !preloadedSlidesRef.current.has(nextSlide.id)) {
       // Helper to check if image is from different origin
       const isCrossOrigin = (url) => {
         try {
@@ -558,34 +638,31 @@ const Hero = () => {
       }
       img.decoding = 'async';
       
-      // Check cache before loading
-      const checkCache = () => {
-        if (img.complete && img.naturalWidth > 0) {
-          // Image is cached, batch state updates
-          requestAnimationFrame(() => {
-            setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
-            setLoadedImages(prev => new Set(prev).add(nextSlide.id));
-          });
-          return true;
-        }
-        return false;
-      };
-      
-      img.onload = () => {
-        // Batch state updates
+      // Batch state updates
+      const updateState = () => {
         requestAnimationFrame(() => {
           setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
           setLoadedImages(prev => new Set(prev).add(nextSlide.id));
         });
+        preloadedSlidesRef.current.add(nextSlide.id);
+      };
+      
+      img.onload = () => {
+        updateState();
       };
       
       // Start loading immediately
       img.src = nextSlide.image;
       
-      // Check cache after setting src
-      checkCache();
+      // Check cache synchronously after setting src
+      requestAnimationFrame(() => {
+        if (img.complete && img.naturalWidth > 0) {
+          // Image is cached, update state immediately
+          updateState();
+        }
+      });
     }
-  }, [current, slides, mounted, preloadedImages]);
+  }, [current, slides, mounted]); // Removed preloadedImages from dependencies - using ref instead
 
   // Reset current index when slides change
   useEffect(() => {
@@ -714,11 +791,12 @@ const Hero = () => {
                                   {isExternalUrl ? (
                                     <img
                                       ref={(imgElement) => {
-                                        // Check if image is already in cache when element mounts
+                                        // Optimized cache check - check immediately when element mounts
                                         if (imgElement && !isPreloaded && !isLoaded) {
-                                          // Check cache status
+                                          // Check cache status synchronously
                                           if (imgElement.complete && imgElement.naturalWidth > 0) {
-                                            // Image is cached, mark as loaded
+                                            // Image is cached, mark as loaded immediately
+                                            // Batch all state updates together
                                             requestAnimationFrame(() => {
                                               setLoadedImages(prev => new Set(prev).add(currentSlide.id));
                                               setPreloadedImages(prev => new Set(prev).add(currentSlide.id));
@@ -727,6 +805,7 @@ const Hero = () => {
                                                 newSet.delete(currentSlide.id);
                                                 return newSet;
                                               });
+                                              preloadedSlidesRef.current.add(currentSlide.id);
                                             });
                                           }
                                         }
@@ -765,11 +844,12 @@ const Hero = () => {
                                         }
                                       }}
                                       onLoad={() => {
-                                        // Batch state updates to reduce re-renders
+                                        // Batch all state updates together to reduce re-renders
                                         requestAnimationFrame(() => {
                                           setLoadedImages(prev => new Set(prev).add(currentSlide.id));
                                           if (!isPreloaded) {
                                             setPreloadedImages(prev => new Set(prev).add(currentSlide.id));
+                                            preloadedSlidesRef.current.add(currentSlide.id);
                                           }
                                           setLoadingImages(prev => {
                                             const newSet = new Set(prev);

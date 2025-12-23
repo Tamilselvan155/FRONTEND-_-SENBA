@@ -7,6 +7,7 @@ import ProductCard from './ProductCard'
 import { fetchProductsAsync } from '@/lib/features/product/productSlice'
 import { assets } from '@/assets/assets'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getImageUrl } from '@/lib/utils/imageUtils'
 
 const ProductTabsContent = () => {
   const dispatch = useDispatch()
@@ -29,15 +30,17 @@ const ProductTabsContent = () => {
   const transformProduct = useCallback((product) => {
     if (!product) return null;
 
-    // Handle images
+    // Handle images - use getImageUrl to ensure correct URLs in production
     let productImages = []
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
       productImages = product.images
-        .filter(img => img && img.trim() !== '')
+        .filter(img => img && img.trim() !== '' && img !== 'null' && img !== 'undefined')
         .map(img => {
-          if (img.startsWith('http')) return img
-          return img.startsWith('/uploads/') ? `${baseUrl}${img}` : `${baseUrl}/uploads/${img}`
+          // Use getImageUrl to handle production URLs correctly
+          const imageUrl = getImageUrl(img);
+          return imageUrl || null;
         })
+        .filter(Boolean) // Remove any null values
     }
     
     if (productImages.length === 0) {

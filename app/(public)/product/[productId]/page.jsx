@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import Link from "next/link";
 import { fetchProductById } from "@/lib/actions/productActions";
 import { assets } from "@/assets/assets";
+import { getImageUrl } from "@/lib/utils/imageUtils";
 
 export default function Product() {
     const { productId } = useParams();
@@ -18,27 +19,26 @@ export default function Product() {
     // Transform product data to match component expectations
     const transformProduct = (apiProduct) => {
         if (!apiProduct) return null;
-
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
         
         // Handle images - check if it's an array or single string
+        // Use getImageUrl utility to ensure correct URLs in production
         let productImages = [];
         if (apiProduct.images) {
             if (Array.isArray(apiProduct.images) && apiProduct.images.length > 0) {
                 productImages = apiProduct.images
-                    .filter(img => img && img.trim() !== '') // Filter out empty strings
+                    .filter(img => img && img.trim() !== '' && img !== 'null' && img !== 'undefined') // Filter out empty strings
                     .map(img => {
-                        if (img.startsWith('http')) return img;
-                        return img.startsWith('/uploads/') ? `${baseUrl}${img}` : `${baseUrl}/uploads/${img}`;
-                    });
-            } else if (typeof apiProduct.images === 'string' && apiProduct.images.trim() !== '') {
+                        // Use getImageUrl to handle production URLs correctly
+                        const imageUrl = getImageUrl(img);
+                        return imageUrl || null;
+                    })
+                    .filter(Boolean); // Remove any null values
+            } else if (typeof apiProduct.images === 'string' && apiProduct.images.trim() !== '' && apiProduct.images !== 'null' && apiProduct.images !== 'undefined') {
                 // Single image string
-                const img = apiProduct.images.startsWith('http') 
-                    ? apiProduct.images 
-                    : apiProduct.images.startsWith('/uploads/') 
-                        ? `${baseUrl}${apiProduct.images}` 
-                        : `${baseUrl}/uploads/${apiProduct.images}`;
-                productImages = [img];
+                const imageUrl = getImageUrl(apiProduct.images);
+                if (imageUrl) {
+                    productImages = [imageUrl];
+                }
             }
         }
         
