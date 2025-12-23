@@ -525,13 +525,6 @@ const Hero = () => {
         document.head.removeChild(preloadLinkRef.current);
       }
     };
-
-    return () => {
-      // Cleanup preload link on unmount
-      if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
-        document.head.removeChild(preloadLinkRef.current);
-      }
-    };
   }, [mounted, slides, preloadedImages]);
 
   // Preload next slide when current changes (optimized with cache detection)
@@ -716,19 +709,16 @@ const Hero = () => {
                                 }
                               })() : false;
                               
-                              // Determine if image should be shown immediately (preloaded or cached)
-                              const shouldShowImmediately = isPreloaded || isLoaded;
-                              
                               return (
                                 <>
                                   {isExternalUrl ? (
                                     <img
                                       ref={(imgElement) => {
                                         // Check if image is already in cache when element mounts
-                                        if (imgElement && !shouldShowImmediately) {
+                                        if (imgElement && !isPreloaded && !isLoaded) {
                                           // Check cache status
                                           if (imgElement.complete && imgElement.naturalWidth > 0) {
-                                            // Image is cached, show immediately
+                                            // Image is cached, mark as loaded
                                             requestAnimationFrame(() => {
                                               setLoadedImages(prev => new Set(prev).add(currentSlide.id));
                                               setPreloadedImages(prev => new Set(prev).add(currentSlide.id));
@@ -756,10 +746,7 @@ const Hero = () => {
                                         left: 0,
                                         width: '100%',
                                         height: '100%',
-                                        objectFit: 'cover',
-                                        opacity: shouldShowImmediately ? 1 : 0,
-                                        transition: shouldShowImmediately ? 'none' : 'opacity 0.1s ease-out',
-                                        willChange: shouldShowImmediately ? 'auto' : 'opacity'
+                                        objectFit: 'cover'
                                       }}
                                       onError={(e) => {
                                         // Mark this image as failed if it's a backend image
@@ -777,13 +764,7 @@ const Hero = () => {
                                           e.target.style.display = 'none';
                                         }
                                       }}
-                                      onLoad={(e) => {
-                                        // Check if image was already complete (cached)
-                                        const wasCached = e.target.complete && e.target.naturalWidth > 0;
-                                        
-                                        // Immediately show image - no fade delay
-                                        e.target.style.opacity = '1';
-                                        
+                                      onLoad={() => {
                                         // Batch state updates to reduce re-renders
                                         requestAnimationFrame(() => {
                                           setLoadedImages(prev => new Set(prev).add(currentSlide.id));
@@ -824,10 +805,7 @@ const Hero = () => {
                                       quality={85}
                                       className="object-cover"
                                       style={{ 
-                                        position: 'absolute',
-                                        opacity: shouldShowImmediately ? 1 : 0,
-                                        transition: shouldShowImmediately ? 'none' : 'opacity 0.1s ease-out',
-                                        willChange: shouldShowImmediately ? 'auto' : 'opacity'
+                                        position: 'absolute'
                                       }}
                                       onLoad={() => {
                                         // Batch state updates
@@ -859,86 +837,73 @@ const Hero = () => {
                               )
                             })()}
                             
-                            {/* Professional Gradient Overlay - Middle Layer */}
-                            <div 
-                                className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/20 pointer-events-none" 
-                                style={{ 
-                                    zIndex: 1, 
-                                    position: 'absolute',
-                                    willChange: 'auto',
-                                    transform: 'translateZ(0)'
-                                }}
-                            ></div>
-                            
                             {/* Content Container - Top Layer */}
                             <div 
                                 className="absolute inset-0 max-w-7xl mx-auto" 
                                 style={{ zIndex: 10, position: 'absolute' }}
                             >
                                 <div 
-                                    className="h-full flex flex-col justify-center items-start pl-14 sm:pl-20 md:pl-24 lg:pl-28 xl:pl-32 pr-4 sm:pr-6 md:pr-8" 
+                                    className="h-full flex flex-col justify-center items-start px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20" 
                                     style={{ position: 'relative', zIndex: 11 }}
                                 >
                                     <motion.div
                                         key={`content-${current}`}
-                                        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -30, scale: 0.95 }}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
                                         transition={{ 
-                                            duration: 0.6, 
-                                            ease: [0.25, 0.46, 0.45, 0.94],
-                                            staggerChildren: 0.15
+                                            duration: 0.5, 
+                                            ease: "easeOut"
                                         }}
-                                        className="max-w-full sm:max-w-xl md:max-w-2xl text-white w-full"
+                                        className="max-w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl text-white space-y-3 sm:space-y-4"
                                         style={{ 
                                             position: 'relative',
                                             zIndex: 12
                                         }}
                                     >
                                         <motion.h1 
-                                            initial={{ opacity: 0, x: -20 }}
+                                            initial={{ opacity: 0, x: -30 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ 
                                                 delay: 0.1, 
                                                 duration: 0.6,
                                                 ease: "easeOut"
                                             }}
-                                            className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-3 sm:mb-4 md:mb-5 leading-tight tracking-tight text-white drop-shadow-2xl text-left"
+                                            className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold leading-tight text-white drop-shadow-2xl text-left"
                                             style={{ 
                                                 textShadow: '2px 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5)',
-                                                position: 'relative'
+                                                lineHeight: '1.2'
                                             }}
                                         >
                                             {mounted ? slides[current].title : slides[0].title}
                                         </motion.h1>
                                         
                                         <motion.p 
-                                            initial={{ opacity: 0, x: -20 }}
+                                            initial={{ opacity: 0, x: -30 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ 
-                                                delay: 0.25, 
+                                                delay: 0.2, 
                                                 duration: 0.6,
                                                 ease: "easeOut"
                                             }}
-                                            className="text-xs sm:text-sm md:text-base lg:text-lg text-white mb-5 sm:mb-6 md:mb-7 max-w-full sm:max-w-lg leading-relaxed drop-shadow-lg text-left"
+                                            className="text-xs sm:text-sm md:text-base lg:text-lg text-white/95 max-w-full sm:max-w-lg leading-relaxed drop-shadow-lg text-left"
                                             style={{ 
                                                 textShadow: '1px 1px 6px rgba(0,0,0,0.8), 0 0 15px rgba(0,0,0,0.5)',
-                                                position: 'relative'
+                                                lineHeight: '1.6'
                                             }}
                                         >
-                                            {mounted ? slides[current].subtitle : slides[0].subtitle}
+                                            {mounted ? (slides[current]?.subtitle || 'Explore our products') : (slides[0]?.subtitle || 'Explore our products')}
                                         </motion.p>
                                         
                                         <motion.div
-                                            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
                                             transition={{ 
-                                                delay: 0.4, 
+                                                delay: 0.3, 
                                                 duration: 0.5,
                                                 ease: "easeOut"
                                             }}
-                                            className="flex justify-start mt-1"
-                                            style={{ position: 'relative' }}
+                                            className="flex justify-start pt-2"
                                         >
                                             <Link href="/category/products">
                                                 <motion.button 

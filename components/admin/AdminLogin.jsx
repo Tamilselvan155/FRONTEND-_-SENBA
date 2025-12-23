@@ -350,14 +350,14 @@ const AdminLogin = () => {
             </div>
 
             {/* Forgot Password */}
-            <div className="flex items-center justify-end pt-1">
+            {/* <div className="flex items-center justify-end pt-1">
               <Link
                 href="/forgot-password"
                 className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Forgot password?
               </Link>
-            </div>
+            </div> */}
 
             {/* Login Button */}
             <button

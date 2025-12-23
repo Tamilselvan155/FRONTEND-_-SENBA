@@ -165,29 +165,29 @@ export default function PrivacyPolicy() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
-            className="bg-gradient-to-br from-[#7C2A47] to-[#8B3A5A] rounded-xl shadow-lg p-6 sm:p-8 border border-[#7C2A47]/20"
+            className="bg-gray-50 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200"
           >
             <div className="text-center mb-6">
-              <h2 className="text-base font-bold text-white mb-2">
+              <h2 className="text-base font-bold text-gray-900 mb-2">
                 7. Contact Us
               </h2>
-              <p className="text-base text-white/90">
+              <p className="text-base text-gray-600">
                 For questions or to exercise rights, contact us at:
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Email */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 border border-white/20">
+              <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-white" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#7C2A47]/10 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-[#7C2A47]" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-semibold text-white mb-2">Email</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-2">Email</h3>
                     <a 
                       href="mailto:senbapumpsandmotors@gmail.com"
-                      className="text-base text-white/90 hover:text-white hover:underline transition-colors break-all"
+                      className="text-base text-[#7C2A47] hover:text-[#8B3A5A] hover:underline transition-colors break-all"
                     >
                       senbapumpsandmotors@gmail.com
                     </a>
@@ -196,14 +196,14 @@ export default function PrivacyPolicy() {
               </div>
 
               {/* Postal Address */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 border border-white/20">
+              <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-white" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#7C2A47]/10 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-[#7C2A47]" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-semibold text-white mb-2">Postal Address</h3>
-                    <p className="text-base text-white/90 leading-relaxed text-left break-words">
+                    <h3 className="text-base font-semibold text-gray-900 mb-2">Postal Address</h3>
+                    <p className="text-base text-gray-700 leading-relaxed text-left break-words">
                       15/29, Thambuchetty Street,<br />
                       Near Rayapuram Bridge,<br />
                       Chennai-600001
