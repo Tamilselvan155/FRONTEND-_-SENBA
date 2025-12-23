@@ -348,7 +348,7 @@
 'use client'
 import { ArrowRightIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
-import React,{useState,useEffect, useCallback, useMemo} from 'react'
+import React,{useState,useEffect, useCallback, useMemo, useRef} from 'react'
 import Link from "next/link";
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
@@ -364,6 +364,8 @@ const Hero = () => {
   const [failedImages, setFailedImages] = useState(new Set());
   const [imageErrors, setImageErrors] = useState({});
   const [loadingImages, setLoadingImages] = useState(new Set());
+  const [preloadedImages, setPreloadedImages] = useState(new Set());
+  const preloadLinkRef = useRef(null);
 
   // No fallback static slides - only use backend banners
 
@@ -403,6 +405,134 @@ const Hero = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Preload images for better performance
+  useEffect(() => {
+    if (!mounted || slides.length === 0 || typeof window === 'undefined') return;
+
+    // Helper to check if image is from different origin
+    const isCrossOrigin = (url) => {
+      try {
+        const imgUrl = new URL(url, window.location.href);
+        return imgUrl.origin !== window.location.origin;
+      } catch {
+        return false;
+      }
+    };
+
+    // Add preload link to head for first image (critical for LCP)
+    if (slides[0]?.image) {
+      // Remove existing preload link if any
+      if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
+        document.head.removeChild(preloadLinkRef.current);
+      }
+
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = slides[0].image;
+      link.fetchPriority = 'high';
+      
+      // Only set crossOrigin if image is from different origin
+      if (isCrossOrigin(slides[0].image)) {
+        link.crossOrigin = 'anonymous';
+      }
+      
+      document.head.appendChild(link);
+      preloadLinkRef.current = link;
+    }
+
+    // Preload first slide image immediately (critical)
+    const preloadImage = (src, slideId, isHighPriority = false) => {
+      if (preloadedImages.has(slideId) || !src) return;
+      
+      // Use window.Image to avoid conflict with Next.js Image component
+      const img = new window.Image();
+      img.src = src;
+      
+      // Set crossOrigin if needed
+      if (isCrossOrigin(src)) {
+        img.crossOrigin = 'anonymous';
+      }
+      
+      if (isHighPriority && 'fetchPriority' in img) {
+        img.fetchPriority = 'high';
+      }
+      img.decoding = 'async';
+      
+      img.onload = () => {
+        setPreloadedImages(prev => new Set(prev).add(slideId));
+      };
+      
+      img.onerror = () => {
+        // Silently handle error, will be caught by component error handler
+      };
+    };
+
+    // Preload first slide immediately with high priority
+    if (slides[0]?.image) {
+      preloadImage(slides[0].image, slides[0].id, true);
+    }
+
+    // Preload next slide after a short delay (non-blocking)
+    if (slides.length > 1 && slides[1]?.image) {
+      const timeoutId = setTimeout(() => {
+        preloadImage(slides[1].image, slides[1].id, false);
+      }, 100);
+      return () => {
+        clearTimeout(timeoutId);
+        // Cleanup preload link
+        if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
+          document.head.removeChild(preloadLinkRef.current);
+        }
+      };
+    }
+
+    return () => {
+      // Cleanup preload link on unmount
+      if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
+        document.head.removeChild(preloadLinkRef.current);
+      }
+    };
+  }, [mounted, slides, preloadedImages]);
+
+  // Preload next slide when current changes
+  useEffect(() => {
+    if (!mounted || slides.length <= 1 || typeof window === 'undefined') return;
+    
+    const nextIndex = (current + 1) % slides.length;
+    const nextSlide = slides[nextIndex];
+    
+    if (nextSlide?.image && !preloadedImages.has(nextSlide.id)) {
+      // Helper to check if image is from different origin
+      const isCrossOrigin = (url) => {
+        try {
+          const imgUrl = new URL(url, window.location.href);
+          return imgUrl.origin !== window.location.origin;
+        } catch {
+          return false;
+        }
+      };
+
+      // Use window.Image to avoid conflict with Next.js Image component
+      const img = new window.Image();
+      img.src = nextSlide.image;
+      
+      // Set crossOrigin if needed
+      if (isCrossOrigin(nextSlide.image)) {
+        img.crossOrigin = 'anonymous';
+      }
+      
+      if ('fetchPriority' in img) {
+        img.fetchPriority = 'auto';
+      }
+      img.decoding = 'async';
+      
+      img.onload = () => {
+        setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
+      };
+    }
+  }, [current, slides, mounted, preloadedImages]);
 
   // Reset current index when slides change
   useEffect(() => {
@@ -512,6 +642,18 @@ const Hero = () => {
                               
                               // Use regular img tag for better error handling with external URLs
                               const isExternalUrl = typeof imageSrc === 'string' && imageSrc.startsWith('http');
+                              const isFirstSlide = current === 0;
+                              const isPreloaded = preloadedImages.has(currentSlide.id);
+                              
+                              // Check if image is from different origin for CORS
+                              const isCrossOrigin = typeof window !== 'undefined' && isExternalUrl ? (() => {
+                                try {
+                                  const imgUrl = new URL(imageSrc, window.location.href);
+                                  return imgUrl.origin !== window.location.origin;
+                                } catch {
+                                  return false;
+                                }
+                              })() : false;
                               
                               return (
                                 <>
@@ -520,7 +662,12 @@ const Hero = () => {
                                       src={imageSrc}
                                       alt={currentSlide.title}
                                       className="object-cover"
-                                      loading={current === 0 ? "eager" : "lazy"}
+                                      loading={isFirstSlide ? "eager" : "lazy"}
+                                      fetchPriority={isFirstSlide ? "high" : "auto"}
+                                      decoding="async"
+                                      crossOrigin={isCrossOrigin ? "anonymous" : undefined}
+                                      width={1920}
+                                      height={1080}
                                       style={{ 
                                         position: 'absolute',
                                         top: 0,
@@ -528,7 +675,9 @@ const Hero = () => {
                                         width: '100%',
                                         height: '100%',
                                         objectFit: 'cover',
-                                        willChange: 'auto'
+                                        willChange: isPreloaded ? 'auto' : 'transform',
+                                        opacity: isPreloaded ? 1 : 0,
+                                        transition: 'opacity 0.3s ease-in-out'
                                       }}
                                       onError={(e) => {
                                         // Mark this image as failed if it's a backend image
@@ -543,26 +692,33 @@ const Hero = () => {
                                           e.target.style.display = 'none';
                                         }
                                       }}
-                                      onLoad={() => {
-                                        // Mark image as loaded
-                                        setLoadingImages(prev => {
-                                          const newSet = new Set(prev);
-                                          newSet.delete(currentSlide.id);
-                                          return newSet;
-                                        });
+                                      onLoad={(e) => {
+                                        // Fade in image smoothly
+                                        e.target.style.opacity = '1';
                                         
-                                        // Clear error state if image loads successfully
-                                        if (imageErrors[currentSlide.id]) {
-                                          setImageErrors(prev => {
-                                            const newErrors = { ...prev };
-                                            delete newErrors[currentSlide.id];
-                                            return newErrors;
+                                        // Mark image as loaded (batch state updates)
+                                        requestAnimationFrame(() => {
+                                          setLoadingImages(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(currentSlide.id);
+                                            return newSet;
                                           });
-                                        }
+                                          
+                                          // Clear error state if image loads successfully
+                                          if (imageErrors[currentSlide.id]) {
+                                            setImageErrors(prev => {
+                                              const newErrors = { ...prev };
+                                              delete newErrors[currentSlide.id];
+                                              return newErrors;
+                                            });
+                                          }
+                                        });
                                       }}
                                       onLoadStart={() => {
-                                        // Mark image as loading
-                                        setLoadingImages(prev => new Set(prev).add(currentSlide.id));
+                                        // Only show loading if not preloaded
+                                        if (!isPreloaded) {
+                                          setLoadingImages(prev => new Set(prev).add(currentSlide.id));
+                                        }
                                       }}
                                     />
                                   ) : (
@@ -570,17 +726,20 @@ const Hero = () => {
                                       src={imageSrc}
                                       alt={currentSlide.title}
                                       fill
-                                      priority
+                                      priority={isFirstSlide}
+                                      loading={isFirstSlide ? "eager" : "lazy"}
+                                      sizes="100vw"
+                                      quality={85}
                                       className="object-cover"
                                       style={{ 
                                         position: 'absolute',
-                                        willChange: 'auto'
+                                        willChange: isPreloaded ? 'auto' : 'transform'
                                       }}
                                     />
                                   )}
                                   
-                                  {/* Loading overlay */}
-                                  {loadingImages.has(currentSlide.id) && (
+                                  {/* Loading overlay - only show if not preloaded */}
+                                  {loadingImages.has(currentSlide.id) && !isPreloaded && (
                                     <div 
                                       className="absolute inset-0 bg-gray-800/50 flex items-center justify-center"
                                       style={{ zIndex: 2 }}

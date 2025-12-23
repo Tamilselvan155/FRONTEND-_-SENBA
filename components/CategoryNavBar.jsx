@@ -149,10 +149,11 @@ const CategoryNavBar = () => {
         const rect = button.getBoundingClientRect()
         
         // Validate button has valid dimensions and coordinates
+        const maxWidth = typeof window !== 'undefined' ? window.innerWidth : 375
         if (rect.width > 0 && rect.height > 0 && 
             !isNaN(rect.left) && !isNaN(rect.top) && 
             !isNaN(rect.bottom) && !isNaN(rect.right) &&
-            rect.left >= -window.innerWidth && rect.left <= window.innerWidth * 2) {
+            rect.left >= -maxWidth && rect.left <= maxWidth * 2) {
           calculateDropdownPosition(rect, categoryId)
         } else if (attempt < 3) {
           // Retry if position isn't valid yet
@@ -170,7 +171,8 @@ const CategoryNavBar = () => {
   // Helper function to calculate dropdown position
   const calculateDropdownPosition = (rect, categoryId) => {
     // Responsive dropdown width based on viewport
-    const viewportWidth = window.innerWidth
+    // Check if window is available (client-side) to prevent SSR errors
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 375 // Default to mobile width during SSR
     let dropdownWidth = 160 // Default mobile
     if (viewportWidth >= 768) {
       dropdownWidth = 200 // Tablet
@@ -258,10 +260,11 @@ const CategoryNavBar = () => {
           const rect = button.getBoundingClientRect()
           
           // Validate button has valid dimensions and coordinates
+          const maxWidth = typeof window !== 'undefined' ? window.innerWidth : 375
           if (rect.width > 0 && rect.height > 0 && 
               !isNaN(rect.left) && !isNaN(rect.top) && 
               !isNaN(rect.bottom) && !isNaN(rect.right) &&
-              rect.left >= -window.innerWidth && rect.left <= window.innerWidth * 2) {
+              rect.left >= -maxWidth && rect.left <= maxWidth * 2) {
             calculateDropdownPosition(rect, activeCategory)
           }
         }
@@ -287,7 +290,7 @@ const CategoryNavBar = () => {
       navContainer.addEventListener('scroll', updatePosition, { passive: true })
       
       // Also listen for scrollend if supported (for final position after scroll completes)
-      if ('onscrollend' in window) {
+      if (typeof window !== 'undefined' && 'onscrollend' in window) {
         navContainer.addEventListener('scrollend', updatePosition, { passive: true })
       }
     }
