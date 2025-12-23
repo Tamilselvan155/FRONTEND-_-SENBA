@@ -123,6 +123,11 @@ const CategoryNavBar = () => {
     e.preventDefault()
     e.stopPropagation()
     
+    // Skip if not in browser environment
+    if (typeof window === 'undefined') {
+      return
+    }
+    
     if (activeCategory === categoryId) {
       // Close dropdown
       setActiveCategory(null)
@@ -133,9 +138,14 @@ const CategoryNavBar = () => {
       
       // Calculate position - use multiple attempts to ensure we get the correct position
       const calculatePosition = (attempt = 0) => {
+        // Skip if not in browser environment
+        if (typeof window === 'undefined') {
+          return
+        }
+        
         const button = buttonRefs.current[categoryId]
         if (!button) {
-          if (attempt < 3) {
+          if (attempt < 3 && typeof window !== 'undefined' && window.requestAnimationFrame) {
             requestAnimationFrame(() => calculatePosition(attempt + 1))
           }
           return
@@ -155,16 +165,18 @@ const CategoryNavBar = () => {
             !isNaN(rect.bottom) && !isNaN(rect.right) &&
             rect.left >= -maxWidth && rect.left <= maxWidth * 2) {
           calculateDropdownPosition(rect, categoryId)
-        } else if (attempt < 3) {
+        } else if (attempt < 3 && typeof window !== 'undefined' && window.requestAnimationFrame) {
           // Retry if position isn't valid yet
           requestAnimationFrame(() => calculatePosition(attempt + 1))
         }
       }
       
       // Start calculation
-      requestAnimationFrame(() => {
-        calculatePosition(0)
-      })
+      if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+        requestAnimationFrame(() => {
+          calculatePosition(0)
+        })
+      }
     }
   }
 
@@ -217,6 +229,11 @@ const CategoryNavBar = () => {
 
   // Calculate initial position immediately when dropdown opens (before paint)
   useLayoutEffect(() => {
+    // Skip during SSR - only run on client side
+    if (typeof window === 'undefined') {
+      return
+    }
+    
     if (!activeCategory) {
       return
     }
@@ -235,14 +252,26 @@ const CategoryNavBar = () => {
 
   // Update dropdown position on scroll/resize when active and prevent horizontal scroll
   useEffect(() => {
+    // Skip during SSR - only run on client side
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return
+    }
+    
     if (!activeCategory) {
       // Reset overflow when dropdown is closed
-      document.body.style.overflowX = ''
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.overflowX = ''
+      }
       return
     }
 
     let rafId = null
     const updatePosition = () => {
+      // Skip if not in browser environment
+      if (typeof window === 'undefined') {
+        return
+      }
+      
       // Cancel any pending animation frame
       if (rafId) {
         cancelAnimationFrame(rafId)
@@ -273,14 +302,18 @@ const CategoryNavBar = () => {
     }
 
     // Prevent horizontal scroll when dropdown is open
-    document.body.style.overflowX = 'hidden'
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflowX = 'hidden'
+    }
 
     // Initial position update
     updatePosition()
     
     // Listen for window scroll and resize
-    window.addEventListener('scroll', updatePosition, { passive: true })
-    window.addEventListener('resize', updatePosition)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', updatePosition, { passive: true })
+      window.addEventListener('resize', updatePosition)
+    }
     
     // Listen to nav container scroll events (for horizontal scrolling)
     // This is critical for updating dropdown position when category bar is scrolled
@@ -296,18 +329,22 @@ const CategoryNavBar = () => {
     }
 
     return () => {
-      if (rafId) {
+      if (rafId && typeof window !== 'undefined') {
         cancelAnimationFrame(rafId)
       }
-      window.removeEventListener('scroll', updatePosition)
-      window.removeEventListener('resize', updatePosition)
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('scroll', updatePosition)
+        window.removeEventListener('resize', updatePosition)
+      }
       if (navContainer) {
         navContainer.removeEventListener('scroll', updatePosition)
-        if ('onscrollend' in window) {
+        if (typeof window !== 'undefined' && 'onscrollend' in window) {
           navContainer.removeEventListener('scrollend', updatePosition)
         }
       }
-      document.body.style.overflowX = ''
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.overflowX = ''
+      }
     }
   }, [activeCategory])
 

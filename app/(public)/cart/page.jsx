@@ -8,15 +8,16 @@ import { useCart } from "@/lib/hooks/useCart";
 import { Trash2Icon, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProductsAsync } from "@/lib/features/product/productSlice";
 import { fetchCartAsync } from "@/lib/features/cart/cartSlice";
 import { getImageUrl } from "@/lib/utils/imageUtils";
 import { assets } from "@/assets/assets";
 import { useRouter, useSearchParams } from "next/navigation";
+import Loading from "@/components/Loading";
 
-export default function Cart() {
+function CartContent() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
     const dispatch = useDispatch();
@@ -574,4 +575,16 @@ export default function Cart() {
             </div>
         </div>
     )
+}
+
+export default function Cart() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <Loading />
+            </div>
+        }>
+            <CartContent />
+        </Suspense>
+    );
 }
