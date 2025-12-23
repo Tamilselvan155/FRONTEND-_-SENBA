@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Mail } from 'lucide-react';
+import { CheckCircle2, Mail, ArrowLeft } from 'lucide-react';
 import { clearError, forgetPasswordRequest, forgetPasswordSuccess, forgetPasswordFailure } from '../../../lib/features/login/authSlice';
 import toast from 'react-hot-toast';
 import logo from '@/assets/YUCHII LOGO.png';
@@ -77,6 +77,15 @@ const ForgetPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 px-4 py-12 flex items-center justify-center relative overflow-hidden">
+      {/* Back Button */}
+      <Link
+        href="/login"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-gray-600 hover:text-[#7C2A47] transition-colors z-10"
+      >
+        <ArrowLeft size={20} />
+        <span className="text-sm font-medium">Back to Login</span>
+      </Link>
+      
       {/* FORGOT PASSWORD CARD */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

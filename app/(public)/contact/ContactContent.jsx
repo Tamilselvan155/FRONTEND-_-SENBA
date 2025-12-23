@@ -10,6 +10,7 @@ import Newsletter from '@/components/Newsletter';
 export default function ContactContent() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -20,7 +21,7 @@ export default function ContactContent() {
     e.preventDefault();
 
     if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error('Please fill in all fields.');
+      toast.error('Please fill in all required fields.');
       return;
     }
 
@@ -33,7 +34,7 @@ export default function ContactContent() {
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({ name, email, message }),
+      body: JSON.stringify({ name, email, mobile, message }),
     }).catch((error) => {
       // Silently handle errors - data might still be saved
       console.log('Fetch completed (no-cors mode)');
@@ -52,6 +53,7 @@ export default function ContactContent() {
     // Clear form
     setName('');
     setEmail('');
+    setMobile('');
     setMessage('');
     setIsSubmitting(false);
   };
@@ -141,87 +143,124 @@ export default function ContactContent() {
                 </div>
               </motion.div>
 
-              {/* Right Side - Contact Form */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="w-full"
-              >
-                <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 h-full hover:shadow-2xl transition-shadow duration-300">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2 mb-6">
-                    Send Us a <span className="text-[#7C2A47]">Message</span>
-                  </h2>
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div>
-                        <label htmlFor="name" className="block text-base font-semibold text-gray-700 mb-2">
-                          Your Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          id="name"
-                          placeholder="Enter your full name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="email" className="block text-base font-semibold text-gray-700 mb-2">
-                          Your Email <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          id="email"
-                          placeholder="Enter your email address"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="message" className="block text-base font-semibold text-gray-700 mb-2">
-                        Your Message <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        id="message"
-                        placeholder="Tell us how we can help you..."
-                        rows="5"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 bg-gray-50 hover:bg-white resize-none"
-                        required
-                      ></textarea>
-                    </div>
-                    
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] hover:from-[#6a2340] hover:to-[#7a2a4a] text-white px-6 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5" />
-                          Send Message
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-              </motion.div>
+             {/* Right Side - Contact Form */}
+{/* Right Side - Contact Form */}
+<motion.div
+  initial={{ opacity: 0, x: 20 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.6, delay: 0.3 }}
+  className="w-full"
+>
+  <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 lg:p-10 border border-gray-100 h-full hover:shadow-2xl transition-shadow duration-300">
+    <div className="mb-8">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+        Send Us a <span className="text-[#7C2A47]">Message</span>
+      </h2>
+      <p className="text-gray-600 mt-2">Fill out the form below and we'll get back to you shortly.</p>
+    </div>
+    
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Name & Email Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label htmlFor="name" className="block text-sm font-semibold text-gray-700">
+            Your Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="name"
+            placeholder="John Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 hover:border-gray-300"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+            Your Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            id="email"
+            placeholder="john@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 hover:border-gray-300"
+            required
+          />
+        </div>
+      </div>
+      
+      {/* Mobile Number - Full Width */}
+      <div className="space-y-2">
+        <label htmlFor="mobile" className="block text-sm font-semibold text-gray-700">
+          Mobile Number
+        </label>
+        <div className="relative">
+          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="tel"
+            id="mobile"
+            placeholder="+1 (555) 000-0000"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            maxLength={15}
+            className="w-full border-2 border-gray-200 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 hover:border-gray-300"
+          />
+        </div>
+      </div>
+      
+      {/* Message - Full Width */}
+      <div className="space-y-2">
+        <label htmlFor="message" className="block text-sm font-semibold text-gray-700">
+          Your Message <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          id="message"
+          placeholder="Tell us how we can help you..."
+          rows={4}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] transition-all duration-200 hover:border-gray-300 resize-none"
+          required
+        ></textarea>
+        <p className="text-xs text-gray-500 mt-1">Please provide as much detail as possible</p>
+      </div>
+      
+      {/* Submit Button */}
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full bg-gradient-to-r from-[#7C2A47] to-[#8B3A5A] hover:from-[#6a2340] hover:to-[#7a2a4a] text-white px-6 py-4 rounded-lg font-semibold text-base transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2 group"
+      >
+        {isSubmitting ? (
+          <>
+            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Sending...
+          </>
+        ) : (
+          <>
+            <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            Send Message
+          </>
+        )}
+      </button>
+      
+      {/* Privacy Notice */}
+      <p className="text-xs text-center text-gray-500">
+        By submitting this form, you agree to our{" "}
+        <a href="/privacy" className="text-[#7C2A47] hover:underline font-medium">
+          Privacy Policy
+        </a>
+      </p>
+    </form>
+  </div>
+</motion.div>
             </div>
           </div>
 

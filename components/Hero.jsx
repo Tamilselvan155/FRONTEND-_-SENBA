@@ -433,6 +433,10 @@ const Hero = () => {
       link.as = 'image';
       link.href = slides[0].image;
       link.fetchPriority = 'high';
+      // Add fetchpriority attribute for better browser support
+      if ('fetchPriority' in link) {
+        link.setAttribute('fetchpriority', 'high');
+      }
       
       // Only set crossOrigin if image is from different origin
       if (isCrossOrigin(slides[0].image)) {
@@ -443,7 +447,7 @@ const Hero = () => {
       preloadLinkRef.current = link;
     }
 
-    // Preload first slide image immediately (critical)
+    // Preload image with cache detection and immediate loading
     const preloadImage = (src, slideId, isHighPriority = false) => {
       if (preloadedImages.has(slideId) || !src) return Promise.resolve();
       
@@ -462,8 +466,11 @@ const Hero = () => {
         img.decoding = 'async';
         
         img.onload = () => {
-          setPreloadedImages(prev => new Set(prev).add(slideId));
-          setLoadedImages(prev => new Set(prev).add(slideId));
+          // Batch state updates
+          requestAnimationFrame(() => {
+            setPreloadedImages(prev => new Set(prev).add(slideId));
+            setLoadedImages(prev => new Set(prev).add(slideId));
+          });
           resolve();
         };
         
@@ -472,33 +479,52 @@ const Hero = () => {
           reject(new Error('Failed to preload image'));
         };
         
-        // Start loading
+        // Start loading immediately (set src first to trigger browser cache check)
         img.src = src;
+        
+        // Check cache after setting src (browser may load from cache synchronously)
+        // Use setTimeout to check after browser processes the src assignment
+        setTimeout(() => {
+          if (img.complete && img.naturalWidth > 0) {
+            // Image is already loaded/cached, resolve immediately
+            requestAnimationFrame(() => {
+              setPreloadedImages(prev => new Set(prev).add(slideId));
+              setLoadedImages(prev => new Set(prev).add(slideId));
+            });
+            resolve();
+          }
+        }, 0);
       });
     };
 
-    // Preload first slide immediately with high priority and wait for it
-    if (slides[0]?.image) {
-      preloadImage(slides[0].image, slides[0].id, true).catch(() => {
-        // Error handled silently
-      });
-    }
-
-    // Preload next slide after a short delay (non-blocking)
-    if (slides.length > 1 && slides[1]?.image) {
-      const timeoutId = setTimeout(() => {
-        preloadImage(slides[1].image, slides[1].id, false).catch(() => {
-          // Error handled silently
-        });
-      }, 100);
-      return () => {
-        clearTimeout(timeoutId);
-        // Cleanup preload link
-        if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
-          document.head.removeChild(preloadLinkRef.current);
+    // Preload all slides in parallel for faster transitions
+    // First slide gets high priority, others get auto priority
+    slides.forEach((slide, index) => {
+      if (slide?.image && !preloadedImages.has(slide.id)) {
+        const isHighPriority = index === 0;
+        // Small delay for non-first slides to prioritize first image
+        const delay = index === 0 ? 0 : index * 50;
+        
+        if (delay === 0) {
+          preloadImage(slide.image, slide.id, isHighPriority).catch(() => {
+            // Error handled silently
+          });
+        } else {
+          setTimeout(() => {
+            preloadImage(slide.image, slide.id, isHighPriority).catch(() => {
+              // Error handled silently
+            });
+          }, delay);
         }
-      };
-    }
+      }
+    });
+    
+    return () => {
+      // Cleanup preload link on unmount
+      if (preloadLinkRef.current && document.head.contains(preloadLinkRef.current)) {
+        document.head.removeChild(preloadLinkRef.current);
+      }
+    };
 
     return () => {
       // Cleanup preload link on unmount
@@ -508,7 +534,7 @@ const Hero = () => {
     };
   }, [mounted, slides, preloadedImages]);
 
-  // Preload next slide when current changes
+  // Preload next slide when current changes (optimized with cache detection)
   useEffect(() => {
     if (!mounted || slides.length <= 1 || typeof window === 'undefined') return;
     
@@ -539,13 +565,32 @@ const Hero = () => {
       }
       img.decoding = 'async';
       
-      img.onload = () => {
-        setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
-        setLoadedImages(prev => new Set(prev).add(nextSlide.id));
+      // Check cache before loading
+      const checkCache = () => {
+        if (img.complete && img.naturalWidth > 0) {
+          // Image is cached, batch state updates
+          requestAnimationFrame(() => {
+            setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
+            setLoadedImages(prev => new Set(prev).add(nextSlide.id));
+          });
+          return true;
+        }
+        return false;
       };
       
-      // Start loading
+      img.onload = () => {
+        // Batch state updates
+        requestAnimationFrame(() => {
+          setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
+          setLoadedImages(prev => new Set(prev).add(nextSlide.id));
+        });
+      };
+      
+      // Start loading immediately
       img.src = nextSlide.image;
+      
+      // Check cache after setting src
+      checkCache();
     }
   }, [current, slides, mounted, preloadedImages]);
 
@@ -582,7 +627,7 @@ const Hero = () => {
     return (
       <section className='bg-white relative overflow-hidden'>
         <div className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] lg:h-[450px] xl:h-[480px] bg-gray-800 flex items-center justify-center">
-          <div className="text-white text-xl">Loading banners...</div>
+          <div className="w-12 h-12 border-4 border-gray-600 border-t-white rounded-full animate-spin"></div>
         </div>
       </section>
     )
@@ -671,10 +716,31 @@ const Hero = () => {
                                 }
                               })() : false;
                               
+                              // Determine if image should be shown immediately (preloaded or cached)
+                              const shouldShowImmediately = isPreloaded || isLoaded;
+                              
                               return (
                                 <>
                                   {isExternalUrl ? (
                                     <img
+                                      ref={(imgElement) => {
+                                        // Check if image is already in cache when element mounts
+                                        if (imgElement && !shouldShowImmediately) {
+                                          // Check cache status
+                                          if (imgElement.complete && imgElement.naturalWidth > 0) {
+                                            // Image is cached, show immediately
+                                            requestAnimationFrame(() => {
+                                              setLoadedImages(prev => new Set(prev).add(currentSlide.id));
+                                              setPreloadedImages(prev => new Set(prev).add(currentSlide.id));
+                                              setLoadingImages(prev => {
+                                                const newSet = new Set(prev);
+                                                newSet.delete(currentSlide.id);
+                                                return newSet;
+                                              });
+                                            });
+                                          }
+                                        }
+                                      }}
                                       src={imageSrc}
                                       alt={currentSlide.title}
                                       className="object-cover"
@@ -691,43 +757,54 @@ const Hero = () => {
                                         width: '100%',
                                         height: '100%',
                                         objectFit: 'cover',
-                                        opacity: isLoaded || isPreloaded ? 1 : 0,
-                                        transition: isLoaded || isPreloaded ? 'none' : 'opacity 0.15s ease-out',
-                                        willChange: isLoaded || isPreloaded ? 'auto' : 'opacity'
+                                        opacity: shouldShowImmediately ? 1 : 0,
+                                        transition: shouldShowImmediately ? 'none' : 'opacity 0.1s ease-out',
+                                        willChange: shouldShowImmediately ? 'auto' : 'opacity'
                                       }}
                                       onError={(e) => {
                                         // Mark this image as failed if it's a backend image
                                         if (currentSlide.isBackend && !failedImages.has(currentSlide.id)) {
-                                          setFailedImages(prev => new Set(prev).add(currentSlide.id));
-                                          setLoadingImages(prev => {
-                                            const newSet = new Set(prev);
-                                            newSet.delete(currentSlide.id);
-                                            return newSet;
+                                          // Batch state updates
+                                          requestAnimationFrame(() => {
+                                            setFailedImages(prev => new Set(prev).add(currentSlide.id));
+                                            setLoadingImages(prev => {
+                                              const newSet = new Set(prev);
+                                              newSet.delete(currentSlide.id);
+                                              return newSet;
+                                            });
                                           });
                                           // Don't try to load fallback - just mark as failed
                                           e.target.style.display = 'none';
                                         }
                                       }}
                                       onLoad={(e) => {
+                                        // Check if image was already complete (cached)
+                                        const wasCached = e.target.complete && e.target.naturalWidth > 0;
+                                        
                                         // Immediately show image - no fade delay
                                         e.target.style.opacity = '1';
                                         
-                                        // Mark image as loaded immediately (no delay)
-                                        setLoadedImages(prev => new Set(prev).add(currentSlide.id));
-                                        setLoadingImages(prev => {
-                                          const newSet = new Set(prev);
-                                          newSet.delete(currentSlide.id);
-                                          return newSet;
-                                        });
-                                        
-                                        // Clear error state if image loads successfully
-                                        if (imageErrors[currentSlide.id]) {
-                                          setImageErrors(prev => {
-                                            const newErrors = { ...prev };
-                                            delete newErrors[currentSlide.id];
-                                            return newErrors;
+                                        // Batch state updates to reduce re-renders
+                                        requestAnimationFrame(() => {
+                                          setLoadedImages(prev => new Set(prev).add(currentSlide.id));
+                                          if (!isPreloaded) {
+                                            setPreloadedImages(prev => new Set(prev).add(currentSlide.id));
+                                          }
+                                          setLoadingImages(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(currentSlide.id);
+                                            return newSet;
                                           });
-                                        }
+                                          
+                                          // Clear error state if image loads successfully
+                                          if (imageErrors[currentSlide.id]) {
+                                            setImageErrors(prev => {
+                                              const newErrors = { ...prev };
+                                              delete newErrors[currentSlide.id];
+                                              return newErrors;
+                                            });
+                                          }
+                                        });
                                       }}
                                       onLoadStart={() => {
                                         // Only show loading if not preloaded and not already loaded
@@ -748,16 +825,22 @@ const Hero = () => {
                                       className="object-cover"
                                       style={{ 
                                         position: 'absolute',
-                                        opacity: isLoaded || isPreloaded ? 1 : 0,
-                                        transition: isLoaded || isPreloaded ? 'none' : 'opacity 0.15s ease-out',
-                                        willChange: isLoaded || isPreloaded ? 'auto' : 'opacity'
+                                        opacity: shouldShowImmediately ? 1 : 0,
+                                        transition: shouldShowImmediately ? 'none' : 'opacity 0.1s ease-out',
+                                        willChange: shouldShowImmediately ? 'auto' : 'opacity'
                                       }}
                                       onLoad={() => {
-                                        setLoadedImages(prev => new Set(prev).add(currentSlide.id));
-                                        setLoadingImages(prev => {
-                                          const newSet = new Set(prev);
-                                          newSet.delete(currentSlide.id);
-                                          return newSet;
+                                        // Batch state updates
+                                        requestAnimationFrame(() => {
+                                          setLoadedImages(prev => new Set(prev).add(currentSlide.id));
+                                          if (!isPreloaded) {
+                                            setPreloadedImages(prev => new Set(prev).add(currentSlide.id));
+                                          }
+                                          setLoadingImages(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(currentSlide.id);
+                                            return newSet;
+                                          });
                                         });
                                       }}
                                     />

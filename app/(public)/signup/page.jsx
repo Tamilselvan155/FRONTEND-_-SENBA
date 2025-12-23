@@ -329,7 +329,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, CheckCircle2, UserPlus, ArrowRight, Phone } from 'lucide-react';
+import { User, Mail, Lock, CheckCircle2, UserPlus, ArrowRight, Phone, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   signupRequest,
@@ -375,10 +375,13 @@ const SignUp = () => {
       return;
     }
 
-    // Require either email or mobile
-    if (!email && !mobile) {
-      dispatch(signupFailure('Please provide either email or mobile number'));
-      toast.error('Please provide either email or mobile number');
+    // Require either email or mobile (at least one is mandatory)
+    const emailTrimmed = email ? email.trim() : '';
+    const mobileTrimmed = mobile ? mobile.trim() : '';
+    
+    if (!emailTrimmed && !mobileTrimmed) {
+      dispatch(signupFailure('Please provide either Email Address or Mobile Number (at least one is required for login)'));
+      toast.error('Please provide either Email Address or Mobile Number (at least one is required for login)');
       return;
     }
 
@@ -395,9 +398,9 @@ const SignUp = () => {
     }
 
     // Email validation (if provided)
-    if (email) {
+    if (emailTrimmed) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(emailTrimmed)) {
         dispatch(signupFailure('Please enter a valid email address'));
         toast.error('Please enter a valid email address');
         return;
@@ -405,9 +408,9 @@ const SignUp = () => {
     }
 
     // Mobile validation (if provided)
-    if (mobile) {
+    if (mobileTrimmed) {
       const mobileRegex = /^[0-9]{10}$/;
-      if (!mobileRegex.test(mobile.trim())) {
+      if (!mobileRegex.test(mobileTrimmed)) {
         dispatch(signupFailure('Please enter a valid 10-digit mobile number'));
         toast.error('Please enter a valid 10-digit mobile number');
         return;
@@ -424,11 +427,11 @@ const SignUp = () => {
       };
 
       // Add email or mobile based on what was provided
-      if (email) {
-        requestBody.email = email;
+      if (emailTrimmed) {
+        requestBody.email = emailTrimmed;
       }
-      if (mobile) {
-        requestBody.mobile = mobile.trim();
+      if (mobileTrimmed) {
+        requestBody.mobile = mobileTrimmed;
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/signup`, {
@@ -487,6 +490,15 @@ const SignUp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 px-4 py-12 flex items-center justify-center relative overflow-hidden">
+      {/* Back Button */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-gray-600 hover:text-[#7C2A47] transition-colors z-10"
+      >
+        <ArrowLeft size={20} />
+        <span className="text-sm font-medium">Back to Home</span>
+      </Link>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -551,7 +563,8 @@ const SignUp = () => {
             {/* Email */}
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
-                Email Address <span className="text-gray-400 text-xs">(Optional)</span>
+                Email Address <span className="text-[#7C2A47]">*</span>
+                <span className="text-gray-400 text-xs font-normal ml-1">(At least one required)</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -569,7 +582,8 @@ const SignUp = () => {
             {/* Mobile */}
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
-                Mobile Number <span className="text-gray-400 text-xs">(Optional)</span>
+                Mobile Number <span className="text-[#7C2A47]">*</span>
+                <span className="text-gray-400 text-xs font-normal ml-1">(At least one required)</span>
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -583,8 +597,8 @@ const SignUp = () => {
                   className="w-full pl-10 pr-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47]"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Provide either email or mobile number (at least one is required)
+              <p className="text-xs text-gray-600 mt-1 font-medium">
+                <span className="text-[#7C2A47]">*</span> At least one (Email or Mobile) is mandatory - you can login with either
               </p>
             </div>
 

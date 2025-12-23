@@ -387,7 +387,9 @@ const CategoryNavBar = () => {
           }}
         >
           {loading ? (
-            <div className="px-2 sm:px-3 md:px-4 py-2 text-[10px] sm:text-[11px] md:text-xs text-gray-500 whitespace-nowrap">Loading categories...</div>
+            <div className="px-2 sm:px-3 md:px-4 py-2 flex items-center justify-center">
+              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-300 border-t-[#7C2A47] rounded-full animate-spin"></div>
+            </div>
           ) : processedCategories.length === 0 ? (
             <div className="px-2 sm:px-3 md:px-4 py-2 text-[10px] sm:text-[11px] md:text-xs text-gray-500 whitespace-nowrap">No categories available</div>
           ) : (
@@ -507,7 +509,9 @@ const CategoryNavBar = () => {
         {/* Desktop: Evenly Distributed */}
         <nav className="hidden lg:flex items-center justify-between w-full py-1">
           {loading ? (
-            <div className="px-4 py-2.5 text-xs lg:text-sm text-gray-500 w-full text-center">Loading categories...</div>
+            <div className="px-4 py-2.5 w-full flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-gray-300 border-t-[#7C2A47] rounded-full animate-spin"></div>
+            </div>
           ) : processedCategories.length === 0 ? (
             <div className="px-4 py-2.5 text-xs lg:text-sm text-gray-500 w-full text-center">No categories available</div>
           ) : (

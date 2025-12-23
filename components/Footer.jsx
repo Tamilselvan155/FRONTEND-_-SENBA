@@ -13,12 +13,12 @@ const Footer = () => {
     const YoutubeIcon = () => (<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.15 5.8C19 5.2 18.6 4.7 18 4.5C16.5 4 10 4 10 4C10 4 3.5 4 2 4.5C1.4 4.7 1 5.2 0.85 5.8C0.5 7.5 0.5 10 0.5 10C0.5 10 0.5 12.5 0.85 14.2C1 14.8 1.4 15.3 2 15.5C3.5 16 10 16 10 16C10 16 16.5 16 18 15.5C18.6 15.3 19 14.8 19.15 14.2C19.5 12.5 19.5 10 19.5 10C19.5 10 19.5 7.5 19.15 5.8ZM8 12.5V7.5L13 10L8 12.5Z" fill="currentColor"/></svg>)
 
     const aboutSection = {
-        title: "ABOUT Semba pumps & motors",
-        description: "Semba pumps & motors is one of the leading suppliers of power equipment and garden machinery. We stock a wide range of products from world renowned brands such as Hyundai, JCB, Semba and more.",
+        title: "ABOUT senba pumps & motors",
+        description: "senba pumps & motors is one of the leading suppliers of power equipment and garden machinery. We stock a wide range of products from world renowned brands such as Hyundai, JCB, senba and more.",
         contact: {
             title: "CONTACT US:",
             phone: "+44(0)1884 799202",
-            emails: ["sales@semba.com", "support@semba.com"]
+            emails: ["sales@senba.com", "support@senba.com"]
         }
     };
 
@@ -182,7 +182,7 @@ const Footer = () => {
                         
                         {/* Copyright */}
                         <div className="text-white/80 text-sm text-center lg:text-left">
-                            © 2025 Semba pumps & motors
+                            © 2025 senba pumps & motors
                         </div>
 
                         {/* Social Icons */}

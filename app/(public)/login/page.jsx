@@ -312,6 +312,7 @@ import {
   Phone,
   ArrowRight,
   CheckCircle2,
+  ArrowLeft,
 } from 'lucide-react';
 import { loginRequest, loginSuccess, loginFailure } from '@/lib/features/login/authSlice';
 import { syncCartAsync, fetchCartAsync } from '@/lib/features/cart/cartSlice';
@@ -465,6 +466,14 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 px-4 py-12 flex items-center justify-center relative overflow-hidden">
+      {/* Back Button */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-gray-600 hover:text-[#7C2A47] transition-colors z-10"
+      >
+        <ArrowLeft size={20} />
+        <span className="text-sm font-medium">Back to Home</span>
+      </Link>
       
       {/* LOGIN CARD */}
       <motion.div
