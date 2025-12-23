@@ -18,7 +18,7 @@ const Footer = () => {
         contact: {
             title: "CONTACT US:",
             phone: "+44(0)1884 799202",
-            emails: ["sales@semba.co.uk", "support@semba.co.uk"]
+            emails: ["sales@semba.com", "support@semba.com"]
         }
     };
 

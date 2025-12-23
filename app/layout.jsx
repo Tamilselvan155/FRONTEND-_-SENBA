@@ -338,6 +338,19 @@ export default function RootLayout({ children }) {
                                 // Override appendChild to catch elements being added - TARGET BUTTON AND SVG WATERMARK
                                 Node.prototype.appendChild = function(child) {
                                     try {
+                                        // Validate that 'this' is a valid Node and child exists
+                                        // If 'this' is null/undefined, let the original handle it (will throw proper error)
+                                        if (!this) {
+                                            return originalAppendChild.call(this, child);
+                                        }
+                                        // Check if this is a valid Node (has nodeType property or is instance of Node)
+                                        if (this.nodeType === undefined && !(this instanceof Node)) {
+                                            return originalAppendChild.call(this, child);
+                                        }
+                                        if (!child) {
+                                            return originalAppendChild.call(this, child);
+                                        }
+                                        
                                         // First append the child (let React manage it)
                                         const result = originalAppendChild.call(this, child);
                                         
@@ -397,6 +410,19 @@ export default function RootLayout({ children }) {
                                 // Override insertBefore to catch elements being inserted - TARGET BUTTON AND SVG WATERMARK
                                 Node.prototype.insertBefore = function(newNode, referenceNode) {
                                     try {
+                                        // Validate that 'this' is a valid Node and newNode exists
+                                        // If 'this' is null/undefined, let the original handle it (will throw proper error)
+                                        if (!this) {
+                                            return originalInsertBefore.call(this, newNode, referenceNode);
+                                        }
+                                        // Check if this is a valid Node (has nodeType property or is instance of Node)
+                                        if (this.nodeType === undefined && !(this instanceof Node)) {
+                                            return originalInsertBefore.call(this, newNode, referenceNode);
+                                        }
+                                        if (!newNode) {
+                                            return originalInsertBefore.call(this, newNode, referenceNode);
+                                        }
+                                        
                                         // First insert the node (let React manage it)
                                         const result = originalInsertBefore.call(this, newNode, referenceNode);
                                         

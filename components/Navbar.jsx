@@ -523,7 +523,7 @@ const Navbar = memo(() => {
                   <div className="flex flex-col gap-3 mb-4">
                     {/* Email */}
                     <a 
-                      href="mailto:contact@example.com"
+                      href="mailto:senbapumpsandmotors@gmail.com"
                       className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

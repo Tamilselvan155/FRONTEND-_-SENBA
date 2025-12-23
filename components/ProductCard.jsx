@@ -10,6 +10,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { addToWishlist, removeFromWishlist } from '@/lib/features/wishlist/wishlistSlice';
 import toast from 'react-hot-toast';
 import { assets } from '@/assets/assets';
+import { getImageUrl } from '@/lib/utils/imageUtils';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -184,13 +185,18 @@ const ProductCard = ({ product }) => {
     router.push('/account?section=collections-wishlist');
   };
 
-  // Get product images with fallbacks
+  // Get product images with fallbacks and process URLs
   const productImages = product.images || productData.images || [];
-  const productImage = productImages.length > 0 
+  const rawProductImage = productImages.length > 0 
     ? productImages[0] 
     : (productData.images && productData.images.length > 0 
         ? productData.images[0] 
-        : assets.product_img0);
+        : null);
+  
+  // Process image URL using getImageUrl utility to ensure correct backend URL
+  const productImage = rawProductImage 
+    ? getImageUrl(rawProductImage) || assets.product_img0
+    : assets.product_img0;
   
   // Check if it's the special Centrifugal Monobloc product
   const isCentrifugalMonobloc = productName === "Centrifugal Monobloc" || 

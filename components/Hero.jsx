@@ -365,6 +365,7 @@ const Hero = () => {
   const [imageErrors, setImageErrors] = useState({});
   const [loadingImages, setLoadingImages] = useState(new Set());
   const [preloadedImages, setPreloadedImages] = useState(new Set());
+  const [loadedImages, setLoadedImages] = useState(new Set());
   const preloadLinkRef = useRef(null);
 
   // No fallback static slides - only use backend banners
@@ -444,40 +445,51 @@ const Hero = () => {
 
     // Preload first slide image immediately (critical)
     const preloadImage = (src, slideId, isHighPriority = false) => {
-      if (preloadedImages.has(slideId) || !src) return;
+      if (preloadedImages.has(slideId) || !src) return Promise.resolve();
       
-      // Use window.Image to avoid conflict with Next.js Image component
-      const img = new window.Image();
-      img.src = src;
-      
-      // Set crossOrigin if needed
-      if (isCrossOrigin(src)) {
-        img.crossOrigin = 'anonymous';
-      }
-      
-      if (isHighPriority && 'fetchPriority' in img) {
-        img.fetchPriority = 'high';
-      }
-      img.decoding = 'async';
-      
-      img.onload = () => {
-        setPreloadedImages(prev => new Set(prev).add(slideId));
-      };
-      
-      img.onerror = () => {
-        // Silently handle error, will be caught by component error handler
-      };
+      return new Promise((resolve, reject) => {
+        // Use window.Image to avoid conflict with Next.js Image component
+        const img = new window.Image();
+        
+        // Set crossOrigin if needed
+        if (isCrossOrigin(src)) {
+          img.crossOrigin = 'anonymous';
+        }
+        
+        if (isHighPriority && 'fetchPriority' in img) {
+          img.fetchPriority = 'high';
+        }
+        img.decoding = 'async';
+        
+        img.onload = () => {
+          setPreloadedImages(prev => new Set(prev).add(slideId));
+          setLoadedImages(prev => new Set(prev).add(slideId));
+          resolve();
+        };
+        
+        img.onerror = () => {
+          // Silently handle error, will be caught by component error handler
+          reject(new Error('Failed to preload image'));
+        };
+        
+        // Start loading
+        img.src = src;
+      });
     };
 
-    // Preload first slide immediately with high priority
+    // Preload first slide immediately with high priority and wait for it
     if (slides[0]?.image) {
-      preloadImage(slides[0].image, slides[0].id, true);
+      preloadImage(slides[0].image, slides[0].id, true).catch(() => {
+        // Error handled silently
+      });
     }
 
     // Preload next slide after a short delay (non-blocking)
     if (slides.length > 1 && slides[1]?.image) {
       const timeoutId = setTimeout(() => {
-        preloadImage(slides[1].image, slides[1].id, false);
+        preloadImage(slides[1].image, slides[1].id, false).catch(() => {
+          // Error handled silently
+        });
       }, 100);
       return () => {
         clearTimeout(timeoutId);
@@ -516,7 +528,6 @@ const Hero = () => {
 
       // Use window.Image to avoid conflict with Next.js Image component
       const img = new window.Image();
-      img.src = nextSlide.image;
       
       // Set crossOrigin if needed
       if (isCrossOrigin(nextSlide.image)) {
@@ -530,7 +541,11 @@ const Hero = () => {
       
       img.onload = () => {
         setPreloadedImages(prev => new Set(prev).add(nextSlide.id));
+        setLoadedImages(prev => new Set(prev).add(nextSlide.id));
       };
+      
+      // Start loading
+      img.src = nextSlide.image;
     }
   }, [current, slides, mounted, preloadedImages]);
 
@@ -598,13 +613,13 @@ const Hero = () => {
             >
                 <div className="relative w-full overflow-hidden" style={{ isolation: 'isolate' }}>
                     {/* Slide Images with Smooth Transitions */}
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence mode="wait" initial={false}>
                         <motion.div
                             key={current}
-                            initial={{ opacity: 0, scale: 1.1 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.6, ease: "easeInOut" }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
                             className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] lg:h-[450px] xl:h-[480px]"
                             style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}
                         >
@@ -644,6 +659,7 @@ const Hero = () => {
                               const isExternalUrl = typeof imageSrc === 'string' && imageSrc.startsWith('http');
                               const isFirstSlide = current === 0;
                               const isPreloaded = preloadedImages.has(currentSlide.id);
+                              const isLoaded = loadedImages.has(currentSlide.id);
                               
                               // Check if image is from different origin for CORS
                               const isCrossOrigin = typeof window !== 'undefined' && isExternalUrl ? (() => {
@@ -675,9 +691,9 @@ const Hero = () => {
                                         width: '100%',
                                         height: '100%',
                                         objectFit: 'cover',
-                                        willChange: isPreloaded ? 'auto' : 'transform',
-                                        opacity: isPreloaded ? 1 : 0,
-                                        transition: 'opacity 0.3s ease-in-out'
+                                        opacity: isLoaded || isPreloaded ? 1 : 0,
+                                        transition: isLoaded || isPreloaded ? 'none' : 'opacity 0.15s ease-out',
+                                        willChange: isLoaded || isPreloaded ? 'auto' : 'opacity'
                                       }}
                                       onError={(e) => {
                                         // Mark this image as failed if it's a backend image
@@ -693,30 +709,29 @@ const Hero = () => {
                                         }
                                       }}
                                       onLoad={(e) => {
-                                        // Fade in image smoothly
+                                        // Immediately show image - no fade delay
                                         e.target.style.opacity = '1';
                                         
-                                        // Mark image as loaded (batch state updates)
-                                        requestAnimationFrame(() => {
-                                          setLoadingImages(prev => {
-                                            const newSet = new Set(prev);
-                                            newSet.delete(currentSlide.id);
-                                            return newSet;
-                                          });
-                                          
-                                          // Clear error state if image loads successfully
-                                          if (imageErrors[currentSlide.id]) {
-                                            setImageErrors(prev => {
-                                              const newErrors = { ...prev };
-                                              delete newErrors[currentSlide.id];
-                                              return newErrors;
-                                            });
-                                          }
+                                        // Mark image as loaded immediately (no delay)
+                                        setLoadedImages(prev => new Set(prev).add(currentSlide.id));
+                                        setLoadingImages(prev => {
+                                          const newSet = new Set(prev);
+                                          newSet.delete(currentSlide.id);
+                                          return newSet;
                                         });
+                                        
+                                        // Clear error state if image loads successfully
+                                        if (imageErrors[currentSlide.id]) {
+                                          setImageErrors(prev => {
+                                            const newErrors = { ...prev };
+                                            delete newErrors[currentSlide.id];
+                                            return newErrors;
+                                          });
+                                        }
                                       }}
                                       onLoadStart={() => {
-                                        // Only show loading if not preloaded
-                                        if (!isPreloaded) {
+                                        // Only show loading if not preloaded and not already loaded
+                                        if (!isPreloaded && !isLoaded) {
                                           setLoadingImages(prev => new Set(prev).add(currentSlide.id));
                                         }
                                       }}
@@ -733,18 +748,28 @@ const Hero = () => {
                                       className="object-cover"
                                       style={{ 
                                         position: 'absolute',
-                                        willChange: isPreloaded ? 'auto' : 'transform'
+                                        opacity: isLoaded || isPreloaded ? 1 : 0,
+                                        transition: isLoaded || isPreloaded ? 'none' : 'opacity 0.15s ease-out',
+                                        willChange: isLoaded || isPreloaded ? 'auto' : 'opacity'
+                                      }}
+                                      onLoad={() => {
+                                        setLoadedImages(prev => new Set(prev).add(currentSlide.id));
+                                        setLoadingImages(prev => {
+                                          const newSet = new Set(prev);
+                                          newSet.delete(currentSlide.id);
+                                          return newSet;
+                                        });
                                       }}
                                     />
                                   )}
                                   
-                                  {/* Loading overlay - only show if not preloaded */}
-                                  {loadingImages.has(currentSlide.id) && !isPreloaded && (
+                                  {/* Loading overlay - only show if not preloaded and not loaded */}
+                                  {loadingImages.has(currentSlide.id) && !isPreloaded && !isLoaded && (
                                     <div 
-                                      className="absolute inset-0 bg-gray-800/50 flex items-center justify-center"
+                                      className="absolute inset-0 bg-gray-800/30 flex items-center justify-center"
                                       style={{ zIndex: 2 }}
                                     >
-                                      <div className="text-white text-sm">Loading...</div>
+                                      <div className="text-white text-sm opacity-75">Loading...</div>
                                     </div>
                                   )}
                                 </>
