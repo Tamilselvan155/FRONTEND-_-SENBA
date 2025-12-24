@@ -560,7 +560,18 @@ export default function CategoryProducts({ categoryName, subCategoryName }) {
     e.preventDefault();
     const productImageUrl = product.images && product.images.length > 0 ? product.images[0] : '';
     const displayPrice = getDisplayPrice(product);
-    const enquiryUrl = `/enquiry?productId=${encodeURIComponent(product.id || '')}&productName=${encodeURIComponent(product.name || 'Product')}&price=${encodeURIComponent(displayPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    const productCategory = product.category || '';
+    const productSubCategory = product.subCategory || '';
+    
+    let enquiryUrl = `/enquiry?productId=${encodeURIComponent(product.id || '')}&productName=${encodeURIComponent(product.name || 'Product')}&price=${encodeURIComponent(displayPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    
+    if (productCategory) {
+      enquiryUrl += `&category=${encodeURIComponent(productCategory)}`;
+    }
+    if (productSubCategory) {
+      enquiryUrl += `&subcategory=${encodeURIComponent(productSubCategory)}`;
+    }
+    
     router.push(enquiryUrl);
   }
 

@@ -7,11 +7,12 @@ import { useCart } from "@/lib/hooks/useCart";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ArrowRight, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, ArrowRight, Send, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import ProductFilters from "./ProductFilters";
 import Loading from "./Loading";
 import BackButton from "./BackButton";
 import { assets } from "@/assets/assets";
+import { getImageUrl } from "@/lib/utils/imageUtils";
 import { 
   extractProductCategory, 
   normalizeCategoryName, 
@@ -89,6 +90,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
   const [selectedHpOptions, setSelectedHpOptions] = useState({}); // Track selected HP for each product
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageErrors, setImageErrors] = useState({}); // Track image load errors per product
   const [filters, setFilters] = useState({
     selectedPipeSizes: [],
     selectedSpeeds: [],
@@ -103,6 +105,23 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // Get placeholder URL - handle both imported images (objects) and string paths
+  const getPlaceholderUrl = () => {
+    if (assets.product_img0) {
+      // If it's an imported image object, use .src property
+      if (typeof assets.product_img0 === 'object' && assets.product_img0.src) {
+        return assets.product_img0.src;
+      }
+      // If it's already a string, use it directly
+      if (typeof assets.product_img0 === 'string') {
+        return assets.product_img0;
+      }
+    }
+    return '/placeholder-product.png';
+  };
+
+  const placeholderUrl = getPlaceholderUrl();
 
   // Transform API product to match component expectations (same as Categoryproducts)
   const transformProduct = (apiProduct) => {
@@ -711,7 +730,18 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
     e.preventDefault();
     const productImageUrl = product.images && product.images.length > 0 ? product.images[0] : '';
     const displayPrice = getDisplayPrice(product);
-    const enquiryUrl = `/enquiry?productId=${encodeURIComponent(product.id || '')}&productName=${encodeURIComponent(product.name || 'Product')}&price=${encodeURIComponent(displayPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    const productCategory = product.category || '';
+    const productSubCategory = product.subCategory || '';
+    
+    let enquiryUrl = `/enquiry?productId=${encodeURIComponent(product.id || '')}&productName=${encodeURIComponent(product.name || 'Product')}&price=${encodeURIComponent(displayPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    
+    if (productCategory) {
+      enquiryUrl += `&category=${encodeURIComponent(productCategory)}`;
+    }
+    if (productSubCategory) {
+      enquiryUrl += `&subcategory=${encodeURIComponent(productSubCategory)}`;
+    }
+    
     router.push(enquiryUrl);
   }
 
@@ -988,6 +1018,31 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                 
                 const reviewCount = Array.isArray(product.rating) ? product.rating.length : 0;
                 
+                // Get product image URL
+                const productImageUrl = product.images && product.images.length > 0 
+                  ? (product.images[0]?.src || product.images[0])
+                  : null;
+                const processedImageUrl = productImageUrl ? getImageUrl(productImageUrl) : null;
+                
+                // Get placeholder URL - handle both imported images (objects) and string paths
+                const getPlaceholderUrl = () => {
+                  if (assets.product_img0) {
+                    if (typeof assets.product_img0 === 'object' && assets.product_img0.src) {
+                      return assets.product_img0.src;
+                    }
+                    if (typeof assets.product_img0 === 'string') {
+                      return assets.product_img0;
+                    }
+                  }
+                  return '/placeholder-product.png';
+                };
+                const placeholderUrl = getPlaceholderUrl();
+                
+                // Determine image source to display
+                const imageSrc = (imageErrors[product.id] || !processedImageUrl) 
+                  ? placeholderUrl 
+                  : processedImageUrl;
+                
                 // Grid View Layout
                 if (viewMode === 'grid') {
                 return (
@@ -998,23 +1053,17 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                     >
                       {/* Product Image */}
                       <div className="relative w-full aspect-[3/2] sm:aspect-[4/3] bg-gray-50 p-2 sm:p-3 md:p-4 flex items-center justify-center border-b border-gray-100">
-                        {product.images && product.images.length > 0 && product.images[0] ? (
-                          <img
-                            src={product.images[0]?.src || product.images[0]}
-                            alt={product.name || 'Product image'}
-                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = assets.product_img0 || '/placeholder-image.png';
-                            }}
-                          />
-                        ) : (
-                          <img
-                            src={assets.product_img0 || '/placeholder-image.png'}
-                            alt="Placeholder"
-                            className="w-full h-full object-contain opacity-50"
-                          />
-                        )}
+                        <img
+                          src={imageSrc}
+                          alt={product.name || 'Product image'}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                          onError={() => {
+                            // If image fails to load, switch to placeholder
+                            if (!imageErrors[product.id]) {
+                              setImageErrors(prev => ({ ...prev, [product.id]: true }));
+                            }
+                          }}
+                        />
                       </div>
                       
                       {/* Product Info */}
@@ -1102,24 +1151,18 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       {/* Image - Left Side */}
                       <div className="flex-shrink-0 w-full sm:w-32 h-48 sm:h-32 md:h-40">
-                        <div className="w-full h-full bg-white border border-gray-100 rounded-lg p-2 flex items-center justify-center">
-                          {product.images && product.images.length > 0 && product.images[0] ? (
-                            <img
-                              src={product.images[0]?.src || product.images[0]}
-                              alt={product.name || 'Product image'}
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = assets.product_img0 || '/placeholder-image.png';
-                              }}
-                            />
-                          ) : (
-                            <img
-                              src={assets.product_img0 || '/placeholder-image.png'}
-                              alt="Placeholder"
-                              className="w-full h-full object-contain opacity-50"
-                            />
-                          )}
+                        <div className="relative w-full h-full bg-white border border-gray-100 rounded-lg p-2 flex items-center justify-center">
+                          <img
+                            src={imageSrc}
+                            alt={product.name || 'Product image'}
+                            className="w-full h-full object-contain"
+                            onError={() => {
+                              // If image fails to load, switch to placeholder
+                              if (!imageErrors[product.id]) {
+                                setImageErrors(prev => ({ ...prev, [product.id]: true }));
+                              }
+                            }}
+                          />
                         </div>
                       </div>
                       

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, ShoppingCart, Send, Heart, User } from 'lucide-react';
+import { ArrowRight, ShoppingCart, Send, Heart, User, Package } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -155,7 +155,18 @@ const ProductCard = ({ product }) => {
     e.preventDefault();
     const productImages = product.images || productData.images || [];
     const productImageUrl = productImages.length > 0 ? productImages[0] : '';
-    const enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId || '')}&productName=${encodeURIComponent(productName)}&price=${encodeURIComponent(finalPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    const productCategory = product.category || productData.category || '';
+    const productSubCategory = product.subCategory || productData.subCategory || '';
+    
+    let enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId || '')}&productName=${encodeURIComponent(productName)}&price=${encodeURIComponent(finalPrice)}&quantity=1&image=${encodeURIComponent(productImageUrl)}`;
+    
+    if (productCategory) {
+      enquiryUrl += `&category=${encodeURIComponent(productCategory)}`;
+    }
+    if (productSubCategory) {
+      enquiryUrl += `&subcategory=${encodeURIComponent(productSubCategory)}`;
+    }
+    
     router.push(enquiryUrl);
   };
 
@@ -202,6 +213,56 @@ const ProductCard = ({ product }) => {
   const isCentrifugalMonobloc = productName === "Centrifugal Monobloc" || 
                                  productName === "Centrifugal Monobloc Pump";
 
+  // Get placeholder URL - handle both imported images (objects) and string paths
+  const getPlaceholderUrl = () => {
+    if (assets.product_img0) {
+      // If it's an imported image object, use .src property
+      if (typeof assets.product_img0 === 'object' && assets.product_img0.src) {
+        return assets.product_img0.src;
+      }
+      // If it's already a string, use it directly
+      if (typeof assets.product_img0 === 'string') {
+        return assets.product_img0;
+      }
+    }
+    return '/placeholder-product.png';
+  };
+
+  const placeholderUrl = getPlaceholderUrl();
+
+  // Handle image error state
+  const [imageError, setImageError] = useState(false);
+  const [showPlaceholderUI, setShowPlaceholderUI] = useState(false);
+  
+  // Determine initial image source
+  const getInitialImageSrc = () => {
+    // Special case for Centrifugal Monobloc
+    if (isCentrifugalMonobloc && assets.CenMono) {
+      if (typeof assets.CenMono === 'object' && assets.CenMono.src) {
+        return assets.CenMono.src;
+      }
+      if (typeof assets.CenMono === 'string') {
+        return assets.CenMono;
+      }
+    }
+    
+    // Try product image first
+    if (productImage && productImage !== placeholderUrl) {
+      if (typeof productImage === 'object' && productImage !== null) {
+        const src = productImage.src || productImage;
+        if (src && src !== placeholderUrl) return src;
+      }
+      if (typeof productImage === 'string' && productImage.trim() !== '' && productImage !== placeholderUrl) {
+        return productImage;
+      }
+    }
+    
+    // If no valid product image, use placeholder from assets
+    return placeholderUrl;
+  };
+
+  const [imageSrc, setImageSrc] = useState(getInitialImageSrc());
+
   if (!productId) {
     console.warn('ProductCard: Missing product ID', product);
   }
@@ -211,15 +272,46 @@ const ProductCard = ({ product }) => {
      <div className="w-full bg-white border border-gray-200 overflow-hidden flex flex-col h-full rounded-lg transition-shadow hover:shadow-lg">
   {/* Image */}
   <Link href={`/product/${productId || '#'}`} className="block">
-    <div className="relative w-full aspect-[3/2] bg-white">
-      <Image
-        src={isCentrifugalMonobloc ? assets.CenMono : productImage}
-        alt={productName}
-        fill
-        className="object-contain p-2 sm:p-3"
-        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 40vw, 260px"
-        unoptimized
-      />
+    <div className="relative w-full aspect-[3/2] bg-gray-50 flex items-center justify-center overflow-hidden">
+      {showPlaceholderUI ? (
+        // Show placeholder UI when image fails to load
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="text-center p-4">
+            <Package size={48} className="mx-auto text-gray-400 mb-2" />
+            <p className="text-xs text-gray-500">No Image Available</p>
+          </div>
+        </div>
+      ) : imageSrc ? (
+        // Try to load the image (product image or placeholder from assets)
+        <Image
+          src={imageSrc}
+          alt={productName}
+          fill
+          className="object-contain p-2 sm:p-3"
+          sizes="(max-width: 640px) 90vw, (max-width: 1024px) 40vw, 260px"
+          unoptimized
+          onError={(e) => {
+            // If image fails to load, try placeholder, then show UI if that also fails
+            const currentSrc = e.target.src || '';
+            if (!imageError && currentSrc !== placeholderUrl) {
+              // First try: switch to placeholder image
+              setImageError(true);
+              setImageSrc(placeholderUrl);
+            } else {
+              // Second try: placeholder also failed, show UI
+              setShowPlaceholderUI(true);
+            }
+          }}
+        />
+      ) : (
+        // No image source at all
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="text-center p-4">
+            <Package size={48} className="mx-auto text-gray-400 mb-2" />
+            <p className="text-xs text-gray-500">No Image Available</p>
+          </div>
+        </div>
+      )}
 
       {discount > 0 && (
         <div className="absolute top-1.5 left-1.5 bg-[#7C2A47] text-white text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
