@@ -363,13 +363,19 @@ const Navbar = memo(() => {
     return formatted.toUpperCase();
   };
 
-  // Get category slug for URL
+  // Get category slug for URL - ensure it matches backend expectations
   const getCategorySlug = (category) => {
+    // First try to use slug if available (most reliable)
+    if (category.slug && category.slug.trim() !== '') {
+      return category.slug;
+    }
+    // Fallback to title/englishName, but ensure proper formatting
     const categoryTitle = category.title || category.englishName || '';
     if (categoryTitle) {
-      return categoryTitle;
+      // Return as-is for exact matching (spaces will be URL encoded)
+      return categoryTitle.trim();
     }
-    return category.slug || '';
+    return '';
   };
 
   // Get subcategory slug for URL

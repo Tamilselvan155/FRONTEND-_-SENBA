@@ -357,16 +357,19 @@ const CategoryNavBar = () => {
     }
   }, [])
 
-  // Get category slug for URL - use title/englishName for better matching
+  // Get category slug for URL - ensure it matches backend expectations
   const getCategorySlug = (category) => {
-    // Use title or englishName directly (not slug) for better matching with product categories
+    // First try to use slug if available (most reliable)
+    if (category.slug && category.slug.trim() !== '') {
+      return category.slug;
+    }
+    // Fallback to title/englishName, but ensure proper formatting
     const categoryTitle = category.title || category.englishName || '';
     if (categoryTitle) {
-      // Return the title as-is (will be URL encoded) for exact matching
-      return categoryTitle;
+      // Return as-is for exact matching (spaces will be URL encoded)
+      return categoryTitle.trim();
     }
-    // Fallback to slug if title/englishName not available
-    return category.slug || '';
+    return '';
   }
 
   // Get subcategory slug for URL
@@ -375,7 +378,7 @@ const CategoryNavBar = () => {
   }
 
   return (
-    <div className="sticky top-16 md:top-18 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
+    <div className="hidden lg:block sticky top-16 md:top-18 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 relative">
         {/* Mobile & Tablet: Horizontal Scrollable */}
         <nav 
