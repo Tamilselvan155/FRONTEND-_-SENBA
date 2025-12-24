@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Phone, ArrowLeft, Send, MessageCircle, Package, CheckCircle2, Shield, Truck, Award } from 'lucide-react';
+import { User, Phone, ArrowLeft, Send, MessageCircle, Package, CheckCircle2, Shield, Truck, Award, Tag, Layers, ShoppingBag } from 'lucide-react';
 import { createEnquiry } from '@/lib/actions/enquiryActions';
 import { addEnquiry } from '@/lib/features/enquiry/enquirySlice';
 import toast from 'react-hot-toast';
@@ -25,6 +25,8 @@ const EnquiryContent = () => {
   const productPrice = searchParams.get('price') || '0';
   const productImage = searchParams.get('image') || '';
   const quantity = parseInt(searchParams.get('quantity') || '1', 10);
+  const productCategory = searchParams.get('category') || '';
+  const productSubCategory = searchParams.get('subcategory') || '';
 
   // Validate inputs
   const validateInputs = () => {
@@ -127,11 +129,18 @@ const EnquiryContent = () => {
 
     let message = `Hello, I'm interested in placing an order. Here are the details:\n\n`;
     message += `🛍 *Product:* ${productName}\n`;
-    message += `💰 *Price:* ₹${productPrice}\n`;
+    if (productCategory) {
+      message += `📂 *Category:* ${productCategory}\n`;
+    }
+    if (productSubCategory) {
+      message += `📁 *Subcategory:* ${productSubCategory}\n`;
+    }
+    message += `💰 *Unit Price:* ₹${productPrice}\n`;
     message += `📦 *Quantity:* ${quantity}\n`;
+    message += `💵 *Total Amount:* ₹${parseFloat(productPrice) * quantity}\n`;
     message += `🖼 *Product Link:* ${productLink}\n\n`;
     message += `🙋 *Name:* ${userName}\n📱 *Mobile:* ${userMobile}\n`;
-    message += `\nTotal: ₹${parseFloat(productPrice) * quantity}\n\nPlease let me know the next steps.`;
+    message += `\nPlease let me know the next steps.`;
 
     const encodedMessage = encodeURIComponent(message);
     const phoneNumber = '9345795629';
@@ -163,237 +172,197 @@ const EnquiryContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-8 sm:mb-10 text-center">
-          <div className="inline-block mb-4">
-            {/* <div className="w-16 h-1 bg-gradient-to-r from-transparent via-[#7C2A47] to-transparent mx-auto mb-4"></div> */}
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Confirm Enquiry
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto">
-              Please provide your details to proceed with your enquiry. We'll get back to you shortly.
-            </p>
-          </div>
-        </div>
-
-        {/* Main Content Grid - Container */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 p-6 items-stretch">
-            {/* Left Column - Product Details */}
-            <div className="lg:col-span-5 flex">
-              {productId && (
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md w-full flex flex-col">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-[#7C2A47] via-[#8d3454] to-[#7C2A47] px-4 py-3 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black/5"></div>
-                  <div className="relative flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Package size={18} className="text-white" />
-                    </div>
-                    <h2 className="text-sm sm:text-base font-bold text-white">
-                      Product Details
-                    </h2>
+    <div className="max-w-6xl mx-auto">
+  
+      {/* Header Section */}
+      <div className="mb-8 sm:mb-10 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          Confirm Enquiry
+        </h1>
+        <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto">
+          Please provide your details to proceed with your enquiry. We'll get back to you shortly.
+        </p>
+      </div>
+  
+      {/* Main Content Container */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6">
+        <div className="p-6">
+  
+          {/* Flex Container - Centered */}
+          <div className="flex flex-col lg:flex-row lg:justify-center gap-10 items-center">
+  
+            {/* LEFT — Product Section */}
+            {productId && (
+              <div className="w-full lg:w-1/3 flex flex-col items-center gap-4">
+                {productImage && (
+                  <div className="w-full max-w-xs h-52 bg-white rounded-2xl border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+                    <img
+                      src={productImage}
+                      alt={productName}
+                      className="w-full h-full object-contain p-4"
+                      onError={(e) => {
+                        e.target.src = "/placeholder-product.png";
+                      }}
+                    />
                   </div>
-                </div>
-                
-                {/* Content */}
-                <div className="p-4 flex-1 flex flex-col">
-                   {/* Product Image */}
-                   {productImage && (
-                     <div className="mb-5">
-                       <div className="w-full h-44 md:h-52 bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm flex items-center justify-center">
-                        <img
-                          src={productImage}
-                          alt={productName}
-                          className="w-full h-full object-contain p-3"
-                          onError={(e) => {
-                            e.target.src = '/placeholder-product.png';
-                          }}
-                        />
+                )}
+                <div className="w-full text-center space-y-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {productName}
+                    </h3>
+                    
+                    {/* Category Information */}
+                    {(productCategory || productSubCategory) && (
+                      <div className="flex flex-col gap-2 items-center">
+                        {productCategory && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Tag size={14} className="text-[#7C2A47]" />
+                            <span className="text-gray-600 font-medium">
+                              Category:
+                            </span>
+                            <span className="text-gray-900 font-semibold">
+                              {productCategory}
+                            </span>
+                          </div>
+                        )}
+                        {productSubCategory && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Layers size={14} className="text-[#7C2A47]" />
+                            <span className="text-gray-600 font-medium">
+                              Subcategory:
+                            </span>
+                            <span className="text-gray-900 font-semibold">
+                              {productSubCategory}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Price and Quantity Details */}
+                  {/* <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Unit Price
+                      </span>
+                      <span className="text-base font-bold text-[#7C2A47]">
+                        ₹{parseFloat(productPrice).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                        <ShoppingBag size={12} />
+                        Quantity
+                      </span>
+                      <span className="text-base font-semibold text-gray-900">
+                        {quantity}
+                      </span>
+                    </div>
+                    <div className="border-t border-gray-300 pt-2 mt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                          Total Amount
+                        </span>
+                        <span className="text-lg font-bold text-[#7C2A47]">
+                          ₹{totalPrice.toLocaleString("en-IN")}
+                        </span>
                       </div>
                     </div>
-                  )}
-
-                   {/* Product Name and Price */}
-                   <div className="mb-4">
-                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-                       <div className="flex-1 min-w-0">
-                         <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                           {productName}
-                         </h3>
-                       </div>
-                       
-                       {/* Price */}
-                       <div className="flex items-baseline gap-1.5 flex-shrink-0">
-                         <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Price</span>
-                         <span className="text-base sm:text-lg font-bold text-[#7C2A47]">
-                           ₹{parseFloat(productPrice).toLocaleString('en-IN')}
-                         </span>
-                       </div>
-                     </div>
-                   </div>
+                  </div> */}
                 </div>
               </div>
             )}
-          </div>
-
-            {/* Right Column - Contact Information */}
-            <div className="lg:col-span-7 flex">
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md w-full flex flex-col">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-[#7C2A47] via-[#8d3454] to-[#7C2A47] px-4 py-3 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black/5"></div>
-                  <div className="relative">
-                    <h2 className="text-sm sm:text-base font-bold text-white">
-                      Contact Information
-                    </h2>
-                  </div>
+  
+            {/* RIGHT — Contact Form */}
+            <div className="w-full lg:w-2/3 max-w-lg">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-6 text-center lg:text-left">
+                Contact Information
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-6">
+  
+                {/* Your Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Your Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^[A-Za-z\s]*$/.test(value)) setUserName(value);
+                    }}
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] outline-none text-sm"
+                  />
                 </div>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-4 flex-1 flex flex-col">
-                <div className="space-y-5 flex-1">
-                  {/* Name Field */}
-                  <div>
-                    <label htmlFor="userName" className="block text-xs font-semibold text-gray-700 mb-2.5 uppercase tracking-wide">
-                      Your Name <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <User className="h-4 w-4 text-gray-400 group-focus-within:text-[#7C2A47] transition-colors" />
-                      </div>
-                      <input
-                        type="text"
-                        id="userName"
-                        value={userName}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[A-Za-z\s]*$/.test(value)) {
-                            setUserName(value);
-                          }
-                        }}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] outline-none transition-all duration-200 text-sm bg-white hover:bg-white hover:border-gray-300"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Mobile Field */}
-                  <div>
-                    <label htmlFor="userMobile" className="block text-xs font-semibold text-gray-700 mb-2.5 uppercase tracking-wide">
-                      Mobile Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Phone className="h-4 w-4 text-gray-400 group-focus-within:text-[#7C2A47] transition-colors" />
-                      </div>
-                      <input
-                        type="tel"
-                        id="userMobile"
-                        value={userMobile}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[0-9]*$/.test(value) && value.length <= 10) {
-                            setUserMobile(value);
-                          }
-                        }}
-                        maxLength={10}
-                        required
-                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] outline-none transition-all duration-200 text-sm bg-white hover:bg-white hover:border-gray-300"
-                      />
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500 flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-gray-400"></span>
-                      <span>Enter a valid 10-digit mobile number</span>
+  
+                {/* Mobile */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Mobile Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={userMobile}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^[0-9]*$/.test(value) && value.length <= 10) {
+                        setUserMobile(value);
+                      }
+                    }}
+                    maxLength={10}
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#7C2A47]/20 focus:border-[#7C2A47] outline-none text-sm"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    Enter a valid 10-digit mobile number
                   </p>
                 </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-6 mt-auto">
+  
+                {/* Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-[#7C2A47] to-[#8d3454] text-white font-semibold rounded-xl hover:from-[#6a243d] hover:to-[#7a2d4a] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] text-sm"
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#7C2A47] to-[#8d3454] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition disabled:opacity-50"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        <span>Submitting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} />
-                        <span>Submit Enquiry</span>
-                      </>
-                    )}
+                    Submit Enquiry
                   </button>
-
+  
                   <button
                     type="button"
                     onClick={handleWhatsApp}
                     disabled={isSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2.5 px-6 py-3.5 border-2 border-[#7C2A47] text-[#7C2A47] font-semibold rounded-xl hover:bg-[#7C2A47] hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-white shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] text-sm"
+                    className="flex-1 px-4 py-2.5 border-2 border-[#7C2A47] text-[#7C2A47] font-semibold rounded-xl hover:bg-[#7C2A47] hover:text-white transition disabled:opacity-50"
                   >
-                    <MessageCircle size={16} />
-                    <span>Contact via WhatsApp</span>
+                    Contact via WhatsApp
                   </button>
                 </div>
-                </form>
-              </div>
+  
+              </form>
             </div>
+  
           </div>
         </div>
-
-        {/* Benefits Section */}
-        {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#7C2A47]/10 flex items-center justify-center flex-shrink-0">
-                <Truck size={18} className="text-[#7C2A47]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-900 mb-1">Free Shipping</p>
-                <p className="text-[10px] text-gray-600">Worldwide delivery</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#7C2A47]/10 flex items-center justify-center flex-shrink-0">
-                <Shield size={18} className="text-[#7C2A47]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-900 mb-1">Secure Payment</p>
-                <p className="text-[10px] text-gray-600">100% secured</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#7C2A47]/10 flex items-center justify-center flex-shrink-0">
-                <Award size={18} className="text-[#7C2A47]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-900 mb-1">Trusted Brand</p>
-                <p className="text-[10px] text-gray-600">Top brands trust us</p>
-              </div>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Info Section */}
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle2 size={16} className="text-[#7C2A47] flex-shrink-0" />
-            <p className="text-xs text-gray-600 text-center leading-relaxed">
-              By submitting this form, you agree to our terms and conditions. We'll contact you shortly regarding your enquiry.
-            </p>
-            </div>
-          </div>
       </div>
+  
+      {/* Info Section */}
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-center gap-2">
+          <CheckCircle2 size={16} className="text-[#7C2A47]" />
+          <p className="text-xs text-gray-600 text-center">
+            By submitting this form, you agree to our terms and conditions. We'll contact you shortly regarding your enquiry.
+          </p>
+        </div>
+      </div>
+  
     </div>
+  </div>
+  
+  
   );
 };
 

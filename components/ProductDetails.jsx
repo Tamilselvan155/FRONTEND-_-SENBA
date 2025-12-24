@@ -656,7 +656,18 @@ const ProductDetails = ({ product }) => {
         onClick={() => {
           const { price: selectedPrice } = getPriceAndMrpForHP(selectedHP);
           const productImageUrl = productImages[0] || '';
-          const enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId)}&productName=${encodeURIComponent(product.name || product.title || 'Product')}&price=${encodeURIComponent(selectedPrice)}&quantity=${quantity}&image=${encodeURIComponent(productImageUrl)}`;
+          const productCategory = product.category || '';
+          const productSubCategory = product.subCategory || '';
+          
+          let enquiryUrl = `/enquiry?productId=${encodeURIComponent(productId)}&productName=${encodeURIComponent(product.name || product.title || 'Product')}&price=${encodeURIComponent(selectedPrice)}&quantity=${quantity}&image=${encodeURIComponent(productImageUrl)}`;
+          
+          if (productCategory) {
+            enquiryUrl += `&category=${encodeURIComponent(productCategory)}`;
+          }
+          if (productSubCategory) {
+            enquiryUrl += `&subcategory=${encodeURIComponent(productSubCategory)}`;
+          }
+          
           router.push(enquiryUrl);
         }}
         className="flex-1 px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-semibold rounded-lg bg-[#7C2A47] text-white hover:bg-[#6a243d] active:scale-95 transition-all shadow-md hover:shadow-lg"
