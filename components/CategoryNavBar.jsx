@@ -143,7 +143,7 @@ const CategoryNavBar = () => {
           return
         }
         
-        const button = buttonRefs.current[categoryId]
+      const button = buttonRefs.current[categoryId]
         if (!button) {
           if (attempt < 3 && typeof window !== 'undefined' && window.requestAnimationFrame) {
             requestAnimationFrame(() => calculatePosition(attempt + 1))
@@ -211,21 +211,21 @@ const CategoryNavBar = () => {
       left = Math.max(padding, Math.min(rect.right - dropdownWidth, viewportWidth - dropdownWidth - padding))
     }
     // If dropdown would overflow on the left
-    if (left < padding) {
-      left = padding
-    }
-    
-    // Calculate top position (below button with spacing)
+        if (left < padding) {
+          left = padding
+        }
+        
+        // Calculate top position (below button with spacing)
     // Using fixed positioning, so use rect.bottom directly (already viewport-relative)
     const top = Math.max(0, rect.bottom + 8) // 8px spacing below button, ensure not negative
-    
+        
     // Set position with the calculated values
-    setDropdownPosition({
+        setDropdownPosition({
       top: top,
       left: left,
-      width: Math.min(dropdownWidth, viewportWidth - (padding * 2))
-    })
-  }
+          width: Math.min(dropdownWidth, viewportWidth - (padding * 2))
+        })
+      }
 
   // Calculate initial position immediately when dropdown opens (before paint)
   useLayoutEffect(() => {
@@ -260,7 +260,7 @@ const CategoryNavBar = () => {
     if (!activeCategory) {
       // Reset overflow when dropdown is closed
       if (typeof document !== 'undefined' && document.body) {
-        document.body.style.overflowX = ''
+      document.body.style.overflowX = ''
       }
       return
     }
@@ -279,14 +279,14 @@ const CategoryNavBar = () => {
       
       // Use requestAnimationFrame for smooth, real-time updates during scroll
       rafId = requestAnimationFrame(() => {
-        const button = buttonRefs.current[activeCategory]
-        if (button) {
+      const button = buttonRefs.current[activeCategory]
+      if (button) {
           // Force a reflow to ensure latest layout
           void button.offsetHeight
           
           // Always get fresh position - getBoundingClientRect() is viewport-relative
           // and automatically accounts for all scrolling
-          const rect = button.getBoundingClientRect()
+        const rect = button.getBoundingClientRect()
           
           // Validate button has valid dimensions and coordinates
           const maxWidth = typeof window !== 'undefined' ? window.innerWidth : 375
@@ -303,7 +303,7 @@ const CategoryNavBar = () => {
 
     // Prevent horizontal scroll when dropdown is open
     if (typeof document !== 'undefined' && document.body) {
-      document.body.style.overflowX = 'hidden'
+    document.body.style.overflowX = 'hidden'
     }
 
     // Initial position update
@@ -311,8 +311,8 @@ const CategoryNavBar = () => {
     
     // Listen for window scroll and resize
     if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', updatePosition, { passive: true })
-      window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, { passive: true })
+    window.addEventListener('resize', updatePosition)
     }
     
     // Listen to nav container scroll events (for horizontal scrolling)
@@ -333,8 +333,8 @@ const CategoryNavBar = () => {
         cancelAnimationFrame(rafId)
       }
       if (typeof window !== 'undefined') {
-        window.removeEventListener('scroll', updatePosition)
-        window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition)
+      window.removeEventListener('resize', updatePosition)
       }
       if (navContainer) {
         navContainer.removeEventListener('scroll', updatePosition)
@@ -343,7 +343,7 @@ const CategoryNavBar = () => {
         }
       }
       if (typeof document !== 'undefined' && document.body) {
-        document.body.style.overflowX = ''
+      document.body.style.overflowX = ''
       }
     }
   }, [activeCategory])
@@ -419,7 +419,7 @@ const CategoryNavBar = () => {
                     >
                       <span className="leading-tight max-w-[120px] sm:max-w-[140px] md:max-w-none truncate">{categoryName}</span>
                       <ChevronDown 
-                        size={10}
+                        size={10} 
                         className={`sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 flex-shrink-0 transition-transform duration-200 ${
                           isActive ? 'rotate-180' : ''
                         } ${isActive ? 'text-[#7C2A47]' : 'text-gray-500'}`}
@@ -438,7 +438,7 @@ const CategoryNavBar = () => {
                     </Link>
                   )}
 
-                  {/* Mobile Dropdown */}
+                  {/* Mobile Dropdown - Display when category has subcategories and is active */}
                   {hasSubcategories && isActive && (
                     <>
                       {/* Backdrop to close dropdown when clicking outside - transparent */}
@@ -453,9 +453,9 @@ const CategoryNavBar = () => {
                         ref={dropdownRef}
                         className="fixed bg-white shadow-2xl rounded-lg sm:rounded-xl py-1 sm:py-1.5 z-[60] border border-gray-200/80 max-h-[70vh] overflow-y-auto lg:hidden min-w-[140px] sm:min-w-[160px] md:min-w-[180px] max-w-[200px] sm:max-w-[220px] md:max-w-[240px]"
                         style={{
-                          top: `${dropdownPosition.top}px`,
-                          left: `${dropdownPosition.left}px`,
-                          width: `${dropdownPosition.width}px`,
+                          top: `${dropdownPosition.top > 0 ? dropdownPosition.top : 60}px`,
+                          left: `${dropdownPosition.left > 0 ? dropdownPosition.left : 12}px`,
+                          width: `${dropdownPosition.width > 0 ? dropdownPosition.width : 160}px`,
                         }}
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
@@ -463,35 +463,35 @@ const CategoryNavBar = () => {
                         {subcategories.length > 0 ? (
                           <ul className="list-none m-0 p-0">
                             {[...subcategories]
-                              .sort((a, b) => {
-                                if (a.sortOrder !== null && b.sortOrder !== null) {
-                                  return a.sortOrder - b.sortOrder
-                                }
-                                if (a.sortOrder !== null) return -1
-                                if (b.sortOrder !== null) return 1
-                                return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
-                              })
-                              .map((subCat, subIndex) => {
-                                const subCategoryName = subCat.title || subCat.englishName || ''
-                                const subCategorySlug = getSubcategorySlug(subCat)
-                                
-                                if (!subCategoryName) return null
-                                
-                                return (
+                            .sort((a, b) => {
+                              if (a.sortOrder !== null && b.sortOrder !== null) {
+                                return a.sortOrder - b.sortOrder
+                              }
+                              if (a.sortOrder !== null) return -1
+                              if (b.sortOrder !== null) return 1
+                              return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
+                            })
+                            .map((subCat, subIndex) => {
+                              const subCategoryName = subCat.title || subCat.englishName || ''
+                              const subCategorySlug = getSubcategorySlug(subCat)
+                              
+                              if (!subCategoryName) return null
+                              
+                              return (
                                   <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
-                                    <Link
-                                      href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
+                                <Link
+                                  href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
                                       className="flex items-center justify-center w-full min-h-[40px] sm:min-h-[44px] px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 active:text-[#7C2A47] transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
-                                      onClick={() => {
-                                        setActiveCategory(null)
-                                        setDropdownPosition({ top: 0, left: 0, width: 0 })
-                                      }}
-                                    >
+                                  onClick={() => {
+                                    setActiveCategory(null)
+                                    setDropdownPosition({ top: 0, left: 0, width: 0 })
+                                  }}
+                                >
                                       <span className="font-normal text-center w-full leading-normal px-1 truncate">{subCategoryName}</span>
-                                    </Link>
+                                </Link>
                                   </li>
-                                )
-                              })
+                              )
+                            })
                               .filter(Boolean)}
                           </ul>
                         ) : (
@@ -542,7 +542,7 @@ const CategoryNavBar = () => {
                     <span className="leading-tight whitespace-nowrap">{categoryName}</span>
                     {hasSubcategories && (
                       <ChevronDown 
-                        size={12}
+                        size={12} 
                         className={`lg:w-3.5 lg:h-3.5 flex-shrink-0 transition-all duration-200 ${
                           isHovered || hoveredCategory === categoryId
                             ? 'rotate-180 text-[#7C2A47]' 
@@ -563,34 +563,34 @@ const CategoryNavBar = () => {
                       {subcategories.length > 0 ? (
                         <ul className="list-none m-0 p-0">
                           {[...subcategories]
-                            .sort((a, b) => {
-                              if (a.sortOrder !== null && b.sortOrder !== null) {
-                                return a.sortOrder - b.sortOrder
-                              }
-                              if (a.sortOrder !== null) return -1
-                              if (b.sortOrder !== null) return 1
-                              return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
-                            })
-                            .map((subCat, subIndex) => {
-                              const subCategoryName = subCat.title || subCat.englishName || ''
-                              const subCategorySlug = getSubcategorySlug(subCat)
-                              
-                              if (!subCategoryName) return null
-                              
-                              return (
+                          .sort((a, b) => {
+                            if (a.sortOrder !== null && b.sortOrder !== null) {
+                              return a.sortOrder - b.sortOrder
+                            }
+                            if (a.sortOrder !== null) return -1
+                            if (b.sortOrder !== null) return 1
+                            return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '')
+                          })
+                          .map((subCat, subIndex) => {
+                            const subCategoryName = subCat.title || subCat.englishName || ''
+                            const subCategorySlug = getSubcategorySlug(subCat)
+                            
+                            if (!subCategoryName) return null
+                            
+                            return (
                                 <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
-                                  <Link
-                                    href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
+                              <Link
+                                href={`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subCategorySlug)}`}
                                     className="flex items-center justify-center w-full min-h-[44px] px-3 lg:px-4 xl:px-5 py-2 lg:py-2.5 text-xs lg:text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
-                                    onClick={() => {
-                                      setHoveredCategory(null)
-                                    }}
-                                  >
+                                onClick={() => {
+                                  setHoveredCategory(null)
+                                }}
+                              >
                                     <span className="font-normal text-center w-full leading-normal">{subCategoryName}</span>
-                                  </Link>
+                              </Link>
                                 </li>
-                              )
-                            })
+                            )
+                          })
                             .filter(Boolean)}
                         </ul>
                       ) : (

@@ -53,12 +53,12 @@ const OurSpecs = () => {
                                     </div>
                                     
                                     {/* Bottom accent line */}
-                                    <div 
+                                    {/* <div 
                                         className='absolute bottom-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300'
                                         style={{ 
                                             background: `linear-gradient(to right, transparent, ${spec.accent || '#7C2A47'}, transparent)`,
                                         }}
-                                    />
+                                    /> */}
                                 </motion.div>
                             )
                         })

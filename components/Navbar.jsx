@@ -11,6 +11,8 @@ import {
   Info,
   Phone,
   Search,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -21,6 +23,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { signOut } from "@/lib/features/login/authSlice";
 import { clearAuthData } from "@/lib/utils/authUtils";
 import { recalculateTotal, forceClearInvalidCart } from "@/lib/features/cart/cartSlice";
+import { fetchCategoriesWithSubcategoriesAsync } from "@/lib/features/category/categorySlice";
 import toast from "react-hot-toast";
 import WVlogo from "../assets/YUCHII LOGO.png";
 
@@ -39,6 +42,9 @@ const Navbar = memo(() => {
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchMobile, setShowSearchMobile] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showSubcategoryPanel, setShowSubcategoryPanel] = useState(false);
+  const [panelAnimating, setPanelAnimating] = useState(false);
   const closeTimeoutRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -89,12 +95,25 @@ const Navbar = memo(() => {
   });
   
   const { email } = useSelector((state) => state.auth);
+  const { categoriesWithSubcategories, loading: categoriesLoading } = useSelector((state) => state.category);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Fetch categories on mount
+  useEffect(() => {
+    dispatch(fetchCategoriesWithSubcategoriesAsync());
+  }, [dispatch]);
+
   // Memoize toggle function
   const toggleMenu = useCallback(() => {
-    setMenuOpen((prev) => !prev);
+    setMenuOpen((prev) => {
+      // Reset panel state when menu closes
+      if (prev) {
+        setShowSubcategoryPanel(false);
+        setSelectedCategory(null);
+      }
+      return !prev;
+    });
   }, []);
 
 
@@ -238,16 +257,167 @@ const Navbar = memo(() => {
     };
   }, []);
 
-  // Memoize mobile menu items to prevent recreation on every render
-  const mobileMainItems = useMemo(() => [
-    { label: "Home", href: "/", icon: <Home size={18} /> },
-    { label: "Products", href: "/category/products", icon: <ShoppingBag size={18} /> },
-  ], []);
+  // Prevent body scroll when menu or panel is open
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (menuOpen || showSubcategoryPanel) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [menuOpen, showSubcategoryPanel]);
 
-  const mobileFooterItems = useMemo(() => [
-    { label: "About", href: "/about", icon: <Info size={18} /> },
-    { label: "Contact", href: "/contact", icon: <Phone size={18} /> },
-  ], []);
+  // Close panel when menu closes
+  useEffect(() => {
+    if (!menuOpen) {
+      setPanelAnimating(false);
+      setShowSubcategoryPanel(false);
+      setSelectedCategory(null);
+    }
+  }, [menuOpen]);
+
+  // Handle panel animation when it opens
+  useEffect(() => {
+    if (showSubcategoryPanel && selectedCategory) {
+      // Small delay to ensure DOM is ready, then trigger animation
+      const timer = setTimeout(() => {
+        setPanelAnimating(true);
+      }, 10);
+      return () => clearTimeout(timer);
+    } else {
+      setPanelAnimating(false);
+    }
+  }, [showSubcategoryPanel, selectedCategory]);
+
+  // Process categories similar to CategoryNavBar
+  const processedCategories = useMemo(() => {
+    let categoriesData = categoriesWithSubcategories;
+    
+    if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
+      if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data;
+      } else if (Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data;
+      }
+    }
+    
+    if (!categoriesData || !Array.isArray(categoriesData) || categoriesData.length === 0) {
+      return [];
+    }
+    
+    return [...categoriesData]
+      .filter(cat => {
+        const isActive = cat.status === 'active';
+        const isParent = cat.isParent === true;
+        return isActive && isParent;
+      })
+      .map(cat => {
+        let processedSubcategories = [];
+        if (Array.isArray(cat.subcategories) && cat.subcategories.length > 0) {
+          processedSubcategories = [...cat.subcategories]
+            .filter(sub => {
+              const subStatus = sub.status;
+              return subStatus === 'active' || subStatus === undefined;
+            })
+            .map(sub => {
+              const subId = sub.id || sub._id;
+              return {
+                id: subId?.toString() || String(subId) || '',
+                _id: subId?.toString() || String(subId) || '',
+                title: sub.title || sub.englishName || '',
+                englishName: sub.englishName || sub.title || '',
+                slug: sub.slug || sub.englishName?.toLowerCase().replace(/\s+/g, '-') || '',
+                sortOrder: sub.sortOrder !== undefined && sub.sortOrder !== null ? sub.sortOrder : null,
+                status: sub.status || 'active'
+              };
+            });
+        }
+        
+        const catId = cat.id || cat._id;
+        return {
+          ...cat,
+          id: catId?.toString() || String(catId) || '',
+          _id: catId?.toString() || String(catId) || '',
+          subcategories: processedSubcategories
+        };
+      })
+      .sort((a, b) => {
+        if (a.sortOrder !== null && b.sortOrder !== null) {
+          return a.sortOrder - b.sortOrder;
+        }
+        if (a.sortOrder !== null) return -1;
+        if (b.sortOrder !== null) return 1;
+        return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '');
+      });
+  }, [categoriesWithSubcategories]);
+
+  // Format category names for display (convert camelCase to Title Case, then uppercase)
+  const formatCategoryName = (category) => {
+    const name = category.title || category.englishName || '';
+    // Convert camelCase to Title Case
+    const formatted = name.replace(/([A-Z])/g, ' $1').trim();
+    return formatted.toUpperCase();
+  };
+
+  // Get category slug for URL
+  const getCategorySlug = (category) => {
+    const categoryTitle = category.title || category.englishName || '';
+    if (categoryTitle) {
+      return categoryTitle;
+    }
+    return category.slug || '';
+  };
+
+  // Get subcategory slug for URL
+  const getSubcategorySlug = (subcategory) => {
+    return subcategory.slug || (subcategory.englishName ? subcategory.englishName.toLowerCase().replace(/\s+/g, '-') : '') || '';
+  };
+
+  // Handle category click - open subcategory panel or navigate
+  const handleCategoryClick = useCallback((category) => {
+    const hasSubcategories = Array.isArray(category.subcategories) && category.subcategories.length > 0;
+    
+    if (hasSubcategories) {
+      setPanelAnimating(false); // Start off-screen
+      setSelectedCategory(category);
+      setShowSubcategoryPanel(true);
+      // Animation will be triggered by useEffect
+    } else {
+      // Navigate directly to category page if no subcategories
+      const categorySlug = getCategorySlug(category);
+      router.push(`/category/products?category=${encodeURIComponent(categorySlug)}`);
+      toggleMenu();
+    }
+  }, [router, toggleMenu]);
+
+  // Handle back button - return to categories
+  const handleBackToCategories = useCallback(() => {
+    setPanelAnimating(false);
+    // Wait for animation to complete before hiding
+    setTimeout(() => {
+      setShowSubcategoryPanel(false);
+      setSelectedCategory(null);
+    }, 300);
+  }, []);
+
+  // Handle subcategory click - navigate and close menu
+  const handleSubcategoryClick = useCallback((subcategory) => {
+    if (!selectedCategory) return;
+    const categorySlug = getCategorySlug(selectedCategory);
+    const subcategorySlug = getSubcategorySlug(subcategory);
+    // Animate panel out first
+    setPanelAnimating(false);
+    setTimeout(() => {
+      setShowSubcategoryPanel(false);
+      setSelectedCategory(null);
+      toggleMenu();
+      router.push(`/category/products?category=${encodeURIComponent(categorySlug)}&subcategory=${encodeURIComponent(subcategorySlug)}`);
+    }, 150);
+  }, [selectedCategory, router, toggleMenu]);
 
   return (
     <header 
@@ -482,39 +652,77 @@ const Navbar = memo(() => {
                   </button>
                 </div>
                 <div className="flex flex-col gap-1 px-3 sm:px-4 text-gray-700 flex-grow overflow-y-auto py-2">
-                  {mobileMainItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      prefetch={true}
-                      onClick={toggleMenu}
-                      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                        isActive(item.href)
-                          ? "text-[#7C2A47] bg-[#7C2A47]/10"
-                          : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
-                      }`}
-                    >
-                      <span className="flex-shrink-0">{item.icon}</span>
-                      <span className="text-sm font-medium">{item.label}</span>
-                    </Link>
-                  ))}
+                  {/* Home Link */}
+                  <Link
+                    href="/"
+                    prefetch={true}
+                    onClick={toggleMenu}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                      isActive("/")
+                        ? "text-[#7C2A47] bg-[#7C2A47]/10"
+                        : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
+                    }`}
+                  >
+                    <span className="flex-shrink-0"><Home size={18} /></span>
+                    <span className="text-sm font-medium">Home</span>
+                  </Link>
 
-                  {mobileFooterItems.map((item) => (
+                  {/* Categories List */}
+                  {categoriesLoading ? (
+                    <div className="flex items-center justify-center px-4 py-8">
+                      <div className="w-5 h-5 border-2 border-gray-300 border-t-[#7C2A47] rounded-full animate-spin"></div>
+                    </div>
+                  ) : processedCategories.length === 0 ? (
+                    <div className="px-4 py-2 text-xs text-gray-500">No categories available</div>
+                  ) : (
+                    processedCategories.map((category) => {
+                      const categoryName = formatCategoryName(category);
+                      const hasSubcategories = Array.isArray(category.subcategories) && category.subcategories.length > 0;
+                      
+                      return (
+                        <button
+                          key={category.id || category._id}
+                          onClick={() => handleCategoryClick(category)}
+                          className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10 active:bg-[#7C2A47]/10"
+                        >
+                          <span className="text-sm font-medium">{categoryName}</span>
+                          {hasSubcategories && (
+                            <ChevronRight size={18} className="flex-shrink-0 text-gray-400" />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+
+                  {/* About and Contact Links */}
+                  <div className="border-t border-gray-200 mt-2 pt-2">
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      href="/about"
                       prefetch={true}
                       onClick={toggleMenu}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                        isActive(item.href)
+                        isActive("/about")
                           ? "text-[#7C2A47] bg-[#7C2A47]/10"
                           : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
                       }`}
                     >
-                      <span className="flex-shrink-0">{item.icon}</span>
-                      <span className="text-sm font-medium">{item.label}</span>
+                      <span className="flex-shrink-0"><Info size={18} /></span>
+                      <span className="text-sm font-medium">About</span>
                     </Link>
-                  ))}
+                    <Link
+                      href="/contact"
+                      prefetch={true}
+                      onClick={toggleMenu}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                        isActive("/contact")
+                          ? "text-[#7C2A47] bg-[#7C2A47]/10"
+                          : "text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/10"
+                      }`}
+                    >
+                      <span className="flex-shrink-0"><Phone size={18} /></span>
+                      <span className="text-sm font-medium">Contact</span>
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Mobile Menu Footer - Banner Content */}
@@ -620,10 +828,94 @@ const Navbar = memo(() => {
                 </div>
               </div>
             </div>
-            <div
-              className="fixed inset-0 bg-black/20 z-[55]"
-              onClick={toggleMenu}
-            />
+
+            {/* Slide-in Subcategory Panel - Mobile Only */}
+            {showSubcategoryPanel && selectedCategory && (
+              <>
+                {/* Panel Backdrop */}
+                <div
+                  className="lg:hidden fixed inset-0 bg-black/30 z-[65]"
+                  onClick={handleBackToCategories}
+                />
+                {/* Panel */}
+                <div 
+                  className={`lg:hidden fixed top-0 right-0 h-full w-full sm:w-80 bg-white shadow-2xl z-[70] border-l border-gray-200 transition-transform duration-300 ease-out ${
+                    panelAnimating ? 'translate-x-0' : 'translate-x-full'
+                  }`}
+                >
+                <div className="flex flex-col h-full">
+                  {/* Panel Header */}
+                  <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleBackToCategories}
+                        className="p-2 rounded-lg hover:bg-[#7C2A47]/10 active:bg-[#7C2A47]/20 transition-all duration-200 group"
+                        aria-label="Back to categories"
+                      >
+                        <ArrowLeft size={20} className="text-gray-700 group-hover:text-[#7C2A47] transition-colors" />
+                      </button>
+                      <h2 className="text-base font-semibold text-gray-900">
+                        {formatCategoryName(selectedCategory)}
+                      </h2>
+                    </div>
+                    <button
+                      onClick={toggleMenu}
+                      className="p-2 rounded-lg hover:bg-[#7C2A47]/10 active:bg-[#7C2A47]/20 transition-all duration-200 group"
+                      aria-label="Close menu"
+                    >
+                      <X size={20} className="text-gray-700 group-hover:text-[#7C2A47] transition-colors" />
+                    </button>
+                  </div>
+
+                  {/* Subcategories List */}
+                  <div className="flex-1 overflow-y-auto py-2">
+                    {selectedCategory.subcategories && selectedCategory.subcategories.length > 0 ? (
+                      <ul className="list-none m-0 p-0">
+                        {[...selectedCategory.subcategories]
+                          .sort((a, b) => {
+                            if (a.sortOrder !== null && b.sortOrder !== null) {
+                              return a.sortOrder - b.sortOrder;
+                            }
+                            if (a.sortOrder !== null) return -1;
+                            if (b.sortOrder !== null) return 1;
+                            return (a.title || a.englishName || '').localeCompare(b.title || b.englishName || '');
+                          })
+                          .map((subCat) => {
+                            const subCategoryName = subCat.title || subCat.englishName || '';
+                            if (!subCategoryName) return null;
+                            
+                            return (
+                              <li key={subCat.id || subCat._id} className="m-0 p-0">
+                                <button
+                                  onClick={() => handleSubcategoryClick(subCat)}
+                                  className="w-full flex items-center justify-between px-4 sm:px-6 py-3 text-left text-sm text-gray-700 hover:text-[#7C2A47] hover:bg-[#7C2A47]/5 active:bg-[#7C2A47]/10 transition-all duration-150 ease-in-out border-b border-gray-100 last:border-b-0"
+                                >
+                                  <span className="font-medium">{subCategoryName}</span>
+                                  <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+                                </button>
+                              </li>
+                            );
+                          })
+                          .filter(Boolean)}
+                      </ul>
+                    ) : (
+                      <div className="px-4 sm:px-6 py-8 text-sm text-gray-500 text-center">
+                        No subcategories available
+                      </div>
+                    )}
+                  </div>
+                </div>
+                </div>
+              </>
+            )}
+
+            {/* Main Menu Backdrop - Only show when menu is open and subcategory panel is not open */}
+            {!showSubcategoryPanel && (
+              <div
+                className="fixed inset-0 bg-black/20 z-[55]"
+                onClick={toggleMenu}
+              />
+            )}
           </>
         )}
       </nav>
