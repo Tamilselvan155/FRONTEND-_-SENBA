@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchCategoriesWithSubcategoriesAsync } from '@/lib/features/category/categorySlice'
+import { getCategorySlug, getSubcategorySlug, getCategoryDisplayName } from '@/lib/utils/categoryUtils'
 
 const CategoryNavBar = () => {
   const dispatch = useDispatch()
@@ -24,8 +25,11 @@ const CategoryNavBar = () => {
 
   // Process categories: filter active parent categories and sort
   const processedCategories = useMemo(() => {
+    // Redux already extracts the array from { success: true, data: [...] }
+    // So categoriesWithSubcategories should already be an array
     let categoriesData = categoriesWithSubcategories
     
+    // Defensive check: handle edge cases where data might still be wrapped
     if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
       if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
         categoriesData = categoriesWithSubcategories.data
@@ -34,47 +38,99 @@ const CategoryNavBar = () => {
       }
     }
     
+    // Early return if no valid data
     if (!categoriesData || !Array.isArray(categoriesData) || categoriesData.length === 0) {
       return []
     }
     
     return [...categoriesData]
       .filter(cat => {
+        // Use truthy check for isParent instead of strict === true
+        // This handles cases where isParent might be truthy but not exactly true
         const isActive = cat.status === 'active'
-        const isParent = cat.isParent === true
+        const isParent = cat.isParent === true || cat.isParent === 'true' || Boolean(cat.isParent)
         return isActive && isParent
       })
       .map(cat => {
+        // Always initialize subcategories array
         let processedSubcategories = []
-        if (Array.isArray(cat.subcategories) && cat.subcategories.length > 0) {
+        
+        // Process subcategories if they exist and are valid
+        if (cat.subcategories && Array.isArray(cat.subcategories) && cat.subcategories.length > 0) {
           processedSubcategories = [...cat.subcategories]
             .filter(sub => {
+              // Filter active subcategories, but be lenient with undefined status
+              // Backend already filters for active, but add defensive check
+              if (!sub || typeof sub !== 'object') return false
               const subStatus = sub.status
-              return subStatus === 'active' || subStatus === undefined
+              return subStatus === 'active' || subStatus === undefined || subStatus === null
             })
             .map(sub => {
+              // Preserve all subcategory properties while ensuring required fields exist
               const subId = sub.id || sub._id
+              const subTitle = sub.title || sub.englishName || ''
+              const subEnglishName = sub.englishName || sub.title || ''
+              
+              // Preserve original slug from database - don't generate new ones
+              // Backend expects exact slug or title match
+              const subSlug = sub.slug || ''
+              
               return {
-                id: subId?.toString() || String(subId) || '',
-                _id: subId?.toString() || String(subId) || '',
-                title: sub.title || sub.englishName || '',
-                englishName: sub.englishName || sub.title || '',
-                slug: sub.slug || sub.englishName?.toLowerCase().replace(/\s+/g, '-') || '',
+                // Preserve original properties
+                ...sub,
+                // Ensure id and _id are always strings
+                id: subId ? subId.toString() : '',
+                _id: subId ? subId.toString() : '',
+                // Ensure title and englishName exist
+                title: subTitle,
+                englishName: subEnglishName,
+                // Ensure slug exists
+                slug: subSlug,
+                // Preserve sortOrder or set to null
                 sortOrder: sub.sortOrder !== undefined && sub.sortOrder !== null ? sub.sortOrder : null,
+                // Default status to 'active' if missing
                 status: sub.status || 'active'
               }
             })
+            // Filter out any invalid subcategories that might have been created
+            .filter(sub => sub.id && (sub.title || sub.englishName))
         }
         
+        // Process parent category
+        // Extract and preserve original values to ensure data integrity
+        // CRITICAL: Extract values BEFORE any processing to prevent data mixing
         const catId = cat.id || cat._id
+        const catTitle = cat.title || ''
+        const catEnglishName = cat.englishName || ''
+        const catSlug = cat.slug || ''
+        
+        // Build category object with preserved original values
+        // IMPORTANT: Don't use spread operator on cat as it might contain stale/mixed data
+        // Instead, explicitly construct the object with only the values we need
         return {
-          ...cat,
-          id: catId?.toString() || String(catId) || '',
-          _id: catId?.toString() || String(catId) || '',
-          subcategories: processedSubcategories
+          // Core identity fields - preserve exactly as they are
+          id: catId ? catId.toString() : '',
+          _id: catId ? catId.toString() : '',
+          // Name fields - preserve original values, don't swap
+          title: catTitle,
+          englishName: catEnglishName,
+          // Slug - preserve original from database (critical for URL matching)
+          slug: catSlug,
+          // Status and parent flags
+          status: cat.status || 'active',
+          isParent: cat.isParent === true || cat.isParent === 'true' || Boolean(cat.isParent),
+          // Sort order
+          sortOrder: cat.sortOrder !== undefined && cat.sortOrder !== null ? cat.sortOrder : null,
+          // Subcategories array
+          subcategories: processedSubcategories,
+          // Preserve other important properties that might be needed
+          photo: cat.photo || null,
+          showOnHomepage: cat.showOnHomepage || false,
+          parentId: cat.parentId || null
         }
       })
       .sort((a, b) => {
+        // Sort by sortOrder first, then by name
         if (a.sortOrder !== null && b.sortOrder !== null) {
           return a.sortOrder - b.sortOrder
         }
@@ -86,10 +142,8 @@ const CategoryNavBar = () => {
 
   // Format category names for display (convert camelCase to Title Case, then uppercase)
   const formatCategoryName = (category) => {
-    const name = category.title || category.englishName || ''
-    // Convert camelCase to Title Case
-    const formatted = name.replace(/([A-Z])/g, ' $1').trim()
-    return formatted.toUpperCase()
+    const displayName = getCategoryDisplayName(category)
+    return displayName.toUpperCase()
   }
 
   // Desktop hover handlers
@@ -357,25 +411,7 @@ const CategoryNavBar = () => {
     }
   }, [])
 
-  // Get category slug for URL - ensure it matches backend expectations
-  const getCategorySlug = (category) => {
-    // First try to use slug if available (most reliable)
-    if (category.slug && category.slug.trim() !== '') {
-      return category.slug;
-    }
-    // Fallback to title/englishName, but ensure proper formatting
-    const categoryTitle = category.title || category.englishName || '';
-    if (categoryTitle) {
-      // Return as-is for exact matching (spaces will be URL encoded)
-      return categoryTitle.trim();
-    }
-    return '';
-  }
-
-  // Get subcategory slug for URL
-  const getSubcategorySlug = (subcategory) => {
-    return subcategory.slug || (subcategory.englishName ? subcategory.englishName.toLowerCase().replace(/\s+/g, '-') : '') || ''
-  }
+  // Note: getCategorySlug and getSubcategorySlug are now imported from categoryUtils
 
   return (
     <div className="hidden lg:block sticky top-16 md:top-18 lg:top-20 w-full bg-white border-b border-gray-200 z-40 shadow-sm">
@@ -396,14 +432,39 @@ const CategoryNavBar = () => {
           ) : processedCategories.length === 0 ? (
             <div className="px-2 sm:px-3 md:px-4 py-2 text-[10px] sm:text-[11px] md:text-xs text-gray-500 whitespace-nowrap">No categories available</div>
           ) : (
-            processedCategories.map((category) => {
+            processedCategories.map((category, index) => {
+              // Extract category values directly to ensure we're using the correct category
+              // Extract all category values directly from the category object
+              // This ensures we're using the correct category's data
+              // CRITICAL: Extract values directly from the category object to prevent mixing
+              const categoryId = String(category.id || category._id || '')
               const categoryName = formatCategoryName(category)
               const categorySlug = getCategorySlug(category)
               const categoryHref = `/category/products?category=${encodeURIComponent(categorySlug)}`
-              const categoryId = String(category.id || category._id || '')
               const subcategories = Array.isArray(category.subcategories) ? category.subcategories : []
               const hasSubcategories = subcategories.length > 0
               const isActive = activeCategory === categoryId
+              
+              // Debug logging in development to track category mapping
+              if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+                // Log category details to verify correct mapping
+                if (categoryName.includes('MOTOR') || categoryName.includes('PUMP')) {
+                  console.log(`[CategoryNavBar Mobile] Category ${index}:`, {
+                    id: categoryId,
+                    displayName: categoryName,
+                    slug: categorySlug,
+                    title: category.title,
+                    englishName: category.englishName,
+                    href: categoryHref
+                  });
+                }
+              }
+              
+              // Validation: Ensure category slug is not empty before generating URL
+              if (!categorySlug || categorySlug.trim() === '') {
+                console.warn(`Category ${categoryId} (${categoryName}) has no slug, skipping navigation`);
+                return null; // Skip rendering if no valid slug
+              }
 
               return (
                 <div key={categoryId} className="relative flex-shrink-0 z-[60]">
@@ -478,7 +539,7 @@ const CategoryNavBar = () => {
                               const subCategoryName = subCat.title || subCat.englishName || ''
                               const subCategorySlug = getSubcategorySlug(subCat)
                               
-                              if (!subCategoryName) return null
+                              if (!subCategoryName || !subCategorySlug) return null
                               
                               return (
                                   <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
@@ -504,8 +565,9 @@ const CategoryNavBar = () => {
                     </>
                   )}
                 </div>
-              )
-            })
+                )
+              })
+              .filter(item => item !== null) // Filter out null items from invalid slugs
           )}
         </nav>
 
@@ -518,16 +580,42 @@ const CategoryNavBar = () => {
           ) : processedCategories.length === 0 ? (
             <div className="px-4 py-2.5 text-xs lg:text-sm text-gray-500 w-full text-center">No categories available</div>
           ) : (
-            processedCategories.map((category) => {
-              const categoryName = formatCategoryName(category)
-              const categorySlug = getCategorySlug(category)
-              const categoryHref = `/category/products?category=${encodeURIComponent(categorySlug)}`
-              const categoryId = String(category.id || category._id || '')
-              const subcategories = Array.isArray(category.subcategories) ? category.subcategories : []
-              const hasSubcategories = subcategories.length > 0
-              const isHovered = hoveredCategory === categoryId
+            processedCategories
+              .map((category, index) => {
+                // Extract all category values directly from the category object
+                // This ensures we're using the correct category's data
+                // CRITICAL: Extract values directly from the category object to prevent mixing
+                const categoryId = String(category.id || category._id || '')
+                const categoryName = formatCategoryName(category)
+                const categorySlug = getCategorySlug(category)
+                
+                // Validation: Ensure category slug is not empty before generating URL
+                if (!categorySlug || categorySlug.trim() === '') {
+                  console.warn(`Category ${categoryId} (${categoryName}) has no slug, skipping navigation`);
+                  return null; // Skip rendering if no valid slug
+                }
+                
+                const categoryHref = `/category/products?category=${encodeURIComponent(categorySlug)}`
+                const subcategories = Array.isArray(category.subcategories) ? category.subcategories : []
+                const hasSubcategories = subcategories.length > 0
+                const isHovered = hoveredCategory === categoryId
+                
+                // Debug logging in development to track category mapping
+                if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+                  // Log category details to verify correct mapping
+                  if (categoryName.includes('MOTOR') || categoryName.includes('PUMP')) {
+                    console.log(`[CategoryNavBar Desktop] Category ${index}:`, {
+                      id: categoryId,
+                      displayName: categoryName,
+                      slug: categorySlug,
+                      title: category.title,
+                      englishName: category.englishName,
+                      href: categoryHref
+                    });
+                  }
+                }
 
-              return (
+                return (
                 <div
                   key={categoryId}
                   className="relative flex-1 flex justify-center"
@@ -536,6 +624,19 @@ const CategoryNavBar = () => {
                 >
                   <Link
                     href={categoryHref}
+                    onClick={(e) => {
+                      // Debug logging when category is clicked
+                      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+                        console.log('[CategoryNavBar] Category clicked:', {
+                          categoryId,
+                          categoryName,
+                          categorySlug,
+                          href: categoryHref,
+                          title: category.title,
+                          englishName: category.englishName
+                        });
+                      }
+                    }}
                     className={`flex items-center gap-1.5 lg:gap-2 py-2.5 lg:py-3 px-2 lg:px-3 xl:px-4 text-xs lg:text-sm font-semibold uppercase tracking-tight transition-all duration-200 relative group ${
                       isHovered || (hasSubcategories && hoveredCategory === categoryId)
                         ? 'text-[#7C2A47]'
@@ -578,7 +679,7 @@ const CategoryNavBar = () => {
                             const subCategoryName = subCat.title || subCat.englishName || ''
                             const subCategorySlug = getSubcategorySlug(subCat)
                             
-                            if (!subCategoryName) return null
+                            if (!subCategoryName || !subCategorySlug) return null
                             
                             return (
                                 <li key={subCat.id || subCat._id || `sub-${subIndex}`} className="m-0 p-0">
@@ -602,8 +703,9 @@ const CategoryNavBar = () => {
                     </div>
                   )}
                 </div>
-              )
-            })
+                )
+              })
+              .filter(item => item !== null) // Filter out null items from invalid slugs
           )}
         </nav>
       </div>

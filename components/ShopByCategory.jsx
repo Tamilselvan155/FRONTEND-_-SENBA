@@ -222,9 +222,9 @@ const ShopByCategory = () => {
                   <div className="flex items-center gap-3 sm:gap-4">
                     {/* Red Accent Bar */}
                     <div className="w-1 h-8 sm:h-10 bg-[#7C2A47] rounded-full"></div>
-                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
                       {category.name}
-                    </h3>
+                    </h2>
                   </div>
                   
                   {/* View More Link */}

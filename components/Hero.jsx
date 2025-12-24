@@ -269,7 +269,7 @@ const Hero = () => {
                           zIndex: 12
                         }}
                       >
-                        <motion.h1 
+                        {/* <motion.h1 
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ 
@@ -284,9 +284,9 @@ const Hero = () => {
                           }}
                         >
                           {currentSlide.title}
-                        </motion.h1>
+                        </motion.h1> */}
                         
-                        <motion.p 
+                        {/* <motion.p 
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ 
@@ -301,9 +301,9 @@ const Hero = () => {
                           }}
                         >
                           {currentSlide.subtitle}
-                        </motion.p>
+                        </motion.p> */}
                         
-                        <motion.div
+                        {/* <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ 
@@ -333,7 +333,7 @@ const Hero = () => {
                               </motion.div>
                             </motion.button>
                           </Link>
-                        </motion.div>
+                        </motion.div> */}
                       </motion.div>
                     </div>
                   </div>
