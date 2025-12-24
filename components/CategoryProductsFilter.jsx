@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { fetchProducts } from "@/lib/actions/productActions";
 import { useSelector } from "react-redux";
 import { useCart } from "@/lib/hooks/useCart";
@@ -12,10 +12,78 @@ import ProductFilters from "./ProductFilters";
 import Loading from "./Loading";
 import BackButton from "./BackButton";
 import { assets } from "@/assets/assets";
+import { 
+  extractProductCategory, 
+  normalizeCategoryName, 
+  matchCategoryNames, 
+  findCategoryByUrlParam,
+  getCategoryDisplayName 
+} from "@/lib/utils/categoryUtils";
 
 export default function CategoryProductsFilter({ categoryName, subCategoryName }) {
   const { cartItems, addToCart } = useCart();
   const router = useRouter();
+  const { categoriesWithSubcategories } = useSelector((state) => state.category);
+
+  // Get correct category display name from Redux store
+  // CRITICAL: This must match the exact category from the URL parameter
+  const displayCategoryName = useMemo(() => {
+    if (!categoryName || categoryName === "products") {
+      return "All Products";
+    }
+
+    // Store the original categoryName to use as fallback
+    const originalCategoryName = categoryName;
+    const decodedCategoryName = decodeURIComponent(originalCategoryName);
+
+    // Process categories data similar to CategoryNavBar
+    let categoriesData = categoriesWithSubcategories;
+    if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
+      if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data;
+      } else if (Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data;
+      }
+    }
+
+    // If categories data is not loaded yet, use the URL parameter (this is why it shows correctly during loading)
+    if (!categoriesData || !Array.isArray(categoriesData) || categoriesData.length === 0) {
+      let fallbackName = decodedCategoryName;
+      fallbackName = fallbackName.replace(/([A-Z])/g, ' $1').trim();
+      return fallbackName;
+    }
+
+    // Use shared utility to find matching category
+    const matchingCategory = findCategoryByUrlParam(categoryName, categoriesData);
+
+    // Debug logging for matched category
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      if (matchingCategory) {
+        console.log('[CategoryProductsFilter] Matched category:', {
+          matched: {
+            id: matchingCategory.id || matchingCategory._id,
+            title: matchingCategory.title,
+            englishName: matchingCategory.englishName,
+            slug: matchingCategory.slug
+          }
+        });
+      } else {
+        console.warn('[CategoryProductsFilter] No category match found for:', decodedCategoryName);
+      }
+    }
+
+    // Only use matched category if we found an exact match
+    if (matchingCategory) {
+      // Use shared utility to get consistent display name
+      return getCategoryDisplayName(matchingCategory);
+    }
+
+    // Fallback to URL parameter if no exact match found
+    // This ensures we always show something, even if categories haven't loaded or don't match
+    let fallbackName = decodedCategoryName;
+    fallbackName = fallbackName.replace(/([A-Z])/g, ' $1').trim();
+    return fallbackName;
+  }, [categoryName, categoriesWithSubcategories]);
 
   const [products, setProducts] = useState([]);
   const [selectedHpOptions, setSelectedHpOptions] = useState({}); // Track selected HP for each product
@@ -60,22 +128,17 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
       }
     }
 
-    // Get category name
-    let categoryNameValue = '';
-    if (typeof apiProduct.category === 'string' && apiProduct.category.trim() !== '') {
-      categoryNameValue = apiProduct.category;
-    } else if (apiProduct.category?.title) {
-      categoryNameValue = apiProduct.category.title;
-    } else if (apiProduct.categoryId) {
-      if (typeof apiProduct.categoryId === 'object') {
-        if (apiProduct.categoryId.parentId && typeof apiProduct.categoryId.parentId === 'object' && apiProduct.categoryId.parentId.title) {
-          categoryNameValue = apiProduct.categoryId.parentId.title;
-        } else if (apiProduct.categoryId.isParent || !apiProduct.categoryId.parentId) {
-          categoryNameValue = apiProduct.categoryId.title || '';
-        } else {
-          categoryNameValue = apiProduct.categoryId.title || '';
-        }
-      }
+    // Use shared utility to extract category name consistently
+    const categoryNameValue = extractProductCategory(apiProduct);
+    
+    // Debug logging in development
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && !categoryNameValue) {
+      console.warn('[CategoryProductsFilter] Product has no category:', {
+        productId: apiProduct.id || apiProduct._id,
+        productTitle: apiProduct.title,
+        categoryId: apiProduct.categoryId,
+        category: apiProduct.category
+      });
     }
 
     // Get subcategory name
@@ -294,6 +357,20 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
           .map(transformProduct)
           .filter(product => product !== null);
 
+        // Debug logging in development
+        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+          console.log('[CategoryProductsFilter] Products loaded:', {
+            totalProducts: transformedProducts.length,
+            categoriesFound: [...new Set(transformedProducts.map(p => p.category).filter(Boolean))],
+            sampleProducts: transformedProducts.slice(0, 5).map(p => ({
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              subCategory: p.subCategory
+            }))
+          });
+        }
+
         setProducts(transformedProducts);
         
         // Initialize selected HP options - select first option for each product
@@ -316,47 +393,84 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
     loadProducts();
   }, [categoryName, subCategoryName]);
 
-  // Auto-select category from URL query params after products are loaded
+  // Handle "All Products" - clear category filters when categoryName is "products" or empty
+  // Also clear when categoryName changes to ensure filter matches URL
   useEffect(() => {
-    if (categoryName && categoryName !== "products" && products.length > 0 && filters.selectedCategories.length === 0) {
-      // Normalize category name for matching - handle both hyphens and spaces
-      const normalizeCategory = (cat) => {
-        if (!cat) return '';
-        // Convert to lowercase, replace hyphens with spaces, normalize spaces
-        return cat.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
-      };
-      
-      // Decode URL-encoded category name
-      const decodedCategoryName = decodeURIComponent(categoryName);
-      const normalizedCategoryName = normalizeCategory(decodedCategoryName);
-      
-      // Find matching category from available categories
-      const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
-      const matchingCategory = allCategories.find(cat => {
-        const normalizedCat = normalizeCategory(cat);
-        // Exact match first
-        if (normalizedCat === normalizedCategoryName) {
-          return true;
-        }
-        // Check if category names match when comparing word by word
-        const catWords = normalizedCat.split(' ').filter(w => w.length > 0);
-        const nameWords = normalizedCategoryName.split(' ').filter(w => w.length > 0);
-        // Match if all words from one are in the other
-        if (catWords.length > 0 && nameWords.length > 0) {
-          return catWords.every(word => nameWords.includes(word)) || 
-                 nameWords.every(word => catWords.includes(word));
-        }
-        return false;
-      });
-      
-      if (matchingCategory) {
+    if (!categoryName || categoryName === "products") {
+      if (filters.selectedCategories.length > 0) {
         setFilters(prev => ({
           ...prev,
-          selectedCategories: [matchingCategory]
+          selectedCategories: []
         }));
       }
     }
-  }, [categoryName, products, filters.selectedCategories.length]);
+  }, [categoryName]);
+
+  // Auto-select category from URL query params after products are loaded
+  useEffect(() => {
+    if (categoryName && categoryName !== "products" && products.length > 0) {
+      // Process categories from Redux store
+      let categoriesData = categoriesWithSubcategories;
+      if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
+        if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
+          categoriesData = categoriesWithSubcategories.data;
+        } else if (Array.isArray(categoriesWithSubcategories.data)) {
+          categoriesData = categoriesWithSubcategories.data;
+        }
+      }
+
+      // First, try to find matching category from Redux store (most reliable)
+      let matchingCategory = null;
+      
+      if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
+        const matchedCategoryFromStore = findCategoryByUrlParam(categoryName, categoriesData);
+        
+        if (matchedCategoryFromStore) {
+          // Use shared utility to get consistent display name
+          matchingCategory = getCategoryDisplayName(matchedCategoryFromStore);
+        }
+      }
+
+      // Fallback: Find matching category from product categories if store match not found
+      if (!matchingCategory) {
+        const allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        const decodedCategoryName = decodeURIComponent(categoryName);
+        const matchedProductCategory = allCategories.find(cat => {
+          return matchCategoryNames(cat, decodedCategoryName);
+        });
+        
+        if (matchedProductCategory) {
+          matchingCategory = matchedProductCategory;
+        }
+      }
+      
+      // Only update if we found a match AND it's different from current selection
+      if (matchingCategory) {
+        setFilters(prev => {
+          const currentSelection = prev.selectedCategories[0];
+          // Check if current selection doesn't match the URL category
+          if (!currentSelection || !matchCategoryNames(currentSelection, matchingCategory)) {
+            return {
+              ...prev,
+              selectedCategories: [matchingCategory]
+            };
+          }
+          return prev; // No change needed
+        });
+      }
+    } else if (!categoryName || categoryName === "products") {
+      // Clear selection when navigating away from a category
+      setFilters(prev => {
+        if (prev.selectedCategories.length > 0) {
+          return {
+            ...prev,
+            selectedCategories: []
+          };
+        }
+        return prev; // No change needed
+      });
+    }
+  }, [categoryName, products.length, categoriesWithSubcategories]);
 
   // Apply filters and sorting
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -406,62 +520,55 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
 
     let updatedProducts = [...products];
 
-    // Helper function to normalize category/subcategory names - handle hyphens and spaces
-    const normalizeCategory = (cat) => {
-      if (!cat) return '';
-      // Convert to lowercase, replace hyphens with spaces, normalize spaces
-      return cat.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ');
-    };
-
     // Apply subcategory filter first (if subcategory is provided from query params)
     if (subCategoryName) {
       const decodedSubCategoryName = decodeURIComponent(subCategoryName);
-      const normalizedSubCategoryName = normalizeCategory(decodedSubCategoryName);
       updatedProducts = updatedProducts.filter((p) => {
-        const productSubCat = normalizeCategory(p.subCategory || '');
-        return productSubCat === normalizedSubCategoryName ||
-               productSubCat.includes(normalizedSubCategoryName) ||
-               normalizedSubCategoryName.includes(productSubCat);
+        if (!p.subCategory) return false;
+        return matchCategoryNames(p.subCategory, decodedSubCategoryName);
       });
     }
 
-    // Apply category filter (OR logic - match ANY selected category)
-    // Apply filter if categories are selected OR if categoryName is provided from query params
+    // Apply category filter
+    // Priority: Use selectedCategories if available, otherwise use categoryName from URL
+    // This ensures filtering works even if auto-select hasn't happened yet
     if (filters.selectedCategories.length > 0) {
+      // Filter by selected categories (from filter UI)
       updatedProducts = updatedProducts.filter((p) =>
-        // Match if product category matches ANY selected category
         filters.selectedCategories.some(selectedCat => {
-          const productCat = normalizeCategory(p.category || '');
-          const selectedCatLower = normalizeCategory(selectedCat);
-          // Exact match first
-          if (productCat === selectedCatLower) return true;
-          // Word-by-word matching for better accuracy
-          const productWords = productCat.split(' ').filter(w => w.length > 0);
-          const selectedWords = selectedCatLower.split(' ').filter(w => w.length > 0);
-          if (productWords.length > 0 && selectedWords.length > 0) {
-            return productWords.every(word => selectedWords.includes(word)) || 
-                   selectedWords.every(word => productWords.includes(word));
-          }
-          return false;
+          if (!p.category) return false;
+          return matchCategoryNames(p.category, selectedCat);
         })
       );
-    } else if (categoryName && categoryName !== "products" && !subCategoryName) {
-      // If no categories selected but categoryName provided (and no subcategory), filter by it
+    } else if (categoryName && categoryName !== "products") {
+      // Filter by URL category parameter (when no categories are selected in filter UI)
+      // Convert URL slug to display name for better matching
       const decodedCategoryName = decodeURIComponent(categoryName);
-      const normalizedCategoryName = normalizeCategory(decodedCategoryName);
       
-      updatedProducts = updatedProducts.filter((p) => {
-        const productCat = normalizeCategory(p.category || '');
-        // Exact match first
-        if (productCat === normalizedCategoryName) return true;
-        // Word-by-word matching for better accuracy
-        const productWords = productCat.split(' ').filter(w => w.length > 0);
-        const nameWords = normalizedCategoryName.split(' ').filter(w => w.length > 0);
-        if (productWords.length > 0 && nameWords.length > 0) {
-          return productWords.every(word => nameWords.includes(word)) || 
-                 nameWords.every(word => productWords.includes(word));
+      // Try to find matching category from Redux store to get display name
+      let categoryDisplayName = decodedCategoryName;
+      let categoriesData = categoriesWithSubcategories;
+      if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
+        if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
+          categoriesData = categoriesWithSubcategories.data;
+        } else if (Array.isArray(categoriesWithSubcategories.data)) {
+          categoriesData = categoriesWithSubcategories.data;
         }
-        return false;
+      }
+      
+      if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
+        const matchedCategory = findCategoryByUrlParam(categoryName, categoriesData);
+        if (matchedCategory) {
+          categoryDisplayName = getCategoryDisplayName(matchedCategory);
+        }
+      }
+      
+      // Filter products by matching category
+      updatedProducts = updatedProducts.filter((p) => {
+        if (!p.category) return false;
+        // Try matching with both the display name and the original slug
+        return matchCategoryNames(p.category, categoryDisplayName) || 
+               matchCategoryNames(p.category, decodedCategoryName);
       });
     }
 
@@ -584,7 +691,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
     }
 
     setFilteredProducts(updatedProducts);
-  }, [filters, products]);
+  }, [filters, products, categoryName, subCategoryName, categoriesWithSubcategories]);
 
   // 🛒 Add to Cart
   const handleAddToCart = async (product) => {
@@ -662,9 +769,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
           <span className="text-gray-900 font-semibold">
           {subCategoryName 
             ? subCategoryName 
-            : categoryName === "products" || !categoryName 
-              ? "All Products" 
-              : categoryName}
+            : displayCategoryName}
         </span>
       </nav>
 
@@ -691,9 +796,7 @@ export default function CategoryProductsFilter({ categoryName, subCategoryName }
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
                       {subCategoryName 
                         ? subCategoryName 
-                        : categoryName === "products" || !categoryName 
-                          ? "All Products" 
-                          : categoryName}
+                        : displayCategoryName}
                     </h1>
                     
                     {/* View Mode Toggle - Next to title on mobile */}

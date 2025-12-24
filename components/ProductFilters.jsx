@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
 import { Filter, X, CheckSquare, Droplet, Gauge, Waves, Cpu, Package, ChevronDown } from "lucide-react";
+import { getCategoryDisplayName, normalizeCategoryName, matchCategoryNames } from "@/lib/utils/categoryUtils";
 
 export default function ProductFilters({ products, onFilterChange }) {
   const [selectedPipeSizes, setSelectedPipeSizes] = useState([]);
@@ -16,8 +18,47 @@ export default function ProductFilters({ products, onFilterChange }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(true);
 
-  // Extract unique categories from products
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+  // Get categories from Redux store instead of products
+  // This ensures all parent categories are shown, even if they don't have products yet
+  const { categoriesWithSubcategories } = useSelector((state) => state.category);
+
+  // Process categories from Redux store - get all active parent categories
+  const categoriesFromStore = useMemo(() => {
+    let categoriesData = categoriesWithSubcategories;
+    
+    if (categoriesWithSubcategories && typeof categoriesWithSubcategories === 'object' && !Array.isArray(categoriesWithSubcategories)) {
+      if (categoriesWithSubcategories.success && Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data;
+      } else if (Array.isArray(categoriesWithSubcategories.data)) {
+        categoriesData = categoriesWithSubcategories.data;
+      }
+    }
+
+    if (!categoriesData || !Array.isArray(categoriesData) || categoriesData.length === 0) {
+      return [];
+    }
+
+    // Get all active parent categories and extract their display names
+    return categoriesData
+      .filter(cat => {
+        const isActive = cat.status === 'active';
+        const isParent = cat.isParent === true || cat.isParent === 'true' || Boolean(cat.isParent);
+        return isActive && isParent;
+      })
+      .map(cat => {
+        // Use shared utility to get consistent display name
+        return getCategoryDisplayName(cat);
+      })
+      .filter(Boolean)
+      .sort();
+  }, [categoriesWithSubcategories]);
+
+  // Also get categories from products for fallback and to show product counts
+  const categoriesFromProducts = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+
+  // Use categories from store (all parent categories) as primary source
+  // Fallback to product categories if store is not loaded yet
+  const categories = categoriesFromStore.length > 0 ? categoriesFromStore : categoriesFromProducts;
 
   // Extract unique options (with null checks)
   const uniquePipeSizes = [...new Set(products.flatMap(p => 
@@ -194,7 +235,32 @@ export default function ProductFilters({ products, onFilterChange }) {
                 {categoryOpen && (
                   <div className="space-y-1.5 text-sm">
                     {categories.map(category => {
-                      const count = products.filter(p => p.category === category).length;
+                      // Use shared matching function for consistent category matching
+                      const count = products.filter(p => {
+                        if (!p.category) return false;
+                        return matchCategoryNames(p.category, category);
+                      }).length;
+                      
+                      // Debug logging in development
+                      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && (category.includes('MOTOR') || category.includes('PUMP'))) {
+                        const matchingProducts = products.filter(p => {
+                          if (!p.category) return false;
+                          return matchCategoryNames(p.category, category);
+                        });
+                        if (matchingProducts.length > 0) {
+                          console.log(`[ProductFilters] Category "${category}":`, {
+                            normalizedCategory: normalizeCategoryName(category),
+                            count,
+                            sampleProducts: matchingProducts.slice(0, 3).map(p => ({
+                              id: p.id,
+                              title: p.name,
+                              category: p.category,
+                              normalized: normalizeCategoryName(p.category)
+                            }))
+                          });
+                        }
+                      }
+
                       return (
                         <label key={category} className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors duration-150">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
