@@ -8,6 +8,8 @@ import { createEnquiry } from '@/lib/actions/enquiryActions';
 import { addEnquiry } from '@/lib/features/enquiry/enquirySlice';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { assets } from '@/assets/assets';
+import { getImageUrl } from '@/lib/utils/imageUtils';
 
 const EnquiryContent = () => {
   const router = useRouter();
@@ -18,6 +20,7 @@ const EnquiryContent = () => {
   const [userName, setUserName] = useState('');
   const [userMobile, setUserMobile] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Get product info from URL params
   const productId = searchParams.get('productId');
@@ -81,11 +84,8 @@ const EnquiryContent = () => {
         createdAt: new Date().toISOString(),
       };
 
-      // Save to Redux
-      dispatch(addEnquiry(enquiryData));
-
-      // Save to backend
-      await createEnquiry({
+      // Save to backend first
+      const result = await createEnquiry({
         userName,
         userMobile,
         userEmail: email || null,
@@ -95,6 +95,11 @@ const EnquiryContent = () => {
         contactMethod: 'form',
       });
 
+      // Only save to Redux if backend call was successful
+      if (result && result.success) {
+        dispatch(addEnquiry(enquiryData));
+      }
+      
       // Save to localStorage for future use
       if (typeof window !== 'undefined') {
         localStorage.setItem('userName', userName);
@@ -113,7 +118,8 @@ const EnquiryContent = () => {
       }, 1500);
     } catch (error) {
       console.error('Error submitting enquiry:', error);
-      toast.error(error.message || 'Failed to submit enquiry. Please try again.');
+      const errorMessage = error.message || error.toString() || 'Failed to submit enquiry. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -170,6 +176,25 @@ const EnquiryContent = () => {
 
   const totalPrice = parseFloat(productPrice) * quantity;
 
+  // Get placeholder URL - handle both imported images (objects) and string paths
+  const getPlaceholderUrl = () => {
+    if (assets.product_img0) {
+      if (typeof assets.product_img0 === 'object' && assets.product_img0.src) {
+        return assets.product_img0.src;
+      }
+      if (typeof assets.product_img0 === 'string') {
+        return assets.product_img0;
+      }
+    }
+    return '/placeholder-product.png';
+  };
+  const placeholderUrl = getPlaceholderUrl();
+
+  // Process product image URL
+  const processedImageUrl = productImage ? getImageUrl(productImage) : null;
+  
+  // Determine image source to display
+  const imageSrc = imageError || !processedImageUrl ? placeholderUrl : processedImageUrl;
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
     <div className="max-w-6xl mx-auto">
@@ -194,18 +219,19 @@ const EnquiryContent = () => {
             {/* LEFT — Product Section */}
             {productId && (
               <div className="w-full lg:w-1/3 flex flex-col items-center gap-4">
-                {productImage && (
-                  <div className="w-full max-w-xs h-52 bg-white rounded-2xl border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
-                    <img
-                      src={productImage}
-                      alt={productName}
-                      className="w-full h-full object-contain p-4"
-                      onError={(e) => {
-                        e.target.src = "/placeholder-product.png";
-                      }}
-                    />
-                  </div>
-                )}
+                <div className="w-full max-w-xs h-52 bg-white rounded-2xl border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+                  <img
+                    src={imageSrc}
+                    alt={productName}
+                    className="w-full h-full object-contain p-4"
+                    onError={() => {
+                      // If image fails to load, switch to placeholder
+                      if (!imageError) {
+                        setImageError(true);
+                      }
+                    }}
+                  />
+                </div>
                 <div className="w-full text-center space-y-3">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">

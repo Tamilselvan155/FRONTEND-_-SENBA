@@ -34,8 +34,15 @@ const LoginStep = ({ onLoginSuccess, onCancel }) => {
     }
 
     // Determine if input is email or mobile
+<<<<<<< HEAD
+    // Remove spaces and special characters for mobile validation
+    const cleanedInput = emailOrMobile.trim().replace(/[\s\-\(\)]/g, '');
+    const isEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(emailOrMobile);
+    const isMobile = /^[0-9]{10}$/.test(cleanedInput);
+=======
     const isEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(emailOrMobile);
     const isMobile = /^[0-9]{10}$/.test(emailOrMobile);
+>>>>>>> 2e8628eef17f96febdd1a35e7e6a0e782a90abda
 
     if (!isEmail && !isMobile) {
       dispatch(loginFailure('Please enter a valid email or 10-digit mobile number'));
@@ -54,9 +61,15 @@ const LoginStep = ({ onLoginSuccess, onCancel }) => {
 
       // Add email or mobile based on what was entered
       if (isEmail) {
+<<<<<<< HEAD
+        requestBody.email = emailOrMobile.toLowerCase().trim();
+      } else {
+        requestBody.mobile = cleanedInput;
+=======
         requestBody.email = emailOrMobile;
       } else {
         requestBody.mobile = emailOrMobile;
+>>>>>>> 2e8628eef17f96febdd1a35e7e6a0e782a90abda
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/login`, {

@@ -362,11 +362,14 @@ function LoginPageContent() {
     }
 
     // Determine if input is email or mobile
+    // Remove spaces and special characters for mobile validation
+    const cleanedInput = emailOrMobile.trim().replace(/[\s\-\(\)]/g, '');
     const isEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(emailOrMobile);
-    const isMobile = /^[0-9]{10}$/.test(emailOrMobile);
+    const isMobile = /^[0-9]{10}$/.test(cleanedInput);
 
     if (!isEmail && !isMobile) {
       dispatch(loginFailure('Please enter a valid email or 10-digit mobile number'));
+      toast.error('Please enter a valid email or 10-digit mobile number');
       return;
     }
 
@@ -381,9 +384,9 @@ function LoginPageContent() {
 
       // Add email or mobile based on what was entered
       if (isEmail) {
-        requestBody.email = emailOrMobile;
+        requestBody.email = emailOrMobile.toLowerCase().trim();
       } else {
-        requestBody.mobile = emailOrMobile;
+        requestBody.mobile = cleanedInput;
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/login`, {
@@ -395,9 +398,14 @@ function LoginPageContent() {
       });
 
       let data;
+      let responseText = '';
       try {
-        data = await response.json();
+        responseText = await response.text();
+        data = responseText ? JSON.parse(responseText) : {};
       } catch (jsonError) {
+        console.error('Failed to parse response:', jsonError);
+        console.error('Response status:', response.status);
+        console.error('Response text:', responseText);
         throw new Error('Server returned an invalid response. Please check if the backend is running.');
       }
 
@@ -452,7 +460,15 @@ function LoginPageContent() {
           router.refresh();
         }, 2000);
       } else {
-        const errorMessage = data.message || 'Invalid email/mobile or password';
+        // Log detailed error information for debugging
+        console.error('Login failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data,
+          requestBody: { ...requestBody, password: '***' } // Hide password in logs
+        });
+        
+        const errorMessage = data?.message || `Login failed (${response.status}). Please check your credentials.`;
         dispatch(loginFailure(errorMessage));
         toast.error(errorMessage);
       }

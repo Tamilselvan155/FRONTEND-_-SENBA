@@ -64,30 +64,30 @@ const PaymentStep = ({
 
       // Handle COD payment
       if (paymentMethod === 'cod') {
-        if (isLoggedIn) {
-          const result = await createOrder(orderData);
-          if (!result.success) {
-            throw new Error(result.message || 'Failed to place order');
-          }
-          
-          // Clear cart
-          try {
-            await dispatch(clearCartAsync()).unwrap();
-          } catch (error) {
-            console.error('Error clearing cart:', error);
-            dispatch(clearCart());
-          }
-
-          toast.success('Order placed successfully!');
-          onPaymentComplete({
-            success: true,
-            orderId: result.data?._id || result.data?.id,
-            paymentMethod: 'cod',
-            message: 'Your order has been placed successfully. Our sales team will contact you soon.',
-          });
-        } else {
+        if (!isLoggedIn) {
           throw new Error('Please login to place an order');
         }
+        
+        const result = await createOrder(orderData);
+        if (!result || !result.success) {
+          throw new Error(result?.message || 'Failed to place order');
+        }
+        
+        // Clear cart
+        try {
+          await dispatch(clearCartAsync()).unwrap();
+        } catch (error) {
+          console.error('Error clearing cart:', error);
+          dispatch(clearCart());
+        }
+
+        toast.success('Order placed successfully!');
+        onPaymentComplete({
+          success: true,
+          orderId: result.data?._id || result.data?.id,
+          paymentMethod: 'cod',
+          message: 'Your order has been placed successfully. Our sales team will contact you soon.',
+        });
       } 
       // Handle Online Payment
       else if (paymentMethod === 'online') {
@@ -148,7 +148,8 @@ const PaymentStep = ({
     } catch (error) {
       console.error('Error placing order:', error);
       setIsPlacingOrder(false);
-      toast.error(error.message || 'Failed to place order. Please try again.');
+      const errorMessage = error.message || error.toString() || 'Failed to place order. Please try again.';
+      toast.error(errorMessage);
     }
   };
 

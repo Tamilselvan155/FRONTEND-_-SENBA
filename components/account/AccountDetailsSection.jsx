@@ -85,26 +85,12 @@ const AccountDetailsSection = ({ userData }) => {
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                   userData.status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
                 }`}>
                   {userData.status ? userData.status.charAt(0).toUpperCase() + userData.status.slice(1) : 'Active'}
                 </span>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                Last Login
-              </label>
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <span className="text-sm text-gray-900">
-                  {userData.lastLoginAt 
-                    ? new Date(userData.lastLoginAt).toLocaleString('en-US')
-                    : 'Not available'}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

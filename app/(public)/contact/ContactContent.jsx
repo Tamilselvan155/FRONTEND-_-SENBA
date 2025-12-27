@@ -27,6 +27,44 @@ export default function ContactContent() {
 
     setIsSubmitting(true);
 
+<<<<<<< HEAD
+    try {
+      // Send data to Google Sheets (fire and forget)
+      await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Bypass CORS - we can't read response but data will be saved
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({ name, email, mobile, message }),
+      });
+
+      // Show success toast (data is being sent in background)
+      toast.success('Thank you for contacting us! Our team will reach you soon.', {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: false,
+      });
+      
+      // Clear form
+      setName('');
+      setEmail('');
+      setMobile('');
+      setMessage('');
+    } catch (error) {
+      // Even if fetch fails, show success (no-cors mode can't detect errors)
+      console.log('Contact form submission attempted');
+      toast.success('Thank you for contacting us! Our team will reach you soon.', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+=======
     // Send data to Google Sheets (fire and forget)
     fetch(GOOGLE_SHEET_WEB_APP_URL, {
       method: 'POST',
@@ -56,6 +94,7 @@ export default function ContactContent() {
     setMobile('');
     setMessage('');
     setIsSubmitting(false);
+>>>>>>> 2e8628eef17f96febdd1a35e7e6a0e782a90abda
   };
 
   return (
