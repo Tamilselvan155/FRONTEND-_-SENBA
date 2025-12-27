@@ -257,3 +257,4 @@ const CollectionsWishlistSection = () => {
 
 export default CollectionsWishlistSection;
 
+
